@@ -55,7 +55,7 @@ public partial class UiReviewSmoke
         QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 
-    /// <summary>Scroll areas outside the home pages: briefings, inspectors, the account dialog and the battle menus.</summary>
+    /// <summary>Scroll areas outside the home pages: briefings, relic equipping, the forge, the account dialog and the battle menus.</summary>
     private async Task ReviewScrollReachExtras()
     {
         var state = GameState.Instance;
@@ -65,20 +65,14 @@ public partial class UiReviewSmoke
         EncounterBriefing.Show(loadout, GameData.GetStage(state.SelectedStage));
         var briefing = loadout.GetNode<CanvasLayer>("EncounterBriefing");
         await AuditScrollReach("encounter-briefing", briefing); briefing.QueueFree();
-        foreach (var spell in GameData.GetPlayerSpells())
-        {
-            SpellShowcase.Show(loadout, spell); await Wait(.2);
-            var showcase = Walk(loadout).OfType<SpellShowcase>().Last();
-            await AuditScrollReach("spell-" + spell.Id, showcase); showcase.QueueFree(); await Wait(.1);
-        }
         await Open("MainMenu");
         var home = (MapMenu)GetTree().CurrentScene;
-        foreach (var relic in GameData.GetAllEquipment())
-        {
-            RelicEquipmentInspector.Show(home, relic, () => { }); await Wait(.2);
-            var inspector = Walk(home).OfType<RelicEquipmentInspector>().Last();
-            await AuditScrollReach("relic-" + relic.Id, inspector); inspector.QueueFree(); await Wait(.1);
-        }
+        // Relics are equipped on the relics page: its ally list and before/after comparison.
+        SceneRouter.Instance.GoToShop(3); await Wait(.3);
+        var armory = Walk(home).OfType<ShopMenu>().Single();
+        armory.BeginRelicEquip(GameData.GetAllEquipment().First().Id, state.GetOwnedPlayerUnits().First().Id); await Wait(.2);
+        await AuditScrollReach("relic-equip", armory);
+        home.CloseHomeModal(); await Wait(.2);
         ForgeEnchantmentInspector.Show(home, _ => { }, GameData.GetAllEquipment().First().Id); await Wait(.2);
         var forge = Walk(home).OfType<ForgeEnchantmentInspector>().Last();
         await AuditScrollReach("enchantments", forge); forge.QueueFree();

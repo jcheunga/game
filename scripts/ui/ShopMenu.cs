@@ -39,6 +39,7 @@ public partial class ShopMenu : RoyalScreen
     {
         _tab = Mathf.Clamp(index, 0, TabNames.Length - 1);
         _selectedId = "";
+        _equipping = false; RelicPreview = null;
         SetPlate(_tab switch { 1 => "spells", 2 or 3 => "relics", _ => "warband" });
         Refresh();
     }

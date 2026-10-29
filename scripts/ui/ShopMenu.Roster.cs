@@ -199,13 +199,7 @@ public partial class ShopMenu
         var id = entry.Id;
         button.Pressed += () => { _selectedId = id; Refresh(); };
         button.AddChild(Picture(spells, entry.Id, spells ? new Rect2(10, 10, rect.Size.X - 20, rect.Size.Y - 20) : new Rect2(6, 6, rect.Size.X - 12, rect.Size.Y - 9), !entry.Owned));
-        var tab = new Panel { Position = new Vector2(1.5f, 2), Size = new Vector2(26, 25), MouseFilter = MouseFilterEnum.Ignore };
-        var tabStyle = new StyleBoxFlat { BgColor = new Color(selected ? "2b2016" : "1c1b1a"), BorderColor = new Color(selected ? "e9b45c" : "8e7550"), AntiAliasing = true };
-        tabStyle.BorderWidthRight = tabStyle.BorderWidthBottom = 1; tabStyle.CornerRadiusBottomRight = 7; tabStyle.CornerRadiusTopLeft = 2;
-        tab.AddThemeStyleboxOverride("panel", tabStyle);
-        button.AddChild(tab);
-        var icon = spells ? SpellIcon(GameData.GetSpell(entry.Id)) : ClassIcon(GameData.GetUnit(entry.Id));
-        button.AddChild(RoyalKit.Image(icon, new Rect2(5.5f, 6, 17, 17)));
+        AddCornerTab(button, selected, spells ? SpellIcon(GameData.GetSpell(entry.Id)) : ClassIcon(GameData.GetUnit(entry.Id)));
         if (spells && spec.Has("grid.0.0.level"))
         {
             var origin = spec.Rect("grid.0.0").Position;
@@ -218,6 +212,17 @@ public partial class ShopMenu
         if (!entry.Owned && !entry.Available)
             button.AddChild(RoyalKit.Image("lock", new Rect2(rect.Size.X - 24, rect.Size.Y - 24, 16, 16), new Color(1, 1, 1, .8f)));
         return button;
+    }
+
+    /// <summary>The class (or spell) tab in a collection cell's top-left corner.</summary>
+    private static void AddCornerTab(Control cell, bool selected, string icon)
+    {
+        var tab = new Panel { Position = new Vector2(1.5f, 2), Size = new Vector2(26, 25), MouseFilter = MouseFilterEnum.Ignore };
+        var tabStyle = new StyleBoxFlat { BgColor = new Color(selected ? "2b2016" : "1c1b1a"), BorderColor = new Color(selected ? "e9b45c" : "8e7550"), AntiAliasing = true };
+        tabStyle.BorderWidthRight = tabStyle.BorderWidthBottom = 1; tabStyle.CornerRadiusBottomRight = 7; tabStyle.CornerRadiusTopLeft = 2;
+        tab.AddThemeStyleboxOverride("panel", tabStyle);
+        cell.AddChild(tab);
+        cell.AddChild(RoyalKit.Image(icon, new Rect2(5.5f, 6, 17, 17)));
     }
 }
 

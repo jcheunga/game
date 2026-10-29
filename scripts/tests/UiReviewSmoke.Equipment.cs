@@ -39,33 +39,40 @@ public partial class UiReviewSmoke
                 var button=Walk(menu).OfType<Button>().Last(b=>b.IsVisibleInTree() && !b.Disabled && (b.Text==name || b.AccessibilityName==name));
                 await TapModal(button);await Wait(.15);
             }
-            RelicEquipmentInspector Inspector()=>Walk(menu).OfType<RelicEquipmentInspector>().Single();
+            ShopMenu Armory()=>Walk(menu).OfType<ShopMenu>().Single();
+            var modals=Walk(menu).OfType<RealmModal>().Count();
             await TapHint("Guardian Shield");await TapAction("Equip");
             Check(state.GetUnitEquipment("player_brawler")?.Id=="relic_sharpened_edge","Opening equipment choice does not change the worn relic");
+            Check(Walk(menu).OfType<RealmModal>().Count()==modals && Walk(Armory()).OfType<ScrollContainer>().Any(s=>s.Name=="RelicAllies" && s.IsVisibleInTree()),
+                "Equipping happens on the relics page, not in a modal");
             AuditText("Equipment / choose ally");await Capture("01-choose-ally");
+            await TapAction("Back");
+            Check(Walk(Armory()).OfType<RoyalButton>().Any(b=>b.IsVisibleInTree() && b.AccessibilityName=="Guardian Shield") && Armory().RelicPreview==null,
+                "Back leaves equipping for the collection, armory still open");
+            await TapAction("Equip");
             await TapHint("Compare Guardian Shield on Peasant");
-            Check(Inspector().Preview.Unit.Id=="player_peasant" && Walk(Inspector()).OfType<Button>().Any(b=>b.AccessibilityName=="Preview relic slot 2" && b.Disabled),"Unpromoted ally sees its locked second slot");
+            Check(Armory().RelicPreview.Unit.Id=="player_peasant" && Walk(Armory()).OfType<Button>().Any(b=>b.AccessibilityName=="Preview relic slot 2" && b.Disabled),"Unpromoted ally sees its locked second slot");
             AuditText("Equipment / locked slot");await Capture("02-locked-slot");
-            await TapAction("Choose ally");await TapHint("Compare Guardian Shield on Swordsman");
-            var preview=Inspector().Preview;
+            await TapHint("Compare Guardian Shield on Swordsman");
+            var preview=Armory().RelicPreview;
             Check(preview.After.Armor>preview.Current.Armor && preview.After.AttackDamage<preview.Current.AttackDamage,"Native bearer selection shows both equipment gains and replacement losses");
             Check(state.GetUnitEquipment("player_brawler")?.Id=="relic_sharpened_edge","Previewing and switching allies does not equip anything");
-            Check(Walk(Inspector()).OfType<Control>().Any(c=>c.AccessibilityName== $"Armor: {preview.Current.Armor:0.##} → {preview.After.Armor:0.##}"),"Armor comparison displays the exact before and after values");
+            Check(Walk(Armory()).OfType<Control>().Any(c=>c.AccessibilityName== $"Armor: {preview.Current.Armor:0.##} → {preview.After.Armor:0.##}"),"Armor comparison displays the exact before and after values");
             AuditText("Equipment / comparison");await Capture("03-comparison");
-            var confirm=Walk(Inspector()).OfType<Button>().Single(b=>b.Text=="Equip to slot 1");
+            var confirm=Walk(Armory()).OfType<Button>().Single(b=>b.IsVisibleInTree() && b.AccessibilityName=="Equip to slot 1");
             Check(GetViewport().GetVisibleRect().Encloses(confirm.GetGlobalRect()),"Equipment confirmation stays visible outside scrolling stats");
             await TapAction("Equip to slot 1");
-            Check(!Walk(menu).OfType<RelicEquipmentInspector>().Any() && Math.Abs(state.BuildPlayerUnitStats(GameData.GetUnit("player_brawler")).Armor-preview.After.Armor)<.001f,"Native confirmation equips exactly the previewed stats");
+            Check(Armory().RelicPreview==null && Math.Abs(state.BuildPlayerUnitStats(GameData.GetUnit("player_brawler")).Armor-preview.After.Armor)<.001f,"Native confirmation equips exactly the previewed stats");
             await TapHint("Tower Charm");await TapAction("Equip");await TapHint("Compare Tower Charm on Swordsman");
             await TapHint("Preview relic slot 2");
-            Check(Inspector().Preview.Slot==2 && Inspector().Preview.Limits.Any(l=>l.Label=="Armor" && l.Excess>4),"Second-slot comparison shows the shared armor limit");
-            var cap=Walk(Inspector()).OfType<Label>().Single(l=>l.Text.StartsWith("Armor:") && l.Text.Contains("applied"));
-            var bodyScroll=Walk(Inspector()).OfType<ScrollContainer>().Single();bodyScroll.EnsureControlVisible(cap);await Wait(.2);
+            Check(Armory().RelicPreview.Slot==2 && Armory().RelicPreview.Limits.Any(l=>l.Label=="Armor" && l.Excess>4),"Second-slot comparison shows the shared armor limit");
+            var cap=Walk(Armory()).OfType<Label>().Single(l=>l.Text.StartsWith("Armor:") && l.Text.Contains("applied"));
+            var bodyScroll=Walk(Armory()).OfType<ScrollContainer>().Single(s=>s.Name=="RelicComparison");bodyScroll.EnsureControlVisible(cap);await Wait(.2);
             AuditText("Equipment / armor limit");await Capture("04-bonus-limit");
             await TapAction("Equip to slot 2");
             Check(state.GetUnitEquipment2("player_brawler")?.Id=="relic_tower_charm","Native selection equips the promoted ally's second relic slot");
             await TapAction("Unequip");
-            Check(Inspector().Preview.Slot==2 && Inspector().Preview.Candidate==null && Inspector().Preview.After.Armor<Inspector().Preview.Current.Armor,"Second-slot removal is previewed before a change");
+            Check(Armory().RelicPreview.Slot==2 && Armory().RelicPreview.Candidate==null && Armory().RelicPreview.After.Armor<Armory().RelicPreview.Current.Armor,"Second-slot removal is previewed before a change");
             AuditText("Equipment / removal");await Capture("05-removal");
             await TapAction("Remove from slot 2");
             Check(state.GetUnitEquipment2("player_brawler")==null && state.GetUnitEquipment("player_brawler")?.Id=="relic_guardian_shield","Native removal preserves the first-slot relic");
@@ -80,7 +87,7 @@ public partial class UiReviewSmoke
             {
                 // The full-food clock refreshes during real UI waits; compare every progression field.
                 var changed=oldSave.RootElement.EnumerateObject().Where(p=>p.Name!="FoodRechargedAtUnixSeconds" && p.Value.GetRawText()!=newSave.RootElement.GetProperty(p.Name).GetRawText()).Select(p=>p.Name).ToArray();
-                Check(changed.Length==0,"Selecting an unowned relic leaves saved progression unchanged");
+                Check(changed.Length==0,"Selecting an unowned relic leaves saved progression unchanged"+(changed.Length>0?$" (changed: {string.Join(", ",changed)})":""));
             }
             AuditText("Equipment / unowned relic");await Capture("06-unowned-relic");
             Check(state.Food==food && Walk(menu).OfType<MapPathCanvas>().Single().MapOffset==map,"Equipment choices preserve map position and travel supplies");

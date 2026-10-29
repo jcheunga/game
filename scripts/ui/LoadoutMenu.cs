@@ -118,20 +118,25 @@ public partial class LoadoutMenu : RoyalScreen
         {
             var rect = new Rect2(first.Position + new Vector2(i * pitch, 0), first.Size);
             var held = i >= spells.Length && i >= state.LoadoutSizeLimit - units.Length;
-            var slot = RoyalButton.Over(rect, i < spells.Length ? spells[i].DisplayName : held ? "Used by a unit" : "Empty spell slot", null, 6);
-            slot.SetStates(RoyalKit.Slice("prep-spell-slot", 10), 6);
+            Control slot;
             if (i < spells.Length)
             {
+                // Spell slots are display-only like the squad cards: spells are read in the armory.
                 var spell = spells[i];
+                slot = new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Pass,
+                    TooltipText = $"{spell.DisplayName} · Level {state.GetSpellLevel(spell.Id)}" };
+                slot.AddThemeStyleboxOverride("panel", RoyalKit.Slice("prep-spell-slot", 10));
                 slot.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
                     Texture = ResourceLoader.Exists($"res://assets/ui/royal/items/{spell.Id}.png") ? RoyalArt.Load($"res://assets/ui/royal/items/{spell.Id}.png") : UiArtLoader.TryLoadSpellIcon(spell),
                     Position = new Vector2(6, 6), Size = rect.Size - new Vector2(12, 12), MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
-                slot.Pressed += () => SpellShowcase.Show(this, spell);
             }
             else
             {
-                slot.Disabled = true;
-                if (held) slot.AddChild(RoyalKit.Image("tab-warband", new Rect2(rect.Size / 2 - new Vector2(14, 14), new Vector2(28, 28)), new Color(1, 1, 1, .4f)));
+                var empty = RoyalButton.Over(rect, held ? "Used by a unit" : "Empty spell slot", null, 6);
+                empty.SetStates(RoyalKit.Slice("prep-spell-slot", 10), 6);
+                empty.Disabled = true;
+                if (held) empty.AddChild(RoyalKit.Image("tab-warband", new Rect2(rect.Size / 2 - new Vector2(14, 14), new Vector2(28, 28)), new Color(1, 1, 1, .4f)));
+                slot = empty;
             }
             var pip = spec.Rect("spell.1.pip");
             slot.AddChild(RoyalKit.Image("prep-spell-pip", new Rect2(pip.Position - first.Position, pip.Size)));

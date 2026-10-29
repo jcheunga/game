@@ -87,8 +87,8 @@ grid beside the profile (no large preview), with icon stat cards and the role an
 status chip beside the name. `art/royal/plates.py` widens the painted collection
 panel across the concept's preview pedestal. Equip and
 training actions stay outside the details scroller. Spell cards show effect-specific values from the
-trained spell rather than the base definition. Battle preparation opens the same
-visual unit and spell inspectors without changing the loadout.
+trained spell rather than the base definition. Battle preparation shows the squad and
+spells display-only; their details live in the armory.
 
 The shared theme reserves an 18-pixel gutter beside vertical scrollbars and a
 12-pixel gutter above horizontal scrollbars. This spacing is separate from panel

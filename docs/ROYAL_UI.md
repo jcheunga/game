@@ -103,7 +103,7 @@ the caption would sit high. The UI review's `ROYAL_BUTTON_STRETCHED` audit fails
 
 ### Stat sheets
 
-Every stat list (warband and spell profiles, the codex, the spell and relic inspectors) is one `StatSheet`
+Every stat list (warband and spell profiles, the codex) is one `StatSheet`
 (`scripts/ui/shared/StatSheet.cs`, built from `ArmoryDetailUi.Stats`): one kit `tile` frame holding 34-unit rows of
 icon, name (book serif 18) and right-aligned value (book serif bold 20), with hairlines between rows and columns.
 Columns drop until every name and value fits its cell. A single column too narrow for a long pair closes up instead

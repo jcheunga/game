@@ -49,8 +49,8 @@ public partial class MobilePresentationReview : Node
             if(!OS.GetCmdlineUserArgs().Any(x=>x.StartsWith("--save-suffix=mobile-review-")))
                 throw new InvalidOperationException("Requires isolated mobile-review save.");
             GameState.Instance.SetAnalyticsConsent(false); GameState.Instance.SetShowHints(false);
-            // New games start with one swordsman and no spells. This review needs unit and spell cards
-            // and a multi-unit squad for the inspector, so seed a three-unit, two-spell squad.
+            // New games start with one swordsman and no spells. This review needs unit and spell cards,
+            // so seed a three-unit, two-spell squad.
             var squad=GameState.Instance.BuildSaveData();
             squad.OwnedPlayerUnitIds=GameData.PlayerRosterIds.Take(3).ToArray(); squad.ActiveDeckUnitIds=squad.OwnedPlayerUnitIds.ToArray();
             squad.OwnedPlayerSpellIds=GameData.PlayerSpellIds.Take(2).ToArray(); squad.ActiveDeckSpellIds=squad.OwnedPlayerSpellIds.ToArray();

@@ -45,9 +45,67 @@ public partial class ShopMenu
         var all = GameData.GetAllEquipment().OrderBy(r => owned.Contains(r.Id) ? 0 : 1).ToList();
         var visible = _filter switch { 1 => all.Where(r => owned.Contains(r.Id)).ToList(), 2 => all.Where(r => EquippedBy(r.Id) != null).ToList(), _ => all };
         if (visible.Count == 0) visible = all;
-        if (visible.All(r => r.Id != _selectedRelic)) _selectedRelic = (visible.FirstOrDefault(r => owned.Contains(r.Id)) ?? visible[0]).Id;
+        if (!_equipping && visible.All(r => r.Id != _selectedRelic)) _selectedRelic = (visible.FirstOrDefault(r => owned.Contains(r.Id)) ?? visible[0]).Id;
         var selected = all.First(r => r.Id == _selectedRelic);
 
+        if (_equipping) BuildRelicEquip(spec, selected);
+        else BuildRelicCollection(spec, visible, owned);
+
+        var back = RoyalButton.Over(spec.Rect("button.back"), "Back", _equipping ? EndRelicEquip : Close, 6);
+        back.Arrange(spec.Label("button.back.label", "Back", 90), RoyalKit.Texture("icon-back-chevron"), spec.Rect("button.back.icon").Size, gap: 10);
+        _body.AddChild(back);
+
+        // The detail card lists every bonus, so draw uninterrupted wood over the plate's obsolete details button
+        // (the wood beside it, mirrored so the grain runs on across the join).
+        _body.AddChild(new TextureRect { Texture = RoyalArt.Cut("relics", new Rect2(352, 634, 242, 51)), FlipH = true,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
+            Position = new Vector2(594, 634), Size = new Vector2(242, 51), MouseFilter = MouseFilterEnum.Ignore });
+
+        // Detail card.
+        _body.AddChild(RoyalKit.Image(RelicIcon(selected) == "relicicon-lantern" ? "relic-title-icon" : RelicIcon(selected), spec.Rect("detail.icon")));
+        _body.AddChild(spec.Label("detail.name", selected.DisplayName, spec.Rect("detail.titlebar").End.X - spec.Number("detail.name", "pen_x", 955) - 10));
+        var description = RoyalText.Paragraph(selected.Description, (int)spec.Number("detail.desc.1", "size", 17), new Color("1c120a"), 700);
+        description.RemoveThemeColorOverride("font_shadow_color");
+        description.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+        description.Position = new Vector2(spec.Number("detail.desc.1", "pen_x", 897), spec.Number("detail.desc.1", "baseline", 256) - 18);
+        description.Size = new Vector2(spec.Rect("detail.stats").End.X - description.Position.X, 46);
+        description.AddThemeConstantOverride("line_spacing", -1);
+        // Most descriptions take two lines; a longer one takes a third and the bonus panel's top edge drops for it.
+        var font = description.GetThemeFont("font");
+        var size = description.GetThemeFontSize("font_size");
+        var descriptionLines = font.GetMultilineStringSize(selected.Description, HorizontalAlignment.Left, description.Size.X, size).Y > font.GetHeight(size) * 2 + 1 ? 3 : 2;
+        RoyalText.FitLines(description, descriptionLines);
+        BuildRelicBonuses(spec, selected, (descriptionLines - 2) * Mathf.Ceil(font.GetHeight(size) - 1));
+        _body.AddChild(description);
+
+        // The plaque starts equipping (or removing a worn relic); while equipping it confirms the previewed change.
+        var holder = EquippedBy(selected.Id);
+        var have2 = owned.Contains(selected.Id);
+        var verb = _equipping ? _removing ? "Remove" : "Equip" : holder != null ? "Unequip" : "Equip";
+        var action = _equipping && RelicPreview != null ? $"{verb} {(_removing ? "from" : "to")} slot {_equipSlot}" : verb;
+        var equip = RoyalButton.Over(spec.Rect("button.equip"), action, () =>
+        {
+            if (_equipping) ApplyRelicEquip(); else BeginRelicEquip(selected.Id);
+        }, 6);
+        equip.Disabled = _equipping ? RelicPreview?.CanApply != true : !have2;
+        equip.TooltipText = _equipping ? RelicPreview == null ? "Choose an ally" : RelicPreview.CanApply ? action : RelicPreview.Reason
+            : !have2 ? "Not owned yet · craft it in the forge" : holder != null ? $"Equipped on {holder.Unit.DisplayName} · slot {holder.Slot}" : "Choose an ally to compare";
+        // The two big plaques share one capitals size with the other primary actions (result board, forge).
+        var equipLabel = spec.Label("button.equip.label", verb, 200);
+        equipLabel.FontSize = 22;
+        equip.Arrange(equipLabel, RoyalKit.Texture("icon-helm"), spec.Rect("button.equip.icon").Size * .85f, gap: 14);
+        _body.AddChild(equip);
+        var forgeRect = spec.Rect("button.forge");
+        var forge = RoyalButton.Over(forgeRect, "Forge", () => SceneRouter.Instance.GoToForge(), 6);
+        var forgeLabel = spec.Label("button.forge.label", "Forge", 200);
+        forgeLabel.FontSize = 22; forgeLabel.Ink = new Color("1a0a04");
+        forge.Arrange(forgeLabel, RoyalKit.Texture("icon-hammers"), spec.Rect("button.forge.icon").Size * .85f, gap: 14);
+        _body.AddChild(forge);
+    }
+
+    /// <summary>The collection panel: owned relics first, scrolling under the painted track.</summary>
+    private void BuildRelicCollection(RoyalSpec spec, List<EquipmentDefinition> visible, HashSet<string> owned)
+    {
         _body.AddChild(spec.Label("collection.label", "Collection", 200));
         var filterRect = spec.Rect("collection.filter");
         var filter = RoyalButton.Over(filterRect, "Filter collection", () => { _filter = (_filter + 1) % Filters.Length; _relicScroll = 0; Refresh(); }, 4);
@@ -106,55 +164,6 @@ public partial class ShopMenu
         var rowTop = 4 + selectedRow * pitch.Y;
         if (rowTop < _relicScroll || rowTop + cell.Y > _relicScroll + view.Size.Y) _relicScroll = Mathf.Max(0, rowTop - 4);
         Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) { scroll.ScrollVertical = (int)_relicScroll; } }).CallDeferred();
-
-        var back = RoyalButton.Over(spec.Rect("button.back"), "Back", Close, 6);
-        back.Arrange(spec.Label("button.back.label", "Back", 90), RoyalKit.Texture("icon-back-chevron"), spec.Rect("button.back.icon").Size, gap: 10);
-        _body.AddChild(back);
-
-        // The detail card lists every bonus, so draw uninterrupted wood over the plate's obsolete details button
-        // (the wood beside it, mirrored so the grain runs on across the join).
-        _body.AddChild(new TextureRect { Texture = RoyalArt.Cut("relics", new Rect2(352, 634, 242, 51)), FlipH = true,
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
-            Position = new Vector2(594, 634), Size = new Vector2(242, 51), MouseFilter = MouseFilterEnum.Ignore });
-
-        // Detail card.
-        _body.AddChild(RoyalKit.Image(RelicIcon(selected) == "relicicon-lantern" ? "relic-title-icon" : RelicIcon(selected), spec.Rect("detail.icon")));
-        _body.AddChild(spec.Label("detail.name", selected.DisplayName, spec.Rect("detail.titlebar").End.X - spec.Number("detail.name", "pen_x", 955) - 10));
-        var description = RoyalText.Paragraph(selected.Description, (int)spec.Number("detail.desc.1", "size", 17), new Color("1c120a"), 700);
-        description.RemoveThemeColorOverride("font_shadow_color");
-        description.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
-        description.Position = new Vector2(spec.Number("detail.desc.1", "pen_x", 897), spec.Number("detail.desc.1", "baseline", 256) - 18);
-        description.Size = new Vector2(spec.Rect("detail.stats").End.X - description.Position.X, 46);
-        description.AddThemeConstantOverride("line_spacing", -1);
-        // Most descriptions take two lines; a longer one takes a third and the bonus panel's top edge drops for it.
-        var font = description.GetThemeFont("font");
-        var size = description.GetThemeFontSize("font_size");
-        var descriptionLines = font.GetMultilineStringSize(selected.Description, HorizontalAlignment.Left, description.Size.X, size).Y > font.GetHeight(size) * 2 + 1 ? 3 : 2;
-        RoyalText.FitLines(description, descriptionLines);
-        BuildRelicBonuses(spec, selected, (descriptionLines - 2) * Mathf.Ceil(font.GetHeight(size) - 1));
-        _body.AddChild(description);
-
-        var holder = EquippedBy(selected.Id);
-        var have2 = owned.Contains(selected.Id);
-        var equipRect = spec.Rect("button.equip");
-        var equip = RoyalButton.Over(equipRect, holder != null ? "Unequip" : "Equip", () =>
-        {
-            if (holder != null) RelicEquipmentInspector.Show(this,selected,Refresh,holder.Unit,holder.Slot);
-            else ChooseRelicBearer(selected);
-        }, 6);
-        equip.Disabled = !have2;
-        equip.TooltipText = !have2 ? "Not owned yet · craft it in the forge" : holder != null ? $"Equipped on {holder.Unit.DisplayName} · slot {holder.Slot}" : "Choose an ally to compare";
-        // The two big plaques share one capitals size with the other primary actions (result board, forge).
-        var equipLabel = spec.Label("button.equip.label", holder != null ? "Unequip" : "Equip", 200);
-        equipLabel.FontSize = 22;
-        equip.Arrange(equipLabel, RoyalKit.Texture("icon-helm"), spec.Rect("button.equip.icon").Size * .85f, gap: 14);
-        _body.AddChild(equip);
-        var forgeRect = spec.Rect("button.forge");
-        var forge = RoyalButton.Over(forgeRect, "Forge", () => SceneRouter.Instance.GoToForge(), 6);
-        var forgeLabel = spec.Label("button.forge.label", "Forge", 200);
-        forgeLabel.FontSize = 22; forgeLabel.Ink = new Color("1a0a04");
-        forge.Arrange(forgeLabel, RoyalKit.Texture("icon-hammers"), spec.Rect("button.forge.icon").Size * .85f, gap: 14);
-        _body.AddChild(forge);
     }
 
     /// <summary>
@@ -247,10 +256,5 @@ public partial class ShopMenu
             if(_state.GetUnitEquipment2(unit.Id)?.Id==relicId)return new RelicBearer(unit,2);
         }
         return null;
-    }
-
-    private void ChooseRelicBearer(EquipmentDefinition relic)
-    {
-        RelicEquipmentInspector.Show(this,relic,Refresh);
     }
 }

@@ -71,12 +71,14 @@ public partial class UiReviewSmoke
         Check(state.Food == food && Walk(menu).OfType<MapPathCanvas>().Single().MapOffset == camera, "Profile browsing and training preserve the map and travel supplies");
         menu.CloseHomeModal();
         state.ToggleDeckSpell(firstSpell.Id, out _); state.PrepareCampaignBattle(); SceneRouter.Instance.GoToLoadout(); await Wait(.3);
-        SpellShowcase.Show(Walk(menu).OfType<LoadoutMenu>().Single(), firstSpell); await Wait(.3);
-        Check(Walk(menu).OfType<SpellShowcase>().Any(), "Preparation can inspect a spell with the same visual stat cards");
-        AuditText("Profile / spell inspector"); CheckStatSheets("Profile / spell inspector"); await Capture("06-spell-inspector");
-        Check(Walk(menu).OfType<RealmModal>().Count() == 2, "The spell inspector opens as a modal above preparation");
-        await PressHint("Close details");
-        Check(!Walk(menu).OfType<SpellShowcase>().Any(), "Closing the spell inspector returns to preparation");
+        var loadout = Walk(menu).OfType<LoadoutMenu>().Single();
+        var equipped = state.GetActiveDeckSpells().ToArray();
+        // AudioDirector moves touch tooltips into accessible names.
+        var shown = equipped.Count(s => Walk(loadout).OfType<Panel>().Any(p => (p.TooltipText + p.AccessibilityName).StartsWith(s.DisplayName + " · ")));
+        var pressable = Walk(loadout).OfType<BaseButton>().Count(b => equipped.Any(s => b.AccessibilityName == s.DisplayName));
+        Check(equipped.Length > 0 && shown == equipped.Length && pressable == 0,
+            $"Preparation shows equipped spells display-only, like the squad cards (no spell modal): {shown}/{equipped.Length} shown, {pressable} pressable");
+        await Capture("06-prep-spells");
         menu.CloseHomeModal();
         System.IO.File.WriteAllText(_output + "/text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit));
         GD.Print($"ARMORY_DETAILS_REVIEW_RESULT: {_failures} failures");

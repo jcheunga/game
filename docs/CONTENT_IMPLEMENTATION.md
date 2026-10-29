@@ -55,9 +55,9 @@ Run `python3 scripts/tools/revamp_content.py` to rebuild playable units, equipme
 
 ## Equipment choices — implemented
 
-The armory now shows armor, resistance, critical, reach, recovery and structure bonuses alongside health and damage. **View all bonuses** works even for an unowned relic, so players can plan a build before acquiring it.
+The armory now shows armor, resistance, critical, reach, recovery and structure bonuses alongside health and damage. The relic detail card lists every bonus, even for an unowned relic, so players can plan a build before acquiring it.
 
-Choosing an ally opens a before/after comparison using the same calculations as battle. It includes the item being replaced, its enchantment, both relic slots, promotion, squad bonuses and other permanent sources. Nothing equips until the player uses the equip button. Removing an item also has a comparison before confirmation.
+Equipping happens on the relics page itself (no modal): choosing an ally shows a before/after comparison using the same calculations as battle. It includes the item being replaced, its enchantment, both relic slots, promotion, squad bonuses and other permanent sources. Nothing equips until the player uses the equip button. Removing an item also has a comparison before confirmation.
 
 Promoted allies can choose slot 1 or slot 2. Unpromoted allies see the second slot as locked. A relic can occupy only one slot across the warband; both equip paths enforce that rule. Removing it preserves ownership and its enchantment.
 

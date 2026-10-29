@@ -180,7 +180,8 @@ public partial class EndlessMenu : RoyalScreen
                 continue;
             }
             var spell = spells[i];
-            var slot = RoyalButton.Over(rect, spell.DisplayName, () => SpellShowcase.Show(this, spell), 6);
+            // Display-only like the unit cards: spells are read in the armory.
+            var slot = new Control { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Pass, TooltipText = spell.DisplayName };
             slot.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
                 Texture = ResourceLoader.Exists($"res://assets/ui/royal/items/{spell.Id}.png") ? RoyalArt.Load($"res://assets/ui/royal/items/{spell.Id}.png") : UiArtLoader.TryLoadSpellIcon(spell),
                 Position = new Vector2(7, 6), Size = rect.Size - new Vector2(14, 18), MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });

@@ -130,12 +130,20 @@ and say so.
 - **Folded arms.** `open_reach` (0.25 past the painted reach), `limit_elbows` (40°) and `two_high` (80°) respect
   arms painted folded.
 - **Legs.** Standing legs reach 99.3% of their length, and the passing and landing legs 99.9%. Walking strides are
-  at most 0.68–0.81 of the leg. Changing any of these changes the squat: re-run the gait check.
+  at most 0.85–1.0 of the leg, the planted foot shifted back by `STEP_BACK` (0.15 of the step) so it lands only a
+  little ahead of the hips. Centred under the hips, strides over 0.75–0.81 dipped the hips. Changing any of these
+  changes the squat: re-run the gait check.
+- **Cadence.** Troops walk a 1.28 s cycle, about 1.6 steps a second; until October 29 it was 0.95 s, 2.1 steps a
+  second, which the user found far too busy. Don't shorten the cycles, and keep each walk frame near 0.09 s
+  (14 frames).
 - **Re-render after any speed change.** The walk is sized to `data/units.json` speeds, and the cadence check in
   `BlenderAssetSmoke` catches a mismatch.
 - **Environment.**
   - The Mac sleeping (lid closed) stalls renders for hours; keep it awake.
   - zsh aborts a whole command on an unmatched glob (`rm -f x/*.bak`).
+  - In a zsh script, `$(jobs -r | wc -l)` is always 0 because a subshell sees no jobs. Throttle by counting
+    `$jobstates` inline, as `render.sh` does. On Oct 29 the old throttle started all 111 Blenders (about 1.6 GB
+    each) and the Mac rebooted. After starting a render, check `pgrep -f 'Blender.*build.py' | wc -l` equals `-j`.
   - `(a & b).sum()` on 255-valued masks sums 255s. Use `((a & b) > 0).sum()`.
 - **Commits.** Commit only your files: art/remaster sources, `assets/units`, `assets/ui/models`. Other sessions
   leave unrelated changes in the tree (for example `export_presets.cfg`). "Push" means commit and push main

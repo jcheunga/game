@@ -824,14 +824,17 @@ class Animator:
         # step_range, a fraction of the leg); stance: share of the cycle a foot is down (below 0.5 there is a moment
         # with both feet off the ground: a jog); lift: the ankle's clearance in the swing; bob: how far the hips
         # rise and fall (fraction of the leg); lean (deg, - = forward); nod (deg); arms: swing scale; limp: the far
-        # leg's step and lift scale (a dragged leg)
-        'march': dict(cycle=.95, step_range=(.45, .75), stance=.57, lift=.095, lean=-3.0, nod=1.2, arms=1.0, limp=1.0),
-        'heavy': dict(cycle=1.25, step_range=(.32, .68), stance=.62, lift=.1, lean=-5.0, nod=2.0, arms=.65, limp=1.0),
-        'shamble': dict(cycle=1.0, step_range=(.36, .78), stance=.64, lift=.08, lean=-7.0, nod=3.0, arms=.45,
-                        limp=.6),
-        'glide': dict(cycle=1.1, step_range=(.32, .81), stance=.62, lift=.06, lean=-2.0, nod=.8, arms=.5, limp=1.0),
-        'jog': dict(cycle=.66, step_range=(.7, 1.15), stance=.4, lift=.2, lean=-8.0, nod=1.0, arms=1.3, limp=1.0),
-        'prowl': dict(cycle=.7, step_range=(.6, 1.1), stance=.38, lift=.21, lean=-13.0, nod=1.0, arms=1.0, limp=1.0),
+        # leg's step and lift scale (a dragged leg).
+        # The walks' cycles were .95-1.25 s and their steps at most .68-.81 of the leg: at the troops' slow battle
+        # speeds that was a busy patter of short steps (2.1 a second for nearly every soldier). Now they take longer,
+        # unhurried steps, which STEP_BACK lets the legs reach without the hips dipping (October 29)
+        'march': dict(cycle=1.28, step_range=(.45, .94), stance=.57, lift=.095, lean=-3.0, nod=1.2, arms=1.0, limp=1.0),
+        'heavy': dict(cycle=1.7, step_range=(.32, .85), stance=.62, lift=.1, lean=-5.0, nod=2.0, arms=.65, limp=1.0),
+        'shamble': dict(cycle=1.35, step_range=(.36, .98), stance=.64, lift=.08, lean=-7.0, nod=3.0, arms=.45,
+                        limp=.65),   # the dragged foot slides 1 - limp of the ground's motion (.6 was over the limit)
+        'glide': dict(cycle=1.5, step_range=(.32, 1.0), stance=.62, lift=.06, lean=-2.0, nod=.8, arms=.5, limp=1.0),
+        'jog': dict(cycle=.82, step_range=(.7, 1.15), stance=.4, lift=.2, lean=-8.0, nod=1.0, arms=1.3, limp=1.0),
+        'prowl': dict(cycle=.88, step_range=(.6, 1.1), stance=.38, lift=.21, lean=-13.0, nod=1.0, arms=1.0, limp=1.0),
     }
     JOG_ABOVE = 2.5        # legs per second: faster than this no natural walk keeps up, the unit jogs
     # how far the legs straighten (share of their length, hip to ankle): standing (.955 held every knee bent ~35°,
@@ -841,6 +844,10 @@ class Animator:
     # by motion_check's gait figures
     STAND_EXTEND = .993
     PASS_EXTEND = .999
+    # a walking foot lands only a little ahead of the hips and pushes off further behind, its heel rising (as a
+    # person's does): the planted foot's travel is shifted back by this share of the step. The leading leg's reach
+    # is what lowers the hips to land the heel, so a long step centred under the hips dipped them into a squat
+    STEP_BACK = .15
     GUARD = (.24, .2)    # standing feet: the leading foot ahead of the hips, the other behind (fractions of the leg)
     HEEL_OFF = 18.0      # deg the foot turns on its toe as it leaves the ground
     HEEL_STRIKE = 12.0   # deg its toe is up as the heel lands
@@ -866,7 +873,7 @@ class Animator:
         r = math.radians(deg)
         return (vf.x * (1 - math.cos(r)) - vf.z * math.sin(r), vf.x * math.sin(r) + vf.z * (1 - math.cos(r)))
 
-    def foot_path(self, s_, u, S, lift, beta, run=False):
+    def foot_path(self, s_, u, S, lift, beta, run=False, back=0.0):
         """Where a foot is at cycle phase u (0 = it lands, ahead of the hip): x along the stride (relative to its
         neutral spot under the hips), lift above its ground, and its pitch (+ toe up). Planted it slides back at the
         body's speed, rolling onto its toe at the end; then it swings through, the ankle clearing the ground early
@@ -878,7 +885,7 @@ class Animator:
         off = 30.0 if run else self.HEEL_OFF
         if u < beta:
             q = u / beta
-            fx, fz = S * (.5 - q), 0.0
+            fx, fz = S * (.5 - back - q), 0.0
             pitch = strike * max(0.0, 1 - q / .14) ** 2
             roll = .6 if run else .74
             if q > roll:
@@ -891,7 +898,7 @@ class Animator:
         q = (u - beta) / (1 - beta)
         qq = q ** 1.25 if run else q             # a jog's foot stays back while the heel kicks up
         e = qq * qq * (3 - 2 * qq)
-        fx = S * (-.5 + e)
+        fx = S * (-.5 - back + e)
         o_x, o_z = self.toe_turn(vf, off)
         k = 1 - sm(q / .45)
         fz = lift * math.sin(math.pi * q ** (.65 if run else .75)) + o_z * k
@@ -931,6 +938,8 @@ class Animator:
         self.gait_info = dict(gait=gname, step=round(float(step), 3),
                               cycle_s=round(float(step / beta / max(1e-6, self.speed_lps)), 3) if self.speed_lps else None)
         S = step * Lleg
+        back = 0.0 if run else self.STEP_BACK
+        c0 = .05 - beta * back                   # the hips pass over the planted foot that much earlier
         # both feet stride about the spot under the middle of the hips (each about its own hip, the far leg's
         # offset would part the feet unevenly: one long step, one short)
         mid = sum(v['hip'].x for v in legs.values()) / len(legs)
@@ -942,7 +951,7 @@ class Animator:
             full = v['L1'] + v['L2']
             dx = abs(mid - v['hip'].x)
             hz_hi.append(math.sqrt(max(1e-6, (full * self.PASS_EXTEND) ** 2 - dx * dx)) + a)
-            hz_lo.append(math.sqrt(max(1e-6, (full * self.PASS_EXTEND) ** 2 - (S * .5 + dx) ** 2)) + a)
+            hz_lo.append(math.sqrt(max(1e-6, (full * self.PASS_EXTEND) ** 2 - (S * (.5 - back) + dx) ** 2)) + a)
         hi, lo = min(hz_hi), min(hz_lo)
         if run:
             ph = (2 * cyc) % 1.0                 # one step: lands at 0, mid-stance at stance, flight from 2 * stance
@@ -950,14 +959,14 @@ class Animator:
             dip = .5 + .5 * math.cos(math.tau * (ph - low))
             stand = min(hi, lo + .05 * Lleg) - .085 * Lleg * dip
         else:
-            k = .5 - .5 * math.cos(math.tau * 2 * (cyc - .05))       # 0 just after a heel lands, 1 passing
+            k = .5 - .5 * math.cos(math.tau * 2 * (cyc - c0))       # 0 just after a heel lands, 1 passing
             stand = lo + (hi - lo) * k
         hip_shift = Vector((0.0, 0, stand))
         for s_, off in ((near, 0.0), (far, 0.5)):
             v = legs[s_]
             u = (cyc + off) % 1.0
             kk = g['limp'] if s_ == far else 1.0
-            fx, fz, pitch = self.foot_path(s_, u, S * kk, g['lift'] * Lleg * kk, beta, run)
+            fx, fz, pitch = self.foot_path(s_, u, S * kk, g['lift'] * Lleg * kk, beta, run, back)
             tgt = Vector((mid + fx, 0, v['ground'] + fz))
             tgt, up = self.reachable(s_, tgt, hip_shift)
             dt = self.leg_to(s_, tgt, hip_shift)
@@ -965,7 +974,7 @@ class Animator:
         if 'hips' in self.pb:
             self.pb['hips'].location = (-hip_shift.x, -hip_shift.z, 0.0)
         # the body: lean into the walk, a little rise and fall of the chest, the head steady against the bob
-        bob = math.cos(math.tau * 2 * (cyc - .05))
+        bob = math.cos(math.tau * 2 * (cyc - c0))
         self.rot('spine', g['lean'] + .8 * bob)
         self.rot('chest', -.6 * bob)
         self.rot('head', g['nod'] * math.sin(math.tau * 2 * cyc + .6) - g['lean'] * .5)
@@ -1907,8 +1916,9 @@ def new_contract(old, big, boss=False):
             c.update(count=8, duration=0.13, loop=True)
         elif name == 'walk':
             # the big take slow, heavy strides: more frames keep each under the game's 0.16 s playback limit
-            # bosses walk slowest of all: 24 frames let a long, unhurried cycle play within the game's limit
-            c.update(count=24 if boss else 12 if big else 10, duration=0.07, loop=True)
+            # bosses walk slowest of all: 24 frames let a long, unhurried cycle play within the game's limit.
+            # Troops' cycles grew from about 1 s to 1.3 s (fewer, longer steps): 14 frames keep each near 0.09 s
+            c.update(count=24 if boss else 16 if big else 14, duration=0.07, loop=True)
         elif name == 'attack':
             t_contact = o.get('contactFrame', 4) * o['duration']
             c.update(count=16, contactFrame=6, duration=round(t_contact / 6, 4), loop=False)

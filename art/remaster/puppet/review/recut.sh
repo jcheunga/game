@@ -21,9 +21,11 @@ import json;d=json.load(open('$P/$1/layers.json'))
 print('$1', d['order'], 'weapon', d.get('weapon_source') or 'cut', 'whole', d.get('weapon_whole'))" \
     || echo "$1 FAILED"
 }
+# running jobs counted inline from $jobstates: `$(jobs -r | wc -l)` runs in a subshell that sees none (render.sh)
+zmodload zsh/parameter
 for u in $IDS; do
   [[ -f $P/$u/master.png ]] || continue
-  while (( $(jobs -r | wc -l) >= 4 )); do sleep .5; done
+  while :; do r=(${(M)${(v)jobstates}:#running:*}); (( ${#r} < 4 )) && break; sleep .5; done
   one $u &
 done
 wait

@@ -34,8 +34,12 @@ one() {
   $BLENDER --background --factory-startup --python-exit-code 1 --python art/remaster/puppet/build.py -- --ids $u $fr $o \
     2>&1 | grep -E "PUPPET_COMPLETE|PUPPET_FAILED|Error|Traceback" | cut -c1-160 >> $LOG/render.log
 }
+# Count running jobs with $jobstates, inline: in a script anything in $( ) (`jobs -r | wc -l`, or a function) runs
+# in a subshell that sees no jobs, so every unit started at once (Oct 29: 111 Blenders, ~165 GB, ran the Mac out of
+# memory into a reboot)
+zmodload zsh/parameter
 for u in $IDS; do
-  while (( $(jobs -r | wc -l) >= J )); do sleep 1; done
+  while :; do r=(${(M)${(v)jobstates}:#running:*}); (( ${#r} < J )) && break; sleep 1; done
   one $u &
 done
 wait

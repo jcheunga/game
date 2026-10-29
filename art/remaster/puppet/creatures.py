@@ -359,12 +359,13 @@ class QuadAnim(CreatureAnim):
     # Gaits sized to the beast's battle speed (speed_lps: leg lengths per second, set by build). Each: the natural
     # cycle time, the share of the cycle a paw is down (below 0.5 a moment in the air), each paw's phase, the
     # paw's lift (fraction of the leg), how far the body rises in flight, the spine's flex (deg). The cycle is
-    # shortened if the paws would have to sweep further than a leg can reach.
+    # shortened if the paws would have to sweep further than a leg can reach. (The cycles were 30% shorter until
+    # October 29: at battle speeds the paws pattered.)
     QGAITS = {
-        'walk': dict(T=1.0, beta=.66, phase={'hl': 0.0, 'fl': .25, 'hr': .5, 'fr': .75}, lift=.14, air=0.0, flex=1.0),
-        'trot': dict(T=.55, beta=.45, phase={'fl': 0.0, 'hr': 0.0, 'fr': .5, 'hl': .5}, lift=.2, air=.02, flex=1.5),
-        'canter': dict(T=.6, beta=.4, phase={'hl': 0.0, 'hr': .3, 'fl': .3, 'fr': .55}, lift=.24, air=.03, flex=3.0),
-        'gallop': dict(T=.42, beta=.3, phase={'hl': 0.0, 'hr': .1, 'fr': .45, 'fl': .55}, lift=.3, air=.05, flex=6.0),
+        'walk': dict(T=1.3, beta=.66, phase={'hl': 0.0, 'fl': .25, 'hr': .5, 'fr': .75}, lift=.14, air=0.0, flex=1.0),
+        'trot': dict(T=.72, beta=.45, phase={'fl': 0.0, 'hr': 0.0, 'fr': .5, 'hl': .5}, lift=.2, air=.02, flex=1.5),
+        'canter': dict(T=.78, beta=.4, phase={'hl': 0.0, 'hr': .3, 'fl': .3, 'fr': .55}, lift=.24, air=.03, flex=3.0),
+        'gallop': dict(T=.55, beta=.3, phase={'hl': 0.0, 'hr': .1, 'fr': .45, 'fl': .55}, lift=.3, air=.05, flex=6.0),
     }
     speed_lps = 0.0
     MAX_SWEEP = 1.05        # leg lengths a planted paw travels under the body

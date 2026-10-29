@@ -155,8 +155,8 @@ Codex's 5-hour window allows about 40 images; landmarks by Codex cost as much as
 
 In `build.py` the split legs change every clip: the walk is a side-on stride (heel strike, roll, toe-off, a swing
 past the other leg, the knee bending forward by IK), sized to the unit's own battle speed so the cycle keeps a natural
-rhythm (`GAITS`: about 0.7-1 s a cycle for troops, slow heavy steps for bosses; faster than `JOG_ABOVE` legs a second
-there is no natural walk and the unit jogs, with a moment in the air). Idle, attacks, hits and casts move the hips
+rhythm (`GAITS`: about 1.3 s a cycle for troops, about 1.6 steps a second, and slower heavy steps; faster than
+`JOG_ABOVE` legs a second there is no natural walk and the unit jogs, with a moment in the air). Idle, attacks, hits and casts move the hips
 over planted feet (a lunge steps the leading foot), standing in a compact guard; deploy lands on bent knees; archers
 raise the bow, draw the arrow to the cheek and loose it. `WEAPON_MOTION` overrides a profile where the new painting
 carries its weapon differently (a one-handed spear thrusts; a mace or axe held level is still swung, so this is set by
@@ -240,7 +240,10 @@ It found every unit standing with its knees bent about 35°, and the supporting 
 The rig had held standing legs to 95.5% of their length, the passing leg to 97.5%, and the landing leg to 99%, then
 sank the hips a further 1.2% of the leg: a permanent half crouch. Now:
 - **Legs.** Standing legs reach 99.3% of their length, and the passing and landing legs 99.9%, with no extra sink.
-- **Strides.** Walking strides are at most 0.68 to 0.81 of the leg. Longer, the hips had to dip to land the heel.
+- **Strides.** Walking strides were capped at 0.68 to 0.81 of the leg. Longer, the hips had to dip to land the heel.
+  Since October 29 the planted foot's travel is shifted back by `STEP_BACK` (0.15 of the step). It lands only a
+  little ahead of the hips and pushes off behind, heel rising, so strides of 0.85 to 1.0 of the leg keep the hips
+  higher than the old short ones did. The walk cycles grew by 35% to match (troops: 0.95 s to 1.28 s, 14 frames).
 
 One more cap was hiding behind those: `reachable` treated any leg past 99.2% of its length as out of reach. It
 lifted the heel in 2° steps, which bent the knee back to about 97.5%, so the straighter targets never took effect.

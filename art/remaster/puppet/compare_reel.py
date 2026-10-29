@@ -4,7 +4,9 @@ the left and the current assets/units atlas on the right, each played the way th
 cadence its stride and the unit's speed give, over ground marks scrolling at that speed, so a sliding foot shows),
 then an attack and the death. Output: artifacts/remaster/compare_reel/<id>.webp
 
-  python3 art/remaster/pack.py ... first;  python3 art/remaster/puppet/compare_reel.py ids [--rev HEAD]
+  python3 art/remaster/pack.py ... first;  python3 art/remaster/puppet/compare_reel.py ids [--rev HEAD] [--walk]
+
+--walk makes a walk-only reel (4 s), for judging a walk's cadence side by side.
 """
 import argparse
 import io
@@ -23,6 +25,7 @@ OUT = ROOT / 'artifacts/remaster/compare_reel'
 UNITS = {u['Id']: u for u in json.loads((ROOT / 'data/units.json').read_text())['Units']}
 FPS = 30
 SCALE = 4.0          # output pixels per battle pixel
+WALK_ONLY = False
 BG = (214, 206, 190)
 
 
@@ -74,11 +77,11 @@ def timeline(meta, unit):
     w = A['walk']
     # the game: one cycle covers stride frame widths; frame time from that and the unit's speed, clamped
     cyc_world = w.get('stride', 0) * canvas
-    fd = max(.025, min(.16, cyc_world / speed / w['count'])) if cyc_world > 0 else w['duration']
-    for k in range(int(3.2 * FPS)):
+    fd = max(.025, min(.3, cyc_world / speed / w['count'])) if cyc_world > 0 else w['duration']   # Unit.cs's clamp
+    for k in range(int((4.0 if WALK_ONLY else 3.2) * FPS)):
         tt = k / FPS
         out.append(('walk', w['start'] + int(tt / fd) % w['count'], speed * tt))
-    for name, reps, hold in (('attack', 2, 0), ('death', 1, 14)):
+    for name, reps, hold in () if WALK_ONLY else (('attack', 2, 0), ('death', 1, 14)):
         c = A[name]
         for _ in range(reps):
             n = int(c['count'] * c['duration'] * FPS)
@@ -133,7 +136,7 @@ def compose(ident, rev):
                    + (f" · {fd * meta_count(frames):.2f}s cycle" if name == 'walk' else ''), fill=(60, 50, 40))
         out.append(im)
     OUT.mkdir(parents=True, exist_ok=True)
-    path = OUT / f'{ident}.webp'
+    path = OUT / f"{ident}{'_walk' if WALK_ONLY else ''}.webp"
     out[0].save(path, save_all=True, append_images=out[1:], duration=int(1000 / FPS), loop=0, quality=78, method=4)
     return path
 
@@ -146,6 +149,8 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('ids')
     ap.add_argument('--rev', default='HEAD')
+    ap.add_argument('--walk', action='store_true', help='the walk alone, 4 s')
     a = ap.parse_args()
+    WALK_ONLY = a.walk
     for i in a.ids.split(','):
         print(compose(i, a.rev), flush=True)

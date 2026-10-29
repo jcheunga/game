@@ -16,6 +16,9 @@ public partial class UiReviewSmoke
         var fixture = GameState.Instance.BuildSaveData();
         fixture.OwnedPlayerUnitIds = GameData.PlayerRosterIds.ToArray(); fixture.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray();
         fixture.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(3).ToArray(); fixture.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(2).ToArray();
+        // Mixed levels, including the widest tag (LV 20), so the corner tag is checked at every width.
+        fixture.UnitLevels = new Dictionary<string,int>{[fixture.ActiveDeckUnitIds[0]]=UnitBalance.MaxPlayerLevel,[fixture.ActiveDeckUnitIds[1]]=7};
+        fixture.SpellLevels = new Dictionary<string,int>{[fixture.ActiveDeckSpellIds[0]]=GameState.Instance.MaxSpellLevel};
         GameState.Instance.RestoreCloudSave(fixture);
         foreach(var mobile in new[]{false,true})
         {
@@ -48,7 +51,15 @@ public partial class UiReviewSmoke
                 Check(art.CostPlate.Position.X>art.Size.X*.5f && art.CostPlate.Position.Y<=6
                     && new Rect2(Vector2.Zero,art.Size).Encloses(new Rect2(art.CostPlate.Position,art.CostPlate.Size)),
                     $"{prefix}: textured cost badge fits the top-right corner");
-                Check(button.Text=="" && art.FindChildren("*","Label",true,false).All(label=>label==art.CostLabel),$"{prefix}: ready cards show no name/action/state clutter");
+                var level=i<deck.Roster.Count?GameState.Instance.GetUnitLevel(deck.Roster[i].Id):GameState.Instance.BuildSpellStats(spells.Roster[i-deck.Roster.Count]).Level;
+                var tag=new Rect2(art.LevelPlate.Position,art.LevelPlate.Size);
+                Check(art.LevelPlate.Visible && art.LevelLabel.Text==$"LV {level}",$"{prefix}: level tag shows the unit or spell's actual level");
+                Check(tag.Position.X<=8 && tag.End.Y>=art.Size.Y-8 && tag.Size.X<art.Size.X*.5f && new Rect2(Vector2.Zero,art.Size).Encloses(tag)
+                    && !tag.Intersects(new Rect2(art.CostPlate.Position,art.CostPlate.Size)),$"{prefix}: level tag fits the bottom-left corner, clear of the cost badge");
+                Check(art.LevelLabel.FittedSize()==art.LevelLabel.FontSize && art.LevelLabel.FontSize>=ReadingText.PhoneCaps,
+                    $"{prefix}: level tag text fits its plate at the phone caps floor");
+                Check(button.Text=="" && art.FindChildren("*","Label",true,false).All(label=>label==art.CostLabel)
+                    && Walk(art).OfType<RoyalLabel>().All(label=>label==art.LevelLabel),$"{prefix}: ready cards show no name/action/state clutter");
                 Check(!string.IsNullOrWhiteSpace(button.AccessibilityName) && string.IsNullOrWhiteSpace(button.TooltipText),
                     $"{prefix}: unit/spell identification remains available");
                 Check(Walk(art).OfType<Control>().All(c=>c.MouseFilter==Control.MouseFilterEnum.Ignore),
@@ -104,8 +115,8 @@ public partial class UiReviewSmoke
                 Check(((Button)art.GetParent()).Disabled && Mathf.IsEqualApprox(art.CooldownRatio,.5f)
                     && art.FindChildren("*","Label",true,false).All(label=>label==art.CostLabel),$"{prefix}: unit/spell cooldown shows a proportional shade without a countdown");
                 Check(art.CostLabel.IsVisibleInTree() && art.CostLabel.SelfModulate==Colors.White
-                    && art.CostPlate.GetIndex()>art.CooldownShade.GetIndex(),
-                    $"{prefix}: cooldown never obscures the cost badge");
+                    && art.CostPlate.GetIndex()>art.CooldownShade.GetIndex() && art.LevelPlate.GetIndex()>art.CooldownShade.GetIndex(),
+                    $"{prefix}: cooldown never obscures the cost badge or level tag");
                 var split=(float)((ShaderMaterial)art.Portrait.Material).GetShaderParameter("split_y");
                 Check(art.CooldownShade.Visible && split>0 && split<art.Portrait.Size.Y && art.Portrait.Modulate==Colors.White,
                     $"{prefix}: the art greys below the cooldown edge and keeps full colour above it");
@@ -125,7 +136,8 @@ public partial class UiReviewSmoke
                 $"{prefix}: the caravan slot stands right of the dock on its base line, as tall as it and inside the screen");
             Check((caravan.Card.Size-((Button)cards[0].GetParent()).Size).Length()<1,
                 $"{prefix}: the caravan card is the same size as a unit card");
-            Check(!string.IsNullOrWhiteSpace(caravan.Card.AccessibilityName) && caravan.Art.Portrait.Texture!=null && !caravan.Art.CostPlate.Visible,
+            Check(!string.IsNullOrWhiteSpace(caravan.Card.AccessibilityName) && caravan.Art.Portrait.Texture!=null && !caravan.Art.CostPlate.Visible
+                    && !caravan.Art.LevelPlate.Visible,
                 $"{prefix}: the caravan card shows its painted lantern and can be identified");
             await Capture(prefix+"-caravan-ready");
             var tap=slot.GetCenter();

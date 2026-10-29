@@ -15,13 +15,18 @@ public partial class BattleActionCard : Control
     private readonly PanelContainer _costPlate;
     private readonly Label _cost;
     private readonly StyleBoxTexture _costMaterial, _selection;
+    private readonly Panel _levelPlate;
+    private readonly RoyalLabel _level;
     private bool _selected;
+    private int _levelShown;
     private float _cooldownRatio, _numeralBadge;
 
     internal TextureRect Portrait => _portrait;
     internal PanelContainer CostPlate => _costPlate;
     internal Control CooldownShade => _cooldownShade;
     internal Label CostLabel => _cost;
+    internal Panel LevelPlate => _levelPlate;
+    internal RoyalLabel LevelLabel => _level;
     internal bool Selected => _selected;
     internal float CooldownRatio => _cooldownRatio;
     internal bool Unaffordable { get; private set; }
@@ -70,6 +75,17 @@ public partial class BattleActionCard : Control
         _cost.AddThemeConstantOverride("shadow_offset_x", 0);
         _cost.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _costPlate.AddChild(_cost);
+        // Dead Ahead's level tag: a small dark plate in the bottom-left corner with the level in engraved gold.
+        _levelPlate = new Panel { Name = "Level", MouseFilter = MouseFilterEnum.Ignore, Visible = false };
+        _levelPlate.AddThemeStyleboxOverride("panel", RoyalKit.Slice("value-box", 5));
+        AddChild(_levelPlate);
+        _level = RoyalText.Caps("", ReadingText.PhoneCaps, null, 700);
+        _level.Gold = true;
+        _level.Align = HorizontalAlignment.Center;
+        _level.OutlineSize = 3;
+        _level.OutlineInk = new Color("080e12");
+        _level.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _levelPlate.AddChild(_level);
         Resized += LayoutArt;
     }
 
@@ -130,6 +146,25 @@ public partial class BattleActionCard : Control
         _costMaterial.Texture = RoyalKit.Texture("hud-cost-mana");
     }
 
+    /// <summary>Shows the unit's or spell's level in the bottom-left corner; a card never given one (the caravan spell) has none.</summary>
+    public void SetLevel(int level)
+    {
+        if (level == _levelShown) return;
+        _levelShown = level;
+        _level.Text = $"LV {level}";
+        _levelPlate.Visible = level > 0;
+        FitLevelTag();
+    }
+
+    private void FitLevelTag()
+    {
+        // 24 px tall at the concept's 119 px card, hugging its text, inside the frame's rim; scaled with the card.
+        var tagFont = Mathf.Max(ReadingText.PhoneCaps, Mathf.RoundToInt(16 * Size.X / 119f));
+        _level.FontSize = tagFont;
+        _levelPlate.Size = new Vector2(Mathf.Ceil(_level.TextWidth(tagFont)) + 2 * Mathf.Round(7 * Size.X / 119f), Mathf.Round(24 * Size.X / 119f));
+        _levelPlate.Position = new Vector2(5, Size.Y - _levelPlate.Size.Y - 5);
+    }
+
     /// <param name="funds">The courage (troops) or mana (magic) the player has to pay the cost with.</param>
     public void SetState(int cost, float funds, float cooldown, float totalCooldown, bool selected, bool blocked)
     {
@@ -164,10 +199,12 @@ public partial class BattleActionCard : Control
         var badge = Mathf.Round(48 * Size.X / 119f);
         _costPlate.Position = new Vector2(Size.X - badge - 2, 1);
         _costPlate.Size = new Vector2(badge, badge);
+        _levelPlate.Position = new Vector2(5, Size.Y - _levelPlate.Size.Y - 5);
         // Heavy numerals filling most of the badge's dark centre, with an outline that holds on the bronze or blue.
         // LayoutArt runs every HUD update; theme overrides relayout the label, so only touch them on a resize.
         if (badge == _numeralBadge) return;
         _numeralBadge = badge;
+        FitLevelTag();
         _cost.AddThemeFontSizeOverride("font_size", Mathf.Max(16, Mathf.RoundToInt(badge * .58f)));
         _cost.AddThemeConstantOverride("outline_size", Mathf.Max(3, Mathf.RoundToInt(badge * .1f)));
         _cost.AddThemeConstantOverride("shadow_offset_y", Mathf.Max(1, Mathf.RoundToInt(badge * .04f)));

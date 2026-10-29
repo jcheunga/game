@@ -275,6 +275,7 @@ public partial class BattleController
 			slot.Button.SelfModulate = ResolveDeployButtonTint(slot.Definition, isReady, hasCourage);
 			slot.Button.TooltipText = BuildDeployButtonTooltip(slot.Definition, level, isReady, cooldown);
 			var totalCd = ResolvePlayerDeployCooldown(slot.Definition);
+			slot.Card.SetLevel(level);
 			slot.Card.SetState(slot.Definition.Cost, _courage, cooldown, totalCd, false, _battleEnded || _endlessCheckpointActive);
 			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {slot.Definition.Cost} courage";
 			slot.Button.AccessibilityDescription = $"Level {level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasCourage ? "Not enough courage." : "Ready. Select to deploy from the war wagon.");
@@ -292,6 +293,7 @@ public partial class BattleController
 			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasMana, armed);
 			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, resolved, isReady, cooldown);
 			var totalSpellCd = ResolvePlayerSpellCooldown(resolved);
+			slot.Card.SetLevel(resolved.Level);
 			slot.Card.SetState(resolved.ManaCost, _mana, cooldown, totalSpellCd, armed, _battleEnded || _endlessCheckpointActive);
 			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {resolved.ManaCost} mana";
 			slot.Button.AccessibilityDescription = $"Level {resolved.Level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasMana ? "Not enough mana." : armed ? "Selected. Choose a target on the battlefield." : "Ready. Select to cast.");

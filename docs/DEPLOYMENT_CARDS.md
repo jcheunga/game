@@ -1,18 +1,20 @@
 # Icon-first battle cards
 
 The in-battle unit and spell buttons are portrait-led. Their ordinary ready
-state shows only the artwork and a brass courage-cost badge at the top-right—no
-`DEPLOY`, `CAST`, name, level, or repeated `Ready` line. Names and detailed stats
+state shows only the artwork, a brass courage-cost badge at the top-right and,
+as in Dead Ahead, a small `LV n` tag at the bottom-left—no `DEPLOY`, `CAST`,
+name or repeated `Ready` line. Names and detailed stats
 remain in hover tooltips, accessible button labels, and the mobile placement hint
 after selecting a card.
 
 ## Visual states
 
-- Ready: large authored portrait, textured price plate.
+- Ready: large authored portrait, textured price plate, level tag (the unit's
+  level, or the spell's; the caravan spell has none).
 - Selected: bright frame and a check mark; unit and spell selections are mutually
   exclusive visually, matching the active targeting mode.
 - Cooldown: portrait shade proportional to remaining cooldown, with no countdown
-  text. The price is above the shade and remains readable.
+  text. The price and level tag are above the shade and remain readable.
 - Unaffordable: subdued artwork and a red-tinted price badge.
 - Battle ended/checkpoint: existing disabled-button rules remain in effect.
 
@@ -98,7 +100,7 @@ firing range of a base and hold there. Tooltips show "Hits bases" or
 - `scripts/combat/BattleController.CardDragging.cs`: gesture capture, unit taps,
   magic validation, cancellation and drag preview.
 - `scripts/combat/BattleController.Camera.cs`: soldier-scale zoom, band placement, follow and panning.
-- `scripts/combat/hud/BattleActionCard.cs`: the card art, round cost badge (bronze `hud-cost` for courage on troops, blue `hud-cost-mana` for mana on magic) and cooldown.
+- `scripts/combat/hud/BattleActionCard.cs`: the card art, round cost badge (bronze `hud-cost` for courage on troops, blue `hud-cost-mana` for mana on magic), `value-box` level tag and cooldown.
 - `assets/ui/icons/units/` and `assets/ui/royal/items/`: unit portraits and painted spell pictures.
 
 The visual crops transparent icon padding at runtime; no source PNG is modified.

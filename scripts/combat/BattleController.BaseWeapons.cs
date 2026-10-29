@@ -115,6 +115,7 @@ public partial class BattleController
         projectile.LaunchGroundY = (BattlefieldTop + BattlefieldBottom) * .5f;
         projectile.Position = WagonMountPosition(Mathf.Max(0, _wagonMounts.FindIndex(mount => mount.Weapon.Kind == weapon.Kind)));
         AudioDirector.Instance?.PlayBaseWeapon(ProjectileStyles.ForBaseWeapon(weapon.Kind).Id, projectile.GlobalPosition);
+        AnimateWagonShot(weapon, victim);
         projectile.ProcessMode = ProcessModeEnum.Pausable;
         projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive;
         projectile.Setup(victim, weapon.Damage, weapon.Speed, weapon.Color,
@@ -139,24 +140,20 @@ public partial class BattleController
             });
     }
 
-    private void DrawWagonArmaments(CanvasItem canvas)
-    {
-        if (_playerBaseHealth <= 0) return;
-        for (var i = 0; i < _wagonMounts.Count; i++)
-            DrawBaseMount(canvas, WagonMountPosition(i), _wagonMounts[i].Weapon, 1);
-    }
-
-    private void DrawBaseMount(CanvasItem canvas, Vector2 position, BaseWeaponDefinition weapon, float direction)
+    /// <summary>A roof weapon standing at <paramref name="at"/> (canvas transform to its socket): its painted sprite,
+    /// scaled with the base it sits on, or a sketch of it when the sprite is missing.</summary>
+    private void DrawBaseMountSprite(CanvasItem canvas, Transform2D at, BaseWeaponDefinition weapon)
     {
         var texture = BattlefieldTextureLoader.TryLoadStructure("mount_" + weapon.Kind.ToString().ToLowerInvariant());
         if (texture != null)
         {
-            // Mounts scale with the bases they sit on.
-            canvas.DrawSetTransform(position - ((Node2D)canvas).Position, 0f, new Vector2(direction, 1) * _combat.StructureScale);
+            canvas.DrawSetTransformMatrix(at * Transform2D.Identity.Scaled(Vector2.One * _combat.StructureScale));
             canvas.DrawTextureRect(texture, new Rect2(-30f, -59f, 60f, 75f), false, FieldLighting.Tint);
-            canvas.DrawSetTransform(-((Node2D)canvas).Position, 0f, Vector2.One);
             return;
         }
+        canvas.DrawSetTransformMatrix(at);
+        var position = Vector2.Zero;
+        const float direction = 1f;
         var wood = new Color("77563c");
         var iron = new Color("9b9987");
         var shade = new Color("302b26");

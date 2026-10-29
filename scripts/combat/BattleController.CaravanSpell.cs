@@ -13,7 +13,7 @@ public partial class BattleController
     private const float CaravanWindupSeconds = .45f;
     // Battle-time gaps between repeated launch and impact sounds, so thirty missiles a second stay listenable.
     private const float CaravanLaunchSoundGap = .11f, CaravanImpactSoundGap = .075f, CaravanNumberGap = .3f;
-    // The lantern on the wagon roof, as a fraction of the wagon picture (the same on every skin).
+    // The lantern on the wagon roof, as a fraction of the wagon picture, for plates that don't record their own.
     private static readonly Vector2 WagonLanternUv = new(.683f, .317f);
 
     private CaravanSpellButton _caravanSpellButton;
@@ -25,7 +25,7 @@ public partial class BattleController
     private readonly Dictionary<Unit, float> _caravanDamageTally = new();
 
     private CaravanSpellTuning CaravanSpell => _combat.CaravanSpell ?? new CaravanSpellTuning();
-    private Vector2 WagonLantern => WagonArt is { } art ? art.Point(WagonGround, WagonLanternUv) : PlayerBaseCorePosition + new Vector2(22, -60);
+    private Vector2 WagonLantern => WagonArt is { } art ? art.Point(WagonGround, art.Lantern ?? WagonLanternUv) : PlayerBaseCorePosition + new Vector2(22, -60);
     private bool CaravanBarrageActive => _caravanWindup > 0f || _caravanBarrageRemaining > 0f;
     /// <summary>The slot is open whenever the bar holds the spell's cost.</summary>
     private bool CaravanSpellOpen => !_battleEnded && _mana >= CaravanSpell.ManaCost - .01f;

@@ -1,0 +1,37 @@
+{
+  "zone": "citadel",
+  "pieces": [
+    {
+      "file": "citadel_0.png",
+      "size": [
+        757,
+        377
+      ],
+      "foot": 372
+    },
+    {
+      "file": "citadel_1.png",
+      "size": [
+        714,
+        336
+      ],
+      "foot": 331
+    },
+    {
+      "file": "citadel_2.png",
+      "size": [
+        744,
+        376
+      ],
+      "foot": 371
+    },
+    {
+      "file": "citadel_3.png",
+      "size": [
+        746,
+        368
+      ],
+      "foot": 363
+    }
+  ]
+}

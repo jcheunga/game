@@ -1,0 +1,37 @@
+{
+  "zone": "thornwall",
+  "pieces": [
+    {
+      "file": "thornwall_0.png",
+      "size": [
+        719,
+        433
+      ],
+      "foot": 428
+    },
+    {
+      "file": "thornwall_1.png",
+      "size": [
+        701,
+        414
+      ],
+      "foot": 409
+    },
+    {
+      "file": "thornwall_2.png",
+      "size": [
+        740,
+        348
+      ],
+      "foot": 343
+    },
+    {
+      "file": "thornwall_3.png",
+      "size": [
+        723,
+        372
+      ],
+      "foot": 367
+    }
+  ]
+}

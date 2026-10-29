@@ -1,0 +1,37 @@
+{
+  "zone": "foundry",
+  "pieces": [
+    {
+      "file": "foundry_0.png",
+      "size": [
+        744,
+        424
+      ],
+      "foot": 419
+    },
+    {
+      "file": "foundry_1.png",
+      "size": [
+        747,
+        370
+      ],
+      "foot": 365
+    },
+    {
+      "file": "foundry_2.png",
+      "size": [
+        739,
+        344
+      ],
+      "foot": 339
+    },
+    {
+      "file": "foundry_3.png",
+      "size": [
+        745,
+        391
+      ],
+      "foot": 386
+    }
+  ]
+}

@@ -151,7 +151,7 @@ At runtime `EnemyBaseArt` loads the stage's plate (endless runs and boss rushes 
 shifts it with any later change to `EnemyBaseX` (plates without the field default to 1152), so the field's length
 can change without a recut.
 It is drawn untinted behind the band, so every troop on the road passes in front of it, with an additive flicker
-over each lantern, damage smoke from its roofs, and its health meter at world row 270. Stages without a plate
+over each lantern, damage smoke from its roofs, and its health banner at world row 270. Stages without a plate
 fall back to the Blender gatehouse and its outworks. Review with `bases.py preview`, then
 `CombatReviewSmoke --bases [--stages=…] --screenshots` (`artifacts/enemy-bases`).
 
@@ -160,6 +160,39 @@ python3 art/royal/bases.py guide                                  # zone guides
 python3 art/royal/bases.py run [stage ...]                        # Codex paint + key; resumes, waits out limits
 python3 art/royal/bases.py sheet <stage ...>                      # read gate centres into GATES
 art/remaster/puppet/run.sh art/royal/bases.py cut [stage ...]     # plates + JSON (needs numpy/opencv)
+godot --headless --path . --import
+```
+
+The stronghold's hitbox runs the band's full height (`BattleController.BaseContactPoint`): troops strike it in their
+own row. `art/royal/bases_life.py` adds to every plate's JSON the flat wall tops a sentry can stand behind (`posts`),
+its warm lights (`warm`: lit windows, candles, braziers) and solid facade spots near the gate (`wall`); its `sheet`
+command draws them for review. At runtime (`BattleController.StrongholdLife.cs`) reinforcements walk out of the gate,
+war drums and a kindling gate light warn of each wave, up to two sentries (a ranged troop from the stage's waves) stand
+behind the parapets, the warm lights flicker, and each zone has its own drifting weather around the walls. Each
+quarter of health lost cracks the walls (decals tinted by the paint they land on), and from half health the roofs
+burn. A painted barricade of the zone's materials (`assets/structures/barricades/<zone>_N.png`) stands across the road
+in front, one piece per lane depth. Health hangs over the gate as a war banner (`base_banner.png`; high contrast keeps
+the plain bar). Destroyed, the stronghold shakes, sinks into its dust and the caravan's standard (`victory_flag.png`)
+is raised before the result board comes up. Review: `CombatReviewSmoke --base-life --screenshots`
+(`artifacts/base-life`, run with a window).
+
+## The painted caravan
+
+The caravan and its seven skins are Codex paintings in the unit sheet's style (`art/royal/caravan.py`, which also
+paints the roof weapons, barricades, decals, banner and standard). Every edit (open door, battle damage, armour, snow,
+mud, each skin and its door and damage) is registered back onto the clean wagon by `art/royal/caravan_cut.py`, so one
+set of points read by eye (`WAGON_POINTS`: ground, wheels, roof sockets, lamps, lantern, flag, awning) serves them all.
+At runtime (`BattleController.WagonLife.cs`) the flag and awning ripple in a cloth shader, the wagon rocks on its
+springs when struck and keeps up to six siege bolts, its lanterns flicker and the cupola fills with light as mana
+gathers, armour plating shows in three steps with the upgrade, Thornwall adds snow and the Mire mud, it shows its
+damage below half health and tips over when destroyed. An archer from the roster crews the arrow mount; the ballista
+pitches toward its target and the firepot kicks.
+
+```sh
+python3 art/royal/caravan.py run [job ...]                        # Codex paintings into art/royal/gen/caravan
+python3 art/royal/caravan.py sheet wagon                          # grid for reading WAGON_POINTS
+art/remaster/puppet/run.sh art/royal/caravan_cut.py [wagon mounts barricades decals banner flag]
+art/remaster/puppet/run.sh art/royal/caravan_cut.py review        # every wagon, open and battered
 godot --headless --path . --import
 ```
 

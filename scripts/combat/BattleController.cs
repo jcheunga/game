@@ -271,6 +271,11 @@ public partial class BattleController : Node2D
 	private float BaseCenterY => (BattlefieldTop + BattlefieldBottom) * 0.5f;
 	private Vector2 PlayerBaseCorePosition => new(PlayerBaseX, BaseCenterY);
 	private Vector2 EnemyBaseCorePosition => new(EnemyBaseX, BaseCenterY);
+	// The stronghold's hitbox runs the band's full height: each troop strikes the wall in its own row
+	// instead of converging on the gate. The wagon is still struck at its core.
+	private Vector2 BaseContactPoint(Unit unit) => unit.Team == Team.Player
+		? new Vector2(EnemyBaseX, Mathf.Clamp(unit.Position.Y, BattlefieldTop, BattlefieldBottom))
+		: PlayerBaseCorePosition;
 
 	public override void _Ready()
 	{
@@ -1064,6 +1069,12 @@ public partial class BattleController : Node2D
 
 		var skinId = GameState.Instance.SelectedWagonSkinId;
 		var art = WagonArt;
+		// The painted wagon: this canvas draws its plate; door, crew, lights and meter are its sibling layers.
+		if (art != null)
+		{
+			DrawWagonPlate(canvas, art);
+			return;
+		}
 		var wagonTexture = art?.Texture ?? (skinId == WagonSkinCatalog.DefaultSkinId ? null
 			: BattlefieldTextureLoader.TryLoadStructure("war_wagon_" + skinId));
 		wagonTexture ??= BattlefieldTextureLoader.TryLoadStructure("war_wagon");
@@ -2047,6 +2058,7 @@ public partial class BattleController : Node2D
 		position = new Vector2(EnemySpawnX, Mathf.Clamp(position.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
 		GameState.Instance.DiscoverCodexEntry(stats.DefinitionId);
 		var unit = SpawnUnit(Team.Enemy, stats, position);
+		BeginGateExit(unit);
 		unit.CanDropCourage = true;
 		AudioDirector.Instance?.PlayEnemySpawn(unit);
 
@@ -2221,7 +2233,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		var targetBase = attacker.Team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition;
+		var targetBase = BaseContactPoint(attacker);
 		if (!attacker.TryBeginAttackPosition(targetBase, BaseCoreRadius))
 		{
 			return;
@@ -2240,7 +2252,7 @@ public partial class BattleController : Node2D
 		if (attacker.Team==Team.Player && _elapsed<_gateExposedUntil) power*=1.05f;
 		if (attacker.Team==Team.Player && ContentEquipment(attacker).Any(i=>i.Id=="relic_breach_writ") && attacker.TryEffect("breach_writ",999)) _gateExposedUntil=_elapsed+3;
 		if (attacker.Definition.ContentBehavior=="demolition" && !attacker.SecondaryBody && _units.Any(u=>u!=attacker && !u.IsDead && u.CrewGroup==attacker.CrewGroup) && attacker.TryEffect("demolition",12)) power*=1.25f;
-		if (attacker.Definition.ContentBehavior=="structure_splash") foreach(var defender in NearbyContentUnits(attacker.Team==Team.Player?Team.Enemy:Team.Player,attacker.Team==Team.Player?EnemyBaseCorePosition:PlayerBaseCorePosition,50).Take(2)) ContentDamage(attacker,defender,3,false,false);
+		if (attacker.Definition.ContentBehavior=="structure_splash") foreach(var defender in NearbyContentUnits(attacker.Team==Team.Player?Team.Enemy:Team.Player,BaseContactPoint(attacker),50).Take(2)) ContentDamage(attacker,defender,3,false,false);
 		ApplyUnitBaseHit(attacker.Team, power, attacker.Tint, attacker, attacker.CombatLifetime);
 	}
 
@@ -2254,8 +2266,10 @@ public partial class BattleController : Node2D
 			var baseDamage = damage * (1f + Mathf.Min(.1f, gateBreakLevel * .02f));
 			_enemyBaseHealth -= baseDamage;
 			_enemyBaseFlashTimer = 0.22f;
+			ScarStronghold(baseDamage);
 			AudioDirector.Instance?.PlayBaseHit(false, baseDamage);
-			BattleParticles.SpawnBaseHitDebris(this, EnemyBaseCorePosition, tint);
+			var struck = IsInstanceValid(attacker) && attacker.CombatLifetime == attackerLifetime ? BaseContactPoint(attacker) : EnemyBaseCorePosition;
+			BattleParticles.SpawnBaseHitDebris(this, struck, tint);
 			SpawnBaseFeedback(false, baseDamage);
 		}
 		else
@@ -2273,6 +2287,7 @@ public partial class BattleController : Node2D
 				}
 			}
 			_playerBaseFlashTimer = 0.22f;
+			OnWagonStruck(busDamage, attacker, attackerLifetime);
 			AudioDirector.Instance?.PlayBaseHit(true, busDamage);
 			BattleParticles.SpawnBaseHitDebris(this, PlayerBaseCorePosition, tint);
 			SpawnBaseFeedback(true, busDamage);
@@ -2353,7 +2368,7 @@ public partial class BattleController : Node2D
 				continue;
 			}
 
-			if (TickWagonExit(unit, delta)) continue;
+			if (TickWagonExit(unit, delta) || TickGateExit(unit, delta)) continue;
 			if (_pendingBossPhases.ContainsKey(unit)) continue;
 			unit.TickAttackTimer(delta);
 			if (_battleEnded) return;
@@ -2362,7 +2377,7 @@ public partial class BattleController : Node2D
 			if (unit.IsDead || unit.IsAttackCommitted) continue;
 			var contentTarget = FindClosestEnemy(unit);
 			if (TryContentAction(unit, contentTarget, delta)) continue;
-			var defendingBase = unit.Team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition;
+			var defendingBase = BaseContactPoint(unit);
 			if (!(IsEndlessMode && unit.Team == Team.Player) && unit.DamagesStructures && unit.IsAttackingPosition(defendingBase) &&
 				unit.CanAttackPosition(defendingBase, BaseCoreRadius) && !ShouldRepairBus(unit))
 			{
@@ -2419,7 +2434,7 @@ public partial class BattleController : Node2D
 			}
 			else
 			{
-				var targetBase = unit.Team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition;
+				var targetBase = BaseContactPoint(unit);
 				if (ShouldRepairBus(unit))
 				{
 					SimulatePlayerBusSupport(unit, delta);
@@ -2473,7 +2488,7 @@ public partial class BattleController : Node2D
 		for (var i = 0; i < _units.Count; i++)
 		{
 			var unitA = _units[i];
-			if (unitA.IsDead || IsHoldingAttackPosition(unitA) || _wagonExits.ContainsKey(unitA))
+			if (unitA.IsDead || IsHoldingAttackPosition(unitA) || _wagonExits.ContainsKey(unitA) || _gateExits.ContainsKey(unitA))
 			{
 				continue;
 			}
@@ -2481,7 +2496,7 @@ public partial class BattleController : Node2D
 			for (var j = i + 1; j < _units.Count; j++)
 			{
 				var unitB = _units[j];
-				if (unitB.IsDead || IsHoldingAttackPosition(unitB) || _wagonExits.ContainsKey(unitB) || unitA.Team != unitB.Team)
+				if (unitB.IsDead || IsHoldingAttackPosition(unitB) || _wagonExits.ContainsKey(unitB) || _gateExits.ContainsKey(unitB) || unitA.Team != unitB.Team)
 				{
 					continue;
 				}
@@ -2525,7 +2540,7 @@ public partial class BattleController : Node2D
 
 	private bool IsHoldingAttackPosition(Unit unit) => unit.IsAttackCommitted ||
 		(_targetLocks.TryGetValue(unit, out var target) && IsValidCombatTarget(unit, target) && unit.CanAttack(target)) ||
-		unit.CanAttackPosition(unit.Team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition, BaseCoreRadius);
+		unit.CanAttackPosition(BaseContactPoint(unit), BaseCoreRadius);
 
 	private void SimulateRangedPositioning(Unit unit, Unit target, float delta, bool targetInRange)
 	{
@@ -5623,6 +5638,12 @@ public partial class BattleController : Node2D
 
 	private void ShowEndPanelAnimated()
 	{
+		// A destroyed stronghold first collapses and the caravan's standard is raised; then the result board comes up.
+		if (StrongholdFallen && !ReducedMotion && _showTime - _baseFellAt < CollapseRevealDelay)
+		{
+			GetTree().CreateTimer(CollapseRevealDelay - (_showTime - _baseFellAt), true).Timeout += () => { if (IsInstanceValid(this)) ShowEndPanelAnimated(); };
+			return;
+		}
 		// Earned stars ring out one by one as the result appears (D major, in tune with the victory fanfare).
 		if (_endStarRating.Visible) AudioDirector.Instance?.PlayStars(_endStarRating.Stars);
 		if (IsInstanceValid(_royalResult)) { _royalResult.Visible = true; _royalResult.Appear(); return; }
@@ -6154,6 +6175,8 @@ public partial class BattleController : Node2D
 		_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
 		_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
 		SpawnBattleEndParticles(playerWon);
+		if (!playerWon && _playerBaseHealth <= 0f) FellWagon();
+		if (playerWon && _enemyBaseHealth <= 0f) CollapseStronghold();
 		_endStarRating.Visible = !IsEndlessMode;
 		_endStarRating.Stars = StageStarScore.Evaluate(playerWon, _playerBaseHealth, _playerBaseMaxHealth, _playerHullTookDamage);
 

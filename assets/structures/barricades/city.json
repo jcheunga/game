@@ -1,0 +1,37 @@
+{
+  "zone": "city",
+  "pieces": [
+    {
+      "file": "city_0.png",
+      "size": [
+        753,
+        369
+      ],
+      "foot": 364
+    },
+    {
+      "file": "city_1.png",
+      "size": [
+        766,
+        321
+      ],
+      "foot": 316
+    },
+    {
+      "file": "city_2.png",
+      "size": [
+        738,
+        325
+      ],
+      "foot": 320
+    },
+    {
+      "file": "city_3.png",
+      "size": [
+        741,
+        310
+      ],
+      "foot": 305
+    }
+  ]
+}

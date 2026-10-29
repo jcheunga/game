@@ -11,6 +11,17 @@ public sealed record BattleStructureArt(Texture2D Texture, Vector2 Anchor, float
     public BattleDoorArt Door { get; init; }
     // Alpha centroid of the plate (normalised), used to centre a structure's visual mass on the band.
     public Vector2 Centre { get; init; } = new(.5f, .5f);
+    // The painted caravan (art/royal/caravan_cut.py), all normalised over the plate: its lantern glass, the cupola's
+    // lamp, the flag and awning cloth that stir in the wind, and the ring at the shafts' tip.
+    public Vector2[] Lamps { get; init; } = System.Array.Empty<Vector2>();
+    public Vector2? Lantern { get; init; }
+    public Rect2 Flag { get; init; }
+    public Rect2 Awning { get; init; }
+    public Vector2? Hitch { get; init; }
+    /// <summary>The same wagon battered (drawn below half health), when painted.</summary>
+    public Texture2D Damaged { get; init; }
+    /// <summary>Plate rows (normalised) from which each armour stage shows: wheels, lower hull, everything.</summary>
+    public float[] ArmourRows { get; init; } = System.Array.Empty<float>();
     private static readonly Dictionary<string, BattleStructureArt> Cache = new();
     public Vector2 Size => Texture.GetSize() * (Width / Texture.GetWidth());
     public Rect2 At(Vector2 ground) => new(ground - Anchor * Size, Size);
@@ -30,12 +41,29 @@ public sealed record BattleStructureArt(Texture2D Texture, Vector2 Anchor, float
             foreach (var point in array.EnumerateArray()) points.Add(Point(point));
             return points.ToArray();
         }
+        static Rect2 Box(JsonElement root, string key) => root.TryGetProperty(key, out var box)
+            ? new Rect2(box[0].GetSingle(), box[1].GetSingle(), box[2].GetSingle() - box[0].GetSingle(), box[3].GetSingle() - box[1].GetSingle())
+            : new Rect2();
         return Cache[id] = new(ResourceLoader.Load<Texture2D>(path + ".png"), Point(root.GetProperty("anchor")),
             root.GetProperty("width").GetSingle() * GameData.Combat.StructureScale, Points(root.GetProperty("mounts")), Points(root.GetProperty("contacts")), Points(root.GetProperty("lights")), Point(root.GetProperty("smoke")))
         {
             Centre = root.TryGetProperty("centre", out var centre) ? Point(centre) : new Vector2(.5f, .5f),
-            Door = LoadDoor(path, root)
+            Door = LoadDoor(path, root),
+            Lamps = root.TryGetProperty("lamps", out var lamps) ? Points(lamps) : System.Array.Empty<Vector2>(),
+            Lantern = root.TryGetProperty("lantern", out var lantern) ? Point(lantern) : null,
+            Hitch = root.TryGetProperty("hitch", out var hitch) ? Point(hitch) : null,
+            Flag = Box(root, "flag"), Awning = Box(root, "awning"),
+            Damaged = ResourceLoader.Exists(path + "_damaged.png") ? ResourceLoader.Load<Texture2D>(path + "_damaged.png") : null,
+            ArmourRows = root.TryGetProperty("overlays", out var overlays) && overlays.TryGetProperty("armour", out var rows)
+                ? System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(rows.EnumerateArray(), row => row.GetSingle())) : System.Array.Empty<float>()
         };
+    }
+
+    /// <summary>An overlay painted for every caravan (armour, snow, mud: battle-v2/war_wagon_&lt;name&gt;.png), or null.</summary>
+    public static Texture2D Overlay(string name)
+    {
+        var path = "res://assets/structures/battle-v2/war_wagon_" + name + ".png";
+        return ResourceLoader.Exists(path) ? ResourceLoader.Load<Texture2D>(path) : null;
     }
     private static BattleDoorArt LoadDoor(string path, JsonElement root)
     {

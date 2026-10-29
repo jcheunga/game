@@ -29,8 +29,12 @@ public partial class CombatReviewSmoke
         Clear();
 
         Invoke(battle, "SpawnEnemyUnit", new UnitStats(GameData.GetUnit("enemy_runner")), new Vector2(1200, top - 80));
-        Check(Read<List<Unit>>(battle, "_units").Last().Position == new Vector2(combat.EnemySpawnX, top),
-            "Enemies leave the stronghold on any line up to the band's edge");
+        var runner = Read<List<Unit>>(battle, "_units").Last();
+        var gateway = (Vector2)Invoke(battle, "get_GatePoint");
+        Check(runner.Position == gateway, "Enemies appear in the stronghold's gateway");
+        for (var i = 0; i < 60 && runner.Position != new Vector2(combat.EnemySpawnX, top); i++) Invoke(battle, "TickGateExit", runner, 1f / 60f);
+        Check(runner.Position == new Vector2(combat.EnemySpawnX, top) && runner.Modulate == Colors.White,
+            "Enemies walk out of the gate onto any line up to the band's edge");
         Clear();
 
         // Support troops never walk back to an escort behind them; they keep marching to the far end.
@@ -63,10 +67,19 @@ public partial class CombatReviewSmoke
         Simulate(2);
         Check(!gateArcher.IsAttackCommitted && gateArcher.Position == archerStart && !wagonCaster.IsAttackCommitted,
             "Archers and casters hold at firing range and cannot attack a base");
-        Check(ballista.IsAttackingPosition(gate) && swordsman.IsAttackingPosition(gate) && boneBallista.IsAttackingPosition(wagon),
-            "Melee troops and siege ballistas still attack the bases");
+        Check(ballista.IsAttackingPosition(gate - new Vector2(0, 10)) && swordsman.IsAttackingPosition(gate + new Vector2(0, 10))
+            && boneBallista.IsAttackingPosition(wagon), "Melee troops and siege ballistas still attack the bases");
         Check(!new UnitStats(GameData.GetUnit("player_shooter")).DamagesStructures && new UnitStats(GameData.GetUnit("player_ballista")).DamagesStructures
             && new UnitStats(GameData.GetUnit("player_brawler")).DamagesStructures, "Only melee troops and authored siege units are flagged to hit bases");
+        Clear();
+
+        // The stronghold's hitbox spans the band: troops on either edge march straight in and strike it in their own row.
+        var high = Spawn("player_brawler", Team.Player, new Vector2(combat.EnemyBaseX - 70, top));
+        var low = Spawn("player_brawler", Team.Player, new Vector2(combat.EnemyBaseX - 70, bottom));
+        for (var i = 0; i < 600 && !(high.IsAttackCommitted && low.IsAttackCommitted); i++) Simulate(1);
+        Check(high.IsAttackingPosition(new Vector2(combat.EnemyBaseX, top)) && low.IsAttackingPosition(new Vector2(combat.EnemyBaseX, bottom))
+            && Mathf.IsEqualApprox(high.Position.Y, top) && Mathf.IsEqualApprox(low.Position.Y, bottom),
+            "Troops on the band's edges strike the stronghold in their own row without drifting to the gate");
         await CloseBattle(battle);
     }
 }

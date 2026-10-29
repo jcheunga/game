@@ -1,0 +1,37 @@
+{
+  "zone": "harbor",
+  "pieces": [
+    {
+      "file": "harbor_0.png",
+      "size": [
+        739,
+        417
+      ],
+      "foot": 412
+    },
+    {
+      "file": "harbor_1.png",
+      "size": [
+        709,
+        463
+      ],
+      "foot": 458
+    },
+    {
+      "file": "harbor_2.png",
+      "size": [
+        744,
+        416
+      ],
+      "foot": 411
+    },
+    {
+      "file": "harbor_3.png",
+      "size": [
+        744,
+        445
+      ],
+      "foot": 440
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "zone": "basilica",
+  "pieces": [
+    {
+      "file": "basilica_0.png",
+      "size": [
+        683,
+        410
+      ],
+      "foot": 405
+    },
+    {
+      "file": "basilica_1.png",
+      "size": [
+        753,
+        465
+      ],
+      "foot": 460
+    },
+    {
+      "file": "basilica_2.png",
+      "size": [
+        742,
+        362
+      ],
+      "foot": 357
+    },
+    {
+      "file": "basilica_3.png",
+      "size": [
+        704,
+        418
+      ],
+      "foot": 413
+    }
+  ]
+}

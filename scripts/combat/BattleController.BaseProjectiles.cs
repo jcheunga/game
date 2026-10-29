@@ -13,7 +13,7 @@ public partial class BattleController
         AddChild(projectile);
         projectile.GlobalPosition = attacker.WeaponContactPosition;
         // Aim at the struck point of the base, not its foundation line.
-        projectile.TargetOffset = (team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition) - target.Position + new Vector2(0, -12);
+        projectile.TargetOffset = BaseContactPoint(attacker) - target.Position + new Vector2(0, -12);
         projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
         projectile.SetStyle(ProjectileStyles.ForUnit(attacker.DefinitionId, attacker.MotionProfile));
         projectile.LaunchGroundY = attacker.GlobalPosition.Y;

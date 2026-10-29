@@ -1,0 +1,37 @@
+{
+  "zone": "gloamwood",
+  "pieces": [
+    {
+      "file": "gloamwood_0.png",
+      "size": [
+        739,
+        457
+      ],
+      "foot": 452
+    },
+    {
+      "file": "gloamwood_1.png",
+      "size": [
+        740,
+        354
+      ],
+      "foot": 349
+    },
+    {
+      "file": "gloamwood_2.png",
+      "size": [
+        764,
+        367
+      ],
+      "foot": 362
+    },
+    {
+      "file": "gloamwood_3.png",
+      "size": [
+        717,
+        392
+      ],
+      "foot": 387
+    }
+  ]
+}

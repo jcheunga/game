@@ -1,0 +1,37 @@
+{
+  "zone": "steppe",
+  "pieces": [
+    {
+      "file": "steppe_0.png",
+      "size": [
+        690,
+        410
+      ],
+      "foot": 405
+    },
+    {
+      "file": "steppe_1.png",
+      "size": [
+        741,
+        358
+      ],
+      "foot": 353
+    },
+    {
+      "file": "steppe_2.png",
+      "size": [
+        727,
+        362
+      ],
+      "foot": 357
+    },
+    {
+      "file": "steppe_3.png",
+      "size": [
+        727,
+        413
+      ],
+      "foot": 408
+    }
+  ]
+}

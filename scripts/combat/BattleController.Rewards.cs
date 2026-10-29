@@ -100,6 +100,8 @@ public partial class BattleController
             Leave = HandleEndPanelSecondaryAction, Retry = HandleEndPanelPrimaryAction
         };
         _endCenter.GetParent().AddChild(_royalResult);
+        // While a destroyed stronghold falls the board stays down; ShowEndPanelAnimated brings it up afterwards.
+        _royalResult.Visible = !(StrongholdFallen && !ReducedMotion);
         _endPanel.Visible = false;
         // The result board stands alone over the battlefield, as in the concept.
         foreach (var hud in new Control[] { _topHudPanel, _goldFrame, _hudSettingsButton, _cardDock })

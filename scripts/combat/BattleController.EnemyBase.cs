@@ -12,21 +12,18 @@ public partial class BattleController
     {
         // It was painted in the zone's own light, so it takes no field tint; a hit flushes it red as before.
         var modulate = _enemyBaseFlashTimer > 0f ? new Color(1.3f, .8f, .8f) : Colors.White;
-        canvas.DrawTextureRect(art.Texture, art.Rect, false, modulate);
-        // Each roof starts smoking a quarter of the stronghold's health after the one before.
-        for (var i = 0; i < art.Smoke.Length; i++)
+        DrawSentries(canvas);
+        DrawStrongholdPlate(canvas, art, modulate);
+        // Each roof starts smoking a quarter of the stronghold's health after the one before (a fallen one smoulders
+        // through particles instead).
+        for (var i = 0; i < art.Smoke.Length && !StrongholdFallen; i++)
             DrawDamageSmoke(canvas, art.Smoke[i], healthRatio + i * .25f, palette.EnemyBaseColor);
-        DrawBaseHealthMeter(canvas, new Vector2(art.GateX, PaintedBaseBarY), 132f, healthRatio, false);
+        DrawStrongholdBanner(canvas, art, healthRatio);
     }
 
     // Added just after the stronghold, so it shares its depth: an additive glow over each painted lantern.
     private void BuildPaintedBaseGlow()
     {
-        if (PaintedBase.Lights.Length == 0) return;
-        _lanternGlow ??= new GradientTexture2D { Width = 64, Height = 64,
-            Fill = GradientTexture2D.FillEnum.Radial, FillFrom = new(.5f, .5f), FillTo = new(.5f, 0),
-            Gradient = new Gradient { Offsets = new[] { 0f, .3f, 1f },
-                Colors = new[] { Colors.White, new Color(1, 1, 1, .35f), new Color(1, 1, 1, 0) } } };
         AddChild(new BattleBaseCanvas { Name = "CastleGlow", Position = CastleSortPosition,
             Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add },
             TextureFilter = TextureFilterEnum.Linear, Paint = DrawPaintedBaseGlow });
@@ -41,14 +38,16 @@ public partial class BattleController
     private void DrawPaintedBaseGlow(CanvasItem canvas)
     {
         var lights = PaintedBase.Lights;
-        for (var i = 0; i < lights.Length; i++)
+        var fade = 1f - CollapseAmount;
+        for (var i = 0; i < lights.Length && fade > 0f; i++)
         {
             var (point, colour) = lights[i];
             // Two detuned sines per lantern, so no two flicker together.
             var flicker = .72f + .18f * Mathf.Sin(_elapsed * (5.3f + i * .7f) + i * 2.1f) + .1f * Mathf.Sin(_elapsed * 13.7f + i);
             var radius = 7f + 1.2f * flicker;
-            canvas.DrawTextureRect(_lanternGlow, new Rect2(point - Vector2.One * radius, Vector2.One * radius * 2), false,
-                new Color(colour, .30f * flicker));
+            canvas.DrawTextureRect(LanternGlowTexture(), new Rect2(point - Vector2.One * radius, Vector2.One * radius * 2), false,
+                new Color(colour, .30f * flicker * fade));
         }
+        DrawStrongholdGlow(canvas, PaintedBase);
     }
 }

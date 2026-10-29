@@ -1,0 +1,37 @@
+{
+  "zone": "mire",
+  "pieces": [
+    {
+      "file": "mire_0.png",
+      "size": [
+        740,
+        461
+      ],
+      "foot": 456
+    },
+    {
+      "file": "mire_1.png",
+      "size": [
+        740,
+        426
+      ],
+      "foot": 421
+    },
+    {
+      "file": "mire_2.png",
+      "size": [
+        749,
+        440
+      ],
+      "foot": 435
+    },
+    {
+      "file": "mire_3.png",
+      "size": [
+        742,
+        379
+      ],
+      "foot": 374
+    }
+  ]
+}

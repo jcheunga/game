@@ -27,13 +27,16 @@ public partial class BattleController
         _shadowCanvas = new BattleShadowCanvas { Name = "BattleShadows", ZIndex = -5,
             TextureFilter = TextureFilterEnum.LinearWithMipmaps, Paint = DrawBattleGroundShadows };
         AddChild(_shadowCanvas);
-        AddChild(new BattleBaseCanvas { Name = "Caravan", Position = WagonSortPosition,
+        var caravan = new BattleBaseCanvas { Name = "Caravan", Position = WagonSortPosition,
             TextureFilter = TextureFilterEnum.LinearWithMipmaps,
-            Paint = canvas => { DrawPlayerBus(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)); DrawWagonArmaments(canvas); } });
+            Paint = canvas => DrawPlayerBus(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)) };
+        AddChild(caravan);
+        BuildWagonLayers(caravan);
         AddChild(new BattleBaseCanvas { Name = "Castle", Position = CastleSortPosition,
             TextureFilter = TextureFilterEnum.LinearWithMipmaps,
             Paint = canvas => DrawEnemyBarricade(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)) });
         if (PaintedBase != null) BuildPaintedBaseGlow();
+        InitializeStrongholdLife();
     }
 
     private void DrawBattleGroundShadows(CanvasItem canvas)

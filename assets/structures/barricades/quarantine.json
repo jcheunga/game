@@ -1,0 +1,37 @@
+{
+  "zone": "quarantine",
+  "pieces": [
+    {
+      "file": "quarantine_0.png",
+      "size": [
+        730,
+        465
+      ],
+      "foot": 460
+    },
+    {
+      "file": "quarantine_1.png",
+      "size": [
+        738,
+        394
+      ],
+      "foot": 389
+    },
+    {
+      "file": "quarantine_2.png",
+      "size": [
+        744,
+        371
+      ],
+      "foot": 366
+    },
+    {
+      "file": "quarantine_3.png",
+      "size": [
+        729,
+        387
+      ],
+      "foot": 382
+    }
+  ]
+}

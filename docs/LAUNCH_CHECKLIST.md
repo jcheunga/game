@@ -39,6 +39,13 @@ Already done and tested locally (2026-10-17):
   gives a bearer token its own allowance only after it passes a session
   check, and the shop marks the Adventurer's Kit bought when the server's
   history says so.
+- Launch-day tools (2026-10-29): `POST /admin/purchases` pauses new
+  purchases without a redeploy, and `POST /admin/support/grant` makes good a
+  pack that never arrived (see
+  [DEPLOYMENT.md](DEPLOYMENT.md#pausing-purchases)). After a guest's first
+  purchase the storehouse asks once whether to sign in. Shared challenge
+  links (`/challenge/<code>`) open a page on the website that shows the code
+  and how to load it.
 - The iOS preset, set in the file with the editor closed (2026-10-28): Game
   Center entitlement and plugin on, StoreKit plugin on, minimum iOS 15.0, the
   Android preset's exclude filter, the privacy manifest's collected data types,

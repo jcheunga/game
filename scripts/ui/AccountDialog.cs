@@ -16,7 +16,7 @@ public partial class AccountDialog : AcceptDialog
     /// Apple and Google sign-in run in the browser. On iPhone that means leaving the game for Safari, which App Review
     /// has rejected, so the iPhone offers Game Center and email instead; the browser sign-ins stay on Android and desktop.
     /// </summary>
-    private static bool BrowserSignIn => OS.GetName() != "iOS";
+    internal static bool BrowserSignIn => OS.GetName() != "iOS";
 
     public static void Show(Control host)
     {

@@ -121,6 +121,19 @@ public partial class StoreKitShopReview : Node
         iap.RetryUnfinishedPurchases();
         await Wait(3);
         Check(_completed.Count == 0 && state.Gold == gold + ProductGold, "Nothing is left unfinished or granted twice");
+
+        // A guest's first purchase brings the sign-in prompt. On iPhone the Account panel then offers Game Center and
+        // email only: Apple and Google sign-in would leave the game for Safari.
+        var signIn = Walk(shop).OfType<Button>().FirstOrDefault(b => b.IsVisibleInTree() && b.Text == "Sign in");
+        Check(signIn != null, "A guest's first purchase asks them to sign in");
+        signIn?.EmitSignal(BaseButton.SignalName.Pressed);
+        await Wait(.8);
+        var account = Walk(GetTree().Root).OfType<AccountDialog>().FirstOrDefault();
+        Button Named(string name) => account?.FindChild(name, true, false) as Button;
+        Check(account != null && !AccountDialog.BrowserSignIn && Named("AppleSignIn") is { Visible: false } && Named("GoogleSignIn") is { Visible: false },
+            "On iPhone the Account panel offers no Apple or Google sign-in");
+        Check(Named("PlatformSignIn") is { Visible: true } && account != null && Walk(account).OfType<LineEdit>().Any(e => e.IsVisibleInTree() && e.PlaceholderText == "Email address"),
+            "and offers Game Center and email");
     }
 
     /// <summary>The shop's purchase status line (CashShopMenu's status label).</summary>

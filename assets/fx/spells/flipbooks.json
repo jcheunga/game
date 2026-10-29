@@ -1,0 +1,128 @@
+{
+ "dust_ring": {
+  "cols": 5,
+  "rows": 7,
+  "frames": 32,
+  "cell": [
+   256,
+   170
+  ],
+  "pivot": [
+   0.5094,
+   0.6431
+  ],
+  "width": 4.5547,
+  "radius": 1.8305,
+  "kind": "tint",
+  "loop": false,
+  "hold": false
+ },
+ "fire_burst": {
+  "cols": 8,
+  "rows": 5,
+  "frames": 40,
+  "cell": [
+   201,
+   256
+  ],
+  "pivot": [
+   0.4601,
+   0.9
+  ],
+  "width": 2.1224,
+  "radius": 0.9049,
+  "kind": "color",
+  "loop": false,
+  "hold": false
+ },
+ "flame_loop": {
+  "cols": 7,
+  "rows": 5,
+  "frames": 30,
+  "cell": [
+   92,
+   128
+  ],
+  "pivot": [
+   0.4619,
+   0.875
+  ],
+  "width": 1.5312,
+  "radius": 0.5432,
+  "kind": "color",
+  "loop": true,
+  "hold": false
+ },
+ "ice_burst": {
+  "cols": 5,
+  "rows": 5,
+  "frames": 22,
+  "cell": [
+   256,
+   237
+  ],
+  "pivot": [
+   0.4521,
+   0.803
+  ],
+  "width": 2.8406,
+  "radius": 1.3734,
+  "kind": "color",
+  "loop": false,
+  "hold": true
+ },
+ "magic_burst": {
+  "cols": 6,
+  "rows": 5,
+  "frames": 30,
+  "cell": [
+   192,
+   164
+  ],
+  "pivot": [
+   0.537,
+   0.7785
+  ],
+  "width": 3.5437,
+  "radius": 0.782,
+  "kind": "tint",
+  "loop": false,
+  "hold": false
+ },
+ "rock_burst": {
+  "cols": 5,
+  "rows": 4,
+  "frames": 18,
+  "cell": [
+   232,
+   256
+  ],
+  "pivot": [
+   0.4839,
+   0.829
+  ],
+  "width": 1.9214,
+  "radius": 0.9164,
+  "kind": "color",
+  "loop": false,
+  "hold": true
+ },
+ "smoke_puff": {
+  "cols": 6,
+  "rows": 6,
+  "frames": 36,
+  "cell": [
+   192,
+   146
+  ],
+  "pivot": [
+   0.4949,
+   0.7988
+  ],
+  "width": 2.3719,
+  "radius": 0.8745,
+  "kind": "tint",
+  "loop": false,
+  "hold": false
+ }
+}

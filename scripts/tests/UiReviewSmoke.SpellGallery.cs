@@ -16,7 +16,7 @@ using Godot;
 public partial class UiReviewSmoke
 {
     // Battle seconds after the cast; the capture runs at quarter speed so each frame lands on its moment.
-    private static readonly float[] GalleryTimes = { .04f, .1f, .18f, .3f, .5f, .8f, 1.2f, 1.5f, 2.1f };
+    private static readonly float[] GalleryTimes = { .04f, .12f, .22f, .35f, .55f, .8f, 1.15f, 1.55f, 2.2f };
     private const float GallerySlowMotion = .25f;
     private static readonly HashSet<string> GalleryAllySpells = new()
     {
@@ -116,7 +116,9 @@ public partial class UiReviewSmoke
             await Wait(.35);
 
             var screen = battle.GetGlobalTransformWithCanvas() * (effect is "war_cry" or "tactic_repair_cache" ? focus : target);
-            var crop = new Rect2I((int)Mathf.Clamp(screen.X - 300, 0, 1280 - 600), (int)Mathf.Clamp(screen.Y - 250, 0, 720 - 340), 600, 340);
+            // Storms gather their cloud high above the target, so their frames reach further up.
+            var above = effect is "lightning_strike" or "chain_lightning" ? 320 : 250;
+            var crop = new Rect2I((int)Mathf.Clamp(screen.X - 300, 0, 1280 - 600), (int)Mathf.Clamp(screen.Y - above, 0, 720 - 340), 600, 340);
             using var strip = Image.CreateEmpty(crop.Size.X * GalleryTimes.Length, crop.Size.Y, false, Image.Format.Rgba8);
             Engine.TimeScale = GallerySlowMotion;
             Call("ApplySpellEffect", spell, target);

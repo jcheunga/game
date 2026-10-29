@@ -25,6 +25,7 @@ to about 1.8–3; `pack.py` reports the density each unit reaches.
 | Anatomy | Straight limbs | Shaped arm and leg stations (deltoid, biceps, forearm, calf), horse legs with hock, fetlock and hooves, a hair tail; zombies with ribs and torn wounds laid on the skin; boots on soles that follow the foot |
 | Animation | Generic swings | Stances per weapon family plus a six-frame idle, an eight-frame walk (march / heavy / shamble / prowl / float), ten-frame attacks with contact on frame 4, hit, a death performance of its own for every unit (`roster/deaths.py`, solved by `rk/death.py`), deploy, and for ranged units a seven-frame close-quarters `melee` clip (contact on frame 3: kick, stock jab, staff strike, backhand, hammer smash or an engine's ram). Cleaving bosses that also shoot reuse their attack instead |
 | Projectiles | Coloured dots | Side-on lit sprites for every physical shot (arrow, crossbow bolt, ballista and bone bolts, harpoon, flask, plague pot, firepot, cog, ghost skull, blight glob) from `build_projectiles.py`; the game flies them on arcs with trails, launch flashes and impacts (`scripts/combat/ProjectileStyles.cs`) |
+| Spell effects | Painted stills that grew and faded | Rendered flipbooks from `build_spell_flipbooks.py`: Mantaflow fire, smoke, dust and vapour sims plus ice and rock bursting up through the road, seen from the battle camera's 25° and packed premultiplied (smoke covers, fire adds light) into `assets/fx/spells/fb_*.png` + `flipbooks.json`; played and tinted by `SpellVfx.Play` in the spell recipes (`BattleController.SpellVfx.cs`) |
 | Camera | 15° from side | The battle camera's own angle (22° above the ground plane), with each character turned toward it (45° by default, less for mounts and engines) so faces, heraldry and shields read, and deaths fall onto the same ground plane as the battlefield |
 
 ## Roster-sheet style (October 2026)
@@ -364,6 +365,10 @@ blender --background --factory-startup --python-exit-code 1 --python art/remaste
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_particles.py -- --ids all --samples 128
 # projectile sprites: written straight to assets/projectiles/ with projectiles.json (size, tip, centre, length, spin)
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_projectiles.py -- --ids all --samples 64
+# spell flipbooks: written straight to assets/fx/spells/fb_*.png + flipbooks.json; review the <id>_preview.png contact
+# sheets in artifacts/remaster/flipbooks (--quick while tuning; frames are cached, so repacking needs no --rerender).
+# Their .import files keep process/fix_alpha_border=false, or the light in fully clear texels is lost.
+blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_spell_flipbooks.py -- --ids all --rerender
 # stage runtime files (does not touch assets/), then review
 python3 art/remaster/pack.py stage
 python3 art/remaster/compare.py && python3 art/remaster/review_page.py

@@ -670,9 +670,10 @@ public partial class BattleContentField : Node2D
     public long FollowLife;
     public bool SingleTarget;
     private const float MeteorDelay = 1.2f;
-    private float _age;
+    private float _age, _puffTimer;
     private string _built;
     private readonly System.Collections.Generic.List<CpuParticles2D> _motes = new();
+    private readonly System.Collections.Generic.List<VfxSprite> _flames = new();
 
     private (string Sigil, Color Tint, bool Glow, float Spin) Look => Kind switch
     {
@@ -694,7 +695,23 @@ public partial class BattleContentField : Node2D
     {
         _age += (float)delta;
         if (_built != Kind) Rebuild();
+        // Burning ground keeps its flames alight for as long as it lasts; smoke and rot keep rolling out in puffs.
+        foreach (var flame in _flames) if (IsInstanceValid(flame)) flame.KeepFor(Remaining);
+        if (Kind is "smoke" or "miasma" or "rot" && (_puffTimer -= (float)delta) <= 0 && Remaining > .8f)
+        {
+            var smoke = Kind == "smoke";
+            _puffTimer = smoke ? .4f : .6f;
+            var angle = GD.Randf() * Mathf.Tau; var distance = Mathf.Sqrt(GD.Randf()) * Radius * .7f;
+            var at = Position + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle) * BattleGroundPlane.DepthScale) * distance;
+            SpellVfx.Play(GetParent(), at, "smoke_puff", Radius * (smoke ? .5f : .38f), smoke ? 2.4f : 2f,
+                smoke ? new Color(.72f, .72f, .7f, .85f) : new Color(.5f, .6f, .28f, .55f), SpellVfx.AirLayer)?.Envelope(.15f, .45f);
+        }
         QueueRedraw();
+    }
+
+    public override void _ExitTree()
+    {
+        foreach (var flame in _flames) if (IsInstanceValid(flame)) flame.EndIn(.3f);
     }
 
     private void Rebuild()
@@ -702,13 +719,22 @@ public partial class BattleContentField : Node2D
         _built = Kind;
         foreach (var mote in _motes) mote.QueueFree();
         _motes.Clear();
+        _flames.Clear();
         Material = Look.Glow ? SpellVfx.Additive : null;
         var smoke = new[] { new Color(.55f, .54f, .52f, 0), new Color(.6f, .59f, .57f, .55f), new Color(.66f, .65f, .63f, 0) };
         var rot = new[] { new Color(.45f, .52f, .25f, 0), new Color(.5f, .58f, .28f, .5f), new Color(.55f, .6f, .35f, 0) };
         switch (Kind)
         {
             case "burn":
-                Motes("p_flame", 10, .8f, SpellVfx.Fade(new Color(1f, .9f, .6f), new Color(.9f, .3f, .05f)), 10, 20, 15, 35, -40, true);
+                // Patches of flame across the ground, standing among the troops.
+                var patches = Mathf.Clamp(Mathf.RoundToInt(Radius / 16f), 2, 5);
+                for (var i = 0; i < patches; i++)
+                {
+                    var angle = (i + GD.Randf() * .6f) / patches * Mathf.Tau; var distance = Radius * (i == 0 ? .1f : (float)GD.RandRange(.35, .7));
+                    var at = Position + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle) * BattleGroundPlane.DepthScale) * distance;
+                    var flame = SpellVfx.Play(GetParent(), at, "flame_loop", (float)GD.RandRange(13, 18), Remaining, delay: i * .06f, flip: i % 2 == 1);
+                    if (flame != null) { flame.Envelope(.08f, .3f); _flames.Add(flame); }
+                }
                 Motes("p_ember", 8, 1.2f, SpellVfx.Fade(new Color(1f, .85f, .5f), new Color(1f, .5f, .15f)), 3, 6, 20, 60, -30, true);
                 break;
             case "holy": Motes("p_orb", 8, 1.6f, SpellVfx.Fade(new Color(1f, .97f, .84f), new Color(1f, .83f, .44f)), 4, 8, 10, 30, -30, true); break;
@@ -719,8 +745,8 @@ public partial class BattleContentField : Node2D
             case "gravity": Motes("p_pebble", 10, .9f, SpellVfx.Fade(Colors.White), 5, 9, 0, 6, 0, false, 200, Radius * 3.2f); break;
             case "reveal": Motes("p_star", 6, 1.4f, SpellVfx.Fade(new Color(1f, .97f, .84f)), 5, 9, 4, 12, 20, true); break;
             case "null": Motes("p_rune", 5, 1.4f, SpellVfx.Fade(new Color(.86f, .72f, 1f), new Color(.62f, .42f, .88f)), 7, 11, 8, 20, -25, true); break;
-            case "smoke": Motes("p_smoke", 12, 2.4f, smoke, 40, 70, 6, 18, -6, false, 25); break;
-            case "miasma" or "rot": Motes("p_smoke", 7, 1.8f, rot, 26, 44, 6, 16, -10, false, 25); break;
+            case "smoke": Motes("p_smoke", 5, 2.4f, smoke, 40, 70, 6, 18, -6, false, 25); break;
+            case "miasma" or "rot": Motes("p_smoke", 4, 1.8f, rot, 26, 44, 6, 16, -10, false, 25); break;
         }
     }
 

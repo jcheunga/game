@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using Godot;
 
 /// <summary>
-/// Building blocks for spell effects: glows, ground sigils, shockwaves, light beams, lightning, decals,
-/// rising sprites and painted particle bursts. Everything lies on the battlefield's shallow ground plane
-/// (or stands up from it), freezes while the battle is paused and runs at the battle's speed.
+/// Building blocks for spell effects: rendered flipbooks (fire, smoke, dust, ice and rock bursting up), glows,
+/// ground sigils that draw themselves, shockwaves, rising light beams, lightning, decals, things erupting from the
+/// road and painted particle bursts. Everything lies on the battlefield's shallow ground plane (or stands up from it),
+/// freezes while the battle is paused and runs at the battle's speed.
 /// The recipe for each spell lives in BattleController.SpellVfx.cs; the painted textures come from
-/// art/royal/vfx.py (assets/fx/spells).
+/// art/royal/vfx.py and the flipbooks from art/remaster/build_spell_flipbooks.py (both in assets/fx/spells).
 /// </summary>
 public static class SpellVfx
 {
@@ -16,11 +18,53 @@ public static class SpellVfx
     public const int DecalLayer = -3, GroundLayer = -2, TroopLayer = 0, AirLayer = 24, FlashLayer = 26;
     private const string TexturePath = "res://assets/fx/spells/";
     private static readonly Dictionary<string, Texture2D> Textures = new();
-    private static CanvasItemMaterial _additive;
+    private static Dictionary<string, Flipbook> _books;
+    private static CanvasItemMaterial _additive, _premultiplied;
+    private static Shader _sigilShader, _beamShader;
     private static Texture2D _glow, _ring, _beam, _streak, _disc;
 
     public static bool Reduced => GameState.Instance?.ReducedMotion ?? false;
     public static CanvasItemMaterial Additive => _additive ??= new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
+    /// <summary>For the flipbooks: their colour is stored premultiplied, so smoke covers the road and fire adds light to it.</summary>
+    public static CanvasItemMaterial Premultiplied => _premultiplied ??= new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.PremultAlpha };
+
+    /// <summary>A rendered flipbook by name (assets/fx/spells/flipbooks.json), or null when it is missing.</summary>
+    public static Flipbook Book(string name)
+    {
+        if (_books == null)
+        {
+            _books = new();
+            try
+            {
+                using var file = FileAccess.Open(TexturePath + "flipbooks.json", FileAccess.ModeFlags.Read);
+                if (file != null)
+                {
+                    using var doc = JsonDocument.Parse(file.GetAsText());
+                    foreach (var entry in doc.RootElement.EnumerateObject())
+                    {
+                        var e = entry.Value;
+                        var path = TexturePath + "fb_" + entry.Name + ".png";
+                        if (!ResourceLoader.Exists(path)) continue;
+                        float F(JsonElement v) => v.GetSingle();
+                        _books[entry.Name] = new Flipbook
+                        {
+                            Sheet = ResourceLoader.Load<Texture2D>(path), Cols = e.GetProperty("cols").GetInt32(), Frames = e.GetProperty("frames").GetInt32(),
+                            Cell = new Vector2(F(e.GetProperty("cell")[0]), F(e.GetProperty("cell")[1])),
+                            Pivot = new Vector2(F(e.GetProperty("pivot")[0]), F(e.GetProperty("pivot")[1])),
+                            Width = F(e.GetProperty("width")), Radius = F(e.GetProperty("radius")),
+                            Loop = e.TryGetProperty("loop", out var loop) && loop.GetBoolean(),
+                            Hold = e.TryGetProperty("hold", out var hold) && hold.GetBoolean(),
+                        };
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Missing or broken metadata: the recipes fall back to their painted pieces.
+            }
+        }
+        return _books.TryGetValue(name, out var book) ? book : null;
+    }
 
     /// <summary>A painted effect texture, or a soft glow when it is missing.</summary>
     public static Texture2D Tex(string name)
@@ -69,7 +113,16 @@ public static class SpellVfx
     public static void ClearCache()
     {
         Textures.Clear();
+        _books = null;
         _glow = _ring = _beam = _streak = _disc = null;
+    }
+
+    private static ShaderMaterial ShaderOf(ref Shader shader, string name, float seed)
+    {
+        shader ??= ResourceLoader.Load<Shader>($"res://assets/shaders/{name}.gdshader");
+        var material = new ShaderMaterial { Shader = shader };
+        material.SetShaderParameter("seed", seed);
+        return material;
     }
 
     private static T Add<T>(Node parent, T node, Vector2 at, int layer) where T : Node2D
@@ -92,20 +145,48 @@ public static class SpellVfx
         return Add(parent, sprite, at, layer);
     }
 
+    /// <summary>
+    /// Plays a flipbook standing on the road at <paramref name="at"/>, sized so its body spans <paramref name="radius"/>
+    /// battle pixels either side. Tintable books are white and take the tint's colour; coloured ones (fire, ice,
+    /// rock) are best left white. A looping book repeats for the whole life; the others play once over
+    /// <paramref name="play"/> seconds (the life when 0), then hold their last frame or end.
+    /// </summary>
+    public static VfxSprite Play(Node parent, Vector2 at, string name, float radius, float life, Color? tint = null, int layer = TroopLayer,
+        float delay = 0f, float play = 0f, bool flip = false, bool reverse = false)
+    {
+        var book = Book(name);
+        if (parent == null || book == null) return null;
+        var width = book.Width * radius / book.Radius;
+        var size = new Vector2(width, width * book.Cell.Y / book.Cell.X);
+        var sprite = new VfxSprite
+        {
+            Texture = book.Sheet, Book = book, Tint = tint ?? Colors.White, SizeFrom = size, SizeTo = size, Pivot = book.Pivot,
+            Life = Reduced ? Mathf.Min(life, .5f) : life, PlayTime = play, Delay = delay, Flip = flip, Reverse = reverse,
+            Material = Premultiplied, FadeIn = .02f, FadeOut = book.Hold || book.Loop ? .25f : .12f,
+        };
+        return Add(parent, sprite, at, layer);
+    }
+
     /// <summary>A bloom of light, round in the air or flattened on the ground.</summary>
     public static VfxSprite Flash(Node parent, Vector2 at, Color color, float radius, float life = .35f, bool ground = false, float delay = 0f) =>
         // Added light washes out quickly over the sunlit road, so flashes stay at half strength.
         Sprite(parent, at, Glow, new Color(color, color.A * .5f), Vector2.One * radius * 1.1f, Vector2.One * radius * 2f, life, ground ? GroundLayer : FlashLayer, true, ground, delay)
             ?.Envelope(.08f, .2f);
 
-    /// <summary>A painted rune circle on the ground that opens, turns slowly and fades.</summary>
-    public static VfxSprite Sigil(Node parent, Vector2 at, string school, Color color, float radius, float life = 1.1f, float spin = .5f, float delay = 0f)
+    /// <summary>
+    /// A painted rune circle drawn onto the ground: the ink runs round it over <paramref name="draw"/> seconds, flares
+    /// as the spell lands (<paramref name="flareAt"/> seconds in, if set), then it turns slowly, shimmers and fades.
+    /// </summary>
+    public static VfxSprite Sigil(Node parent, Vector2 at, string school, Color color, float radius, float life = 1.1f, float spin = .5f, float delay = 0f,
+        float draw = .22f, float flareAt = -1f)
     {
-        var sigil = Sprite(parent, at, Tex("sigil_" + school), color, Vector2.One * radius * 1.3f, Vector2.One * radius * 2.1f, life,
+        var sigil = Sprite(parent, at, Tex("sigil_" + school), color, Vector2.One * radius * 1.75f, Vector2.One * radius * 2.1f, life,
             GroundLayer, true, true, delay);
         if (sigil == null) return null;
         sigil.Spin = Reduced ? 0 : spin; sigil.SizeEase = 4f;
-        return sigil.Envelope(.12f, .45f);
+        sigil.Material = ShaderOf(ref _sigilShader, "spell_sigil", (float)GD.RandRange(0, 100));
+        sigil.DrawTime = Reduced ? 0 : draw; sigil.FlareAt = flareAt;
+        return sigil.Envelope(.04f, .4f);
     }
 
     /// <summary>An expanding ring across the ground.</summary>
@@ -119,6 +200,7 @@ public static class SpellVfx
         var pillar = Sprite(parent, at, Beam, new Color(color, color.A * .55f), new Vector2(width * 1.3f, height * .7f), new Vector2(width * .35f, height), life, AirLayer, true, false, delay);
         if (pillar == null) return null;
         pillar.Pivot = new Vector2(.5f, 1f);
+        pillar.Material = ShaderOf(ref _beamShader, "spell_beam", (float)GD.RandRange(0, 100));
         return pillar.Envelope(.1f, .55f);
     }
 
@@ -132,15 +214,19 @@ public static class SpellVfx
         return decal.Envelope(.04f, .4f);
     }
 
-    /// <summary>A painted element that bursts up out of the ground (brambles, ice, rock, a wave).</summary>
+    /// <summary>
+    /// A painted element that bursts up out of the ground (brambles, a wave): it pushes up through the road with a
+    /// little overshoot, stands, and at the end sinks back into it.
+    /// </summary>
     public static VfxSprite Rise(Node parent, Vector2 at, string name, float width, float life = 1.2f, float delay = 0f, bool flip = false,
-        Color? color = null)
+        Color? color = null, float emerge = .16f)
     {
-        var rise = Sprite(parent, at, Tex("rise_" + name), color ?? Colors.White, new Vector2(width * .7f, 0), new Vector2(width, width), life,
+        var rise = Sprite(parent, at, Tex("rise_" + name), color ?? Colors.White, new Vector2(width * .9f, width), new Vector2(width, width), life,
             TroopLayer, false, false, delay);
         if (rise == null) return null;
         rise.Pivot = new Vector2(.5f, .96f); rise.SizeEase = 5f; rise.Flip = flip;
-        return rise.Envelope(.02f, .3f);
+        rise.Emerge = Reduced ? 0 : emerge; rise.Sink = Mathf.Min(.3f, life * .25f);
+        return rise.Envelope(.02f, .2f);
     }
 
     /// <summary>A jagged bolt of lightning between two points, re-forking as it flickers.</summary>
@@ -240,18 +326,51 @@ public static class SpellVfx
     public static Color[] Fade(Color color) => Fade(color, color);
 }
 
-/// <summary>A textured sprite with a life: size, alpha, spin and drift over time. Built by <see cref="SpellVfx"/>.</summary>
+/// <summary>A rendered flipbook sheet (art/remaster/build_spell_flipbooks.py): where the road origin sits in a frame,
+/// how many metres a frame spans and the body radius in metres it was built around.</summary>
+public sealed class Flipbook
+{
+    public Texture2D Sheet;
+    public int Cols, Frames;
+    public Vector2 Cell, Pivot;
+    public float Width, Radius;
+    public bool Loop, Hold;
+    public const float LoopFps = 24f;
+
+    public Rect2 Frame(int index) => new(index % Cols * Cell.X, index / Cols * Cell.Y, Cell.X, Cell.Y);
+}
+
+/// <summary>
+/// A textured sprite with a life: size, alpha, spin and drift over time, or the frames of a flipbook. It can also
+/// push up out of the road and sink back (<see cref="Emerge"/>), or draw itself on as a sigil. Built by <see cref="SpellVfx"/>.
+/// </summary>
 public partial class VfxSprite : Node2D
 {
     public Texture2D Texture;
+    public Flipbook Book;
     public Color Tint = Colors.White;
     public Vector2 SizeFrom, SizeTo, Pivot = new(.5f, .5f), Velocity, Gravity;
     public float Life = .5f, Delay, Spin, Angle, SizeEase = 2f, FadeIn = .1f, FadeOut = .5f, Flicker;
-    public bool Ground, Flip;
+    /// <summary>Flipbooks: seconds to play the frames over (0 = the whole life).</summary>
+    public float PlayTime;
+    /// <summary>Seconds to push up out of the road, and to sink back into it at the end (0 = neither).</summary>
+    public float Emerge, Sink;
+    /// <summary>Where the road hides what is below it, as a fraction down the texture (-1 = at the pivot). A flipbook's
+    /// pivot is the road origin, with nearer things below it, so its books clip at their bottom edge instead.</summary>
+    public float Clip = -1f;
+    /// <summary>Sigils: seconds for the ink to run round the circle, and when it flares (-1 = never).</summary>
+    public float DrawTime, FlareAt = -1f;
+    public bool Ground, Flip, Reverse;
     private float _age;
 
     /// <summary>Sets the fade-in and fade-out as fractions of the life.</summary>
     public VfxSprite Envelope(float fadeIn, float fadeOut) { FadeIn = fadeIn; FadeOut = fadeOut; return this; }
+
+    /// <summary>Stretches the life so it lasts at least <paramref name="seconds"/> more (a burning field that was refreshed).</summary>
+    public void KeepFor(float seconds) => Life = Mathf.Max(Life, Mathf.Max(0, _age - Delay) + seconds);
+
+    /// <summary>Cuts the life short so it fades out over the next <paramref name="seconds"/>.</summary>
+    public void EndIn(float seconds) => Life = Mathf.Min(Life, Mathf.Max(0, _age - Delay) + seconds);
 
     public override void _Process(double delta)
     {
@@ -263,7 +382,31 @@ public partial class VfxSprite : Node2D
         Position += Velocity * dt;
         Velocity += Gravity * dt;
         Angle += Spin * dt;
+        if (Material is ShaderMaterial shader && (DrawTime > 0 || FlareAt >= 0))
+        {
+            var age = _age - Delay;
+            shader.SetShaderParameter("draw", DrawTime <= 0 ? 1f : Mathf.Clamp(age / DrawTime, 0, 1));
+            shader.SetShaderParameter("flare", FlareAt < 0 ? 0f : 1.6f * Mathf.Exp(-Mathf.Pow((age - FlareAt) / .07f, 2)) + (age > FlareAt ? .35f * Mathf.Exp(-(age - FlareAt) * 4f) : 0f));
+        }
         QueueRedraw();
+    }
+
+    private int FrameIndex(float age)
+    {
+        if (Book.Loop) return (int)(age * Flipbook.LoopFps + GetInstanceId() % 7) % Book.Frames;
+        var k = Mathf.Clamp(age / (PlayTime > 0 ? PlayTime : Life), 0, .9999f);
+        if (Reverse) k = .9999f - k;
+        return (int)(k * Book.Frames);
+    }
+
+    /// <summary>How much of an emerging sprite stands above the road: shoots up past full height, settles, sinks at the end.</summary>
+    private float Standing(float age)
+    {
+        var up = Emerge <= 0 ? 1f : Mathf.Clamp(age / Emerge, 0, 1);
+        // An overshooting ease: past full height and back.
+        var rise = 1f + 2.4f * Mathf.Pow(up - 1f, 3) + 1.4f * Mathf.Pow(up - 1f, 2);
+        var down = Sink <= 0 ? 1f : Mathf.Clamp((Life - age) / Sink, 0, 1);
+        return Mathf.Clamp(rise, 0, 1.1f) * Mathf.SmoothStep(0, 1, down);
     }
 
     public override void _Draw()
@@ -279,8 +422,24 @@ public partial class VfxSprite : Node2D
         if (Ground) basis = Transform2D.Identity.Scaled(new Vector2(1, BattleGroundPlane.DepthScale)) * basis;
         DrawSetTransformMatrix(basis);
         var rect = new Rect2(-size * Pivot, size);
+        var source = new Rect2(Vector2.Zero, Texture.GetSize());
+        if (Book != null) source = Book.Frame(FrameIndex(_age - Delay));
+        if (Emerge > 0 || Sink > 0)
+        {
+            // Only what has come up through the road shows; the rest is still below it.
+            var standing = Standing(_age - Delay);
+            var clip = Clip < 0 ? Pivot.Y : Clip;
+            var shown = Mathf.Min(1f, standing * clip);
+            if (shown <= .001f) { DrawSetTransform(Vector2.Zero); return; }
+            var top = -size.Y * Pivot.Y + (1 - standing) * clip * size.Y;
+            rect = new Rect2(rect.Position.X, top, size.X, size.Y * shown);
+            source = new Rect2(source.Position, new Vector2(source.Size.X, source.Size.Y * shown));
+        }
         if (Flip) rect = new Rect2(rect.Position.X + rect.Size.X, rect.Position.Y, -rect.Size.X, rect.Size.Y);
-        DrawTextureRect(Texture, rect, false, new Color(Tint, Tint.A * alpha));
+        var a = Tint.A * alpha;
+        // Premultiplied books fade by scaling their colour with their cover.
+        var color = Book != null ? new Color(Tint.R * a, Tint.G * a, Tint.B * a, a) : new Color(Tint, a);
+        DrawTextureRectRegion(Texture, rect, source, color);
         DrawSetTransform(Vector2.Zero);
     }
 }

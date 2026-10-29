@@ -75,9 +75,27 @@
 	@manifest path *.webmanifest
 	header @manifest Content-Type "application/manifest+json"
 
-	# Clean URLs: /privacy serves privacy.html.
-	try_files {path} {path}.html {path}/index.html
-	file_server
+	# A shared challenge link (/challenge/CH-04-PRS-4821) shows its code and how to load it in the game.
+	# challenge.html is a template that fills in the code only when it matches the game's code format.
+	@challenge path_regexp ^/challenge/[^/]+$
+	handle @challenge {
+		rewrite * /challenge.html
+		templates {
+			between [[ ]]
+		}
+		file_server
+	}
+
+	# The template itself is only served through a challenge link.
+	handle /challenge.html {
+		error 404
+	}
+
+	handle {
+		# Clean URLs: /privacy serves privacy.html.
+		try_files {path} {path}.html {path}/index.html
+		file_server
+	}
 
 	handle_errors {
 		@notfound expression {err.status_code} == 404

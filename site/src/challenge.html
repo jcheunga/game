@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!--#include head.html -->
+<title>Challenge · Crownroad</title>
+<meta name="description" content="A friend shared a Crownroad challenge. Load its code in the game to race the same board.">
+<meta name="robots" content="noindex">
+</head>
+<body>
+<!--#include nav.html -->
+
+<!-- Caddy serves /challenge/<code> through this page as a template (server/Caddyfile, delimiters [[ ]]), and fills in
+     the code only when it matches the game's code format, so nothing else from the address reaches the page. -->
+<main id="main" class="doc">
+  <div class="wrap">
+    <header>
+      <span class="eyebrow">Challenge</span>
+      [[- $code := .OriginalReq.URL.Path | trimPrefix "/challenge/" | upper ]]
+      [[- if regexMatch "^CH-[0-9]{1,3}-[A-Z]{3}-[0-9]{1,6}$" $code ]]
+      <h1>Race this board</h1>
+      <p class="summary">A friend shared a seeded challenge. Everyone who loads its code fights the same stage, foes and waves, so your scores compare directly.</p>
+      <div class="contact-card">
+        <span class="eyebrow">Challenge code</span>
+        <span class="address">[[ $code ]]</span>
+        <p>In Crownroad, open More → Community → Challenges, type this code into the code box and tap Load.</p>
+      </div>
+      [[- else ]]
+      <h1>This challenge link is incomplete</h1>
+      <p class="summary">A challenge code looks like CH-04-PRS-4821. Ask your friend to copy the code from the game and send it again.</p>
+      [[- end ]]
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/">About Crownroad</a>
+        <a class="btn btn-ghost" href="/support">Get support</a>
+      </div>
+      <p>Get the game: {{#link app_store}}App Store{{/link}} · {{#link google_play}}Google Play{{/link}}</p>
+    </header>
+  </div>
+</main>
+
+<!--#include footer.html -->
+</body>
+</html>

@@ -118,6 +118,22 @@ declarations remain release gates. Draft store declarations, built from the
 same audit as the policy, are in
 [STORE_PRIVACY_ANSWERS.md](STORE_PRIVACY_ANSWERS.md); update both together.
 
+## Challenge links
+
+The game's **Copy share link** gives `https://<domain>/challenge/CH-04-PRS-4821`.
+Caddy serves those through `site/src/challenge.html` as a template
+(`server/Caddyfile`, delimiters `[[ ]]`, so they don't clash with the site
+builder's `{{ }}`): the page shows the code and how to load it in the game,
+or says the link is incomplete when the address doesn't match the code
+format, so nothing else from the address reaches the page. The site allows
+no scripts, which is why the server fills it in. The preview server doesn't
+run templates, so locally the page shows the raw `[[ ]]` markers.
+
+Opening the game straight from a link would also need a native plugin on
+each platform to pass the link into the game, plus the
+`apple-app-site-association` and `assetlinks.json` files; none of that is
+built yet.
+
 ## Handling deletion requests
 
 Players delete their account in the game: Settings → Account → Delete

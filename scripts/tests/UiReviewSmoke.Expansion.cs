@@ -54,7 +54,7 @@ public partial class UiReviewSmoke
             Check(Walk(battle).OfType<BattleContentWarning>().Any() && caster.ContentStatusLabels.Count>=3,"Live battle renders cast warnings and multiple status badges");
             Call("TogglePause");await Wait(.2);
             var guide=Walk(battle).OfType<Button>().Single(b=>b.Text=="Battle guide");await TapModal(guide);await Wait(.2);
-            Check(Walk(battle).OfType<Label>().Any(l=>l.Text.Contains("CRIT: a critical hit")),"Battle guide explains status labels and critical feedback");
+            await PressTab("Signs");Check(Walk(battle).OfType<Label>().Any(l=>l.Text=="ARM−") && Walk(battle).OfType<CombatNumberSample>().Count()==4,"Battle guide explains status labels and the colours of the numbers");
             await Capture("06-battle-guide");
             Walk(battle).OfType<Button>().Last(b=>b.AccessibilityName=="Close details").EmitSignal(BaseButton.SignalName.Pressed);await Wait(.1);
             Walk(battle).OfType<Button>().Single(b=>b.Text=="Quit battle").EmitSignal(BaseButton.SignalName.Pressed);await Wait(.5);

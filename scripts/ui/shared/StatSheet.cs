@@ -6,6 +6,7 @@ using Godot;
 /// A compact stat ledger: one framed panel of rows, each cell an icon, the stat's name and its value on the right.
 /// Cells sit in up to the asked number of columns; columns drop until every name and value fits its cell, so text
 /// never shrinks below the phone floor or runs past the frame. Each cell is named "Health: 53" for hints and tests.
+/// Without names a sheet is a strip of icons and values, each pair centred in its cell, for cards with little room.
 /// </summary>
 public partial class StatSheet : Container
 {
@@ -18,15 +19,17 @@ public partial class StatSheet : Container
 
     private readonly List<(Control Cell, TextureRect Icon, RoyalLabel Name, RoyalLabel Value)> _cells = new();
     private readonly int _columns;
+    private readonly bool _names;
     private readonly StyleBox _frame = RoyalKit.Slice("tile", 9);
 
     /// <summary>Columns in use at the current width.</summary>
     public int Columns { get; private set; }
 
-    public StatSheet(IEnumerable<ArmoryDetailUi.Stat> stats, int columns = 2)
+    public StatSheet(IEnumerable<ArmoryDetailUi.Stat> stats, int columns = 2, bool names = true)
     {
         Name = "StatSheet";
         _columns = Columns = Mathf.Max(1, columns);
+        _names = names;
         MouseFilter = MouseFilterEnum.Pass;
         foreach (var stat in stats)
         {
@@ -39,6 +42,7 @@ public partial class StatSheet : Container
             var value = RoyalText.Serif(stat.Value, ValueSize, ValueInk, 700);
             value.Align = HorizontalAlignment.Right;
             foreach (var label in new[] { name, value }) { label.ShrinkToFit = false; label.MinimumFontSize = ReadingText.PhoneBody; }
+            name.Visible = names;
             cell.AddChild(icon); cell.AddChild(name); cell.AddChild(value);
             AddChild(cell);
             _cells.Add((cell, icon, name, value));
@@ -70,8 +74,10 @@ public partial class StatSheet : Container
     // At the sheet's own sizes and spacing, whatever a squeeze last set.
     private static float Width(RoyalLabel label, int size) => label.Font.GetStringSize(label.Text, HorizontalAlignment.Left, -1, size).X;
 
-    private float Needed((Control Cell, TextureRect Icon, RoyalLabel Name, RoyalLabel Value) cell) =>
-        Pad + IconSize + IconGap + Width(cell.Name, NameSize) + ValueGap + Width(cell.Value, ValueSize) + Pad;
+    // A strip's pair is centred, so its cells only need the tight insets.
+    private float Needed((Control Cell, TextureRect Icon, RoyalLabel Name, RoyalLabel Value) cell) => _names
+        ? Pad + IconSize + IconGap + Width(cell.Name, NameSize) + ValueGap + Width(cell.Value, ValueSize) + Pad
+        : TightPad + IconSize + TightIconGap + Width(cell.Value, ValueSize) + TightPad;
 
     private int FitColumns(float width)
     {
@@ -85,8 +91,8 @@ public partial class StatSheet : Container
     public override Vector2 _GetMinimumSize()
     {
         // As narrow as one column closed up as far as it goes (see the squeeze below).
-        var widest = _cells.Count == 0 ? 0 : _cells.Max(cell => 2 * TightPad + IconSize + TightIconGap + TightValueGap
-            + Width(cell.Name, NameSize) - MostTracking * Mathf.Max(0, cell.Name.Text.Length - 1) + Width(cell.Value, ReadingText.PhoneBody));
+        var widest = _cells.Count == 0 ? 0 : _cells.Max(cell => 2 * TightPad + IconSize + TightIconGap + Width(cell.Value, ReadingText.PhoneBody)
+            + (_names ? TightValueGap + Width(cell.Name, NameSize) - MostTracking * Mathf.Max(0, cell.Name.Text.Length - 1) : 0));
         return new Vector2(Mathf.Ceil(widest) + Inset * 2, Size.X > 0 ? HeightFor(Size.X) : 0);
     }
 
@@ -109,11 +115,14 @@ public partial class StatSheet : Container
             FitChildInRect(cell, new Rect2(Inset + i % Columns * width, Inset + i / Columns * RowHeight, width, RowHeight));
             value.FontSize = squeeze ? ReadingText.PhoneBody : ValueSize; name.Tracking = 0;
             var over = 2 * pad + IconSize + gap + valueGap + Width(name, NameSize) + Width(value, value.FontSize) - width;
-            if (over > 0) name.Tracking = -Mathf.Min(MostTracking, over / Mathf.Max(1, name.Text.Length - 1));
-            icon.Position = new Vector2(pad, (RowHeight - IconSize) / 2); icon.Size = new Vector2(IconSize, IconSize);
+            if (_names && over > 0) name.Tracking = -Mathf.Min(MostTracking, over / Mathf.Max(1, name.Text.Length - 1));
+            // A strip's icon and value sit together in the middle of the cell; a ledger's icon starts the row.
+            var start = _names ? pad : Mathf.Round((width - IconSize - gap - Width(value, value.FontSize)) / 2);
+            icon.Position = new Vector2(start, (RowHeight - IconSize) / 2); icon.Size = new Vector2(IconSize, IconSize);
             // Name and value share one baseline, the value's cap band centred in the row.
             var baseline = Mathf.Round(RowHeight / 2 + ValueSize * value.CapRatio / 2);
-            var left = pad + IconSize + gap;
+            var left = start + IconSize + gap;
+            value.Align = _names ? HorizontalAlignment.Right : HorizontalAlignment.Left;
             name.Position = new Vector2(left, 0); name.Size = new Vector2(width - left - pad, RowHeight); name.Baseline = baseline;
             value.Position = new Vector2(left, 0); value.Size = new Vector2(width - left - pad, RowHeight); value.Baseline = baseline;
         }

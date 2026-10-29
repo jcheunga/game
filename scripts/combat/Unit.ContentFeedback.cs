@@ -20,6 +20,12 @@ public partial class Unit
             return labels;
         }
     }
+    /// <summary>Statuses the unit's body already shows (UnitStatusFx); they get a chip only with high contrast on.</summary>
+    public static bool StatusOnBody(string label) => label is "STUN" or "SLEEP" or "ROOT" or "SIL" or "BURN" or "SHIELD";
+
+    /// <summary>A status chip's ink: blue for protection, gold for focus and casts, rust for harm.</summary>
+    public static Color StatusTint(string label) => new(label is "SHIELD" or "HIDE" ? "8bc7e2" : label is "MARK" or "CAST" ? "efd082" : "eab18d");
+
     private void DrawContentFeedback()
     {
         if(IsDead)return;
@@ -32,13 +38,12 @@ public partial class Unit
         for(int i=0,drawn=0;i<labels.Count && drawn<3;i++)
         {
             var label=labels[i];
-            if(!all && label is "STUN" or "SLEEP" or "ROOT" or "SIL" or "BURN" or "SHIELD") continue;
+            if(!all && StatusOnBody(label)) continue;
             drawn++;
             if (!StatusWidths.TryGetValue(label, out var width))
                 StatusWidths[label] = width = font.GetStringSize(label,fontSize:11).X+6;
-            var good=label is "SHIELD" or "HIDE";var tint=new Color(good?"8bc7e2":label is "MARK" or "CAST"?"efd082":"eab18d");
             DrawRect(new Rect2(x,y-11,width,14),new Color("17222aed"));
-            DrawString(font,new Vector2(x+3,y),label,fontSize:11,modulate:tint);x+=width+3;
+            DrawString(font,new Vector2(x+3,y),label,fontSize:11,modulate:StatusTint(label));x+=width+3;
         }
         if(ShieldHealth>0)DrawLine(new Vector2(-15,-height+12),new Vector2(-15+30*Mathf.Clamp(ShieldHealth/(MaxHealth*.35f),0,1),-height+12),new Color("8bc7e2"),2);
         if(FocusMarkTime>0)

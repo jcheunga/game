@@ -148,6 +148,7 @@ public static class RealmUi
                 "Relics" => "crown", "All" => "book", "Enemies" or "Bosses" => "skull",
                 "Units" => "people", "Sound" => "music", "Gameplay" or "Combat" or "Adventure" => "sword",
                 "Online" or "Account" or "Rooms" => "people", "Saved" => "flag", "Daily" => "star", "Featured" => "star",
+                "This battle" => "sword", "Signs" => "eye", "Caravan spell" => "bolt",
                 _ => "shield" };
             // Navigation has small monochrome emblems; illustrated resource icons remain in content cards.
             if (!ResourceLoader.Exists($"res://assets/ui/icons/navigation/{symbol}.svg")) symbol = "shield";
@@ -173,18 +174,8 @@ public static class RealmUi
         return stack;
     }
 
-    public static void Details(Control host, string title, string text)
-    {
-        var dialog = new AcceptDialog { Title = title, DialogText = "", MinSize = new Vector2I(640, 360), Exclusive = true };
-        dialog.Theme = host.Theme;
-        host.AddChild(dialog);
-        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(620, 330), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        dialog.AddChild(scroll);
-        scroll.AddChild(Label(text));
-        dialog.Confirmed += () => dialog.QueueFree();
-        dialog.Canceled += () => dialog.QueueFree();
-        dialog.PopupCentered(new Vector2I(680, 430));
-    }
+    /// <summary>A page of reading in the inspector modal (see <see cref="GuidePage.ShowText"/>).</summary>
+    public static void Details(Control host, string title, string text) => GuidePage.ShowText(host, title, text);
 
     public static void Clear(Node node) => TrimChildren(node, 0);
 

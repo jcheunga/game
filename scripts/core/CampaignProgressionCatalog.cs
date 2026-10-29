@@ -46,7 +46,7 @@ public static class CampaignProgressionCatalog
             _ when stage < 61 => "Invest in your core squad first; a useful relic or counter unit can replace another level.",
             _ => "Match your squad to the enemy roles. Keep reserves for dives and avoid marked hazards."
         };
-        return $"Suggested core: level {SuggestedLevel(stage)}. Lower levels remain a challenge option.\n{tactic}";
+        return $"Suggested level {SuggestedLevel(stage)}. {tactic}";
     }
 
     // Raid and tower identity is preserved; ordinary bosses only roll campaign relics.

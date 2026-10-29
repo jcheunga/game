@@ -180,6 +180,12 @@ public partial class BattleFloatText : Node2D
     private static ShaderMaterial MaterialFor(CombatTextKind kind, bool critical)
     {
         if (Materials.TryGetValue((kind, critical), out var cached)) return cached;
+        return Materials[(kind, critical)] = Fill(kind, critical, kind == CombatTextKind.Callout ? CalloutSize : NumberSize);
+    }
+
+    /// <summary>A kind's gradient fill for figures of a size centred on the origin, as _Draw sets them (the combat guide's samples too).</summary>
+    public static ShaderMaterial Fill(CombatTextKind kind, bool critical, float fontSize)
+    {
         _shader ??= ResourceLoader.Load<Shader>("res://assets/shaders/royal_gold_text.gdshader");
         var (top, mid, bottom) = (kind, critical) switch
         {
@@ -190,14 +196,13 @@ public partial class BattleFloatText : Node2D
             (CombatTextKind.Courage, _) => ("f8e3b0", "e6bd78", "cf9440"),
             _ => ("f5f0e6", "e2d9c9", "c8bda9"),
         };
-        var fontSize = kind == CombatTextKind.Callout ? CalloutSize : NumberSize;
         var material = new ShaderMaterial { Shader = _shader };
         material.SetShaderParameter("top_color", new Color(top));
         material.SetShaderParameter("mid_color", new Color(mid));
         material.SetShaderParameter("bottom_color", new Color(bottom));
         material.SetShaderParameter("top_y", -fontSize * .36f);
         material.SetShaderParameter("bottom_y", fontSize * .36f);
-        return Materials[(kind, critical)] = material;
+        return material;
     }
 
     private static float EaseOutCubic(float t) => 1f - Mathf.Pow(1f - t, 3f);

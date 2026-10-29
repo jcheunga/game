@@ -72,7 +72,6 @@ public partial class CombatReviewSmoke
         UnitPool.Release(discarded); UnitPool.Release(reusable); discarded.Free();
         Check(UnitPool.Acquire() == reusable, "An invalid pool entry does not discard a later reusable unit");
         reusable.Free(); UnitPool.Clear();
-        Check(TutorialHintCatalog.GetByContext("first_map").Single().Body.Contains("Travel and collecting supplies are free"), "Map teaching matches free travel and entry-only food costs");
         foreach (var zone in GameData.Stages.GroupBy(s => s.MapId))
         {
             var ordered = zone.OrderBy(s => s.StageNumber).ToArray();

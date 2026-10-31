@@ -40,7 +40,7 @@ For standard foot infantry, aim for similar usefulness at equal courage and inve
 
 ## One shared permanent bonus budget
 
-Add like bonuses across relics, enchantments, promotion, mastery, awakening, guild/account perks, and passive squad stat bonuses. Apply the level curve once, then apply this permanent layer once. These systems do not each receive their own independent multiplier. Promotion can open the second equipment slot, and mastery/awakening can offer cosmetic or tactical rewards; neither can bypass the shared stat limits.
+Add like bonuses across relics, promotion, mastery, awakening, guild/account perks, and passive squad stat bonuses. Apply the level curve once, then apply this permanent layer once. These systems do not each receive their own independent multiplier. Promotion can open the second equipment slot, and mastery/awakening can offer cosmetic or tactical rewards; neither can bypass the shared stat limits.
 
 | Permanent bonus from all sources combined | Implemented limit |
 | --- | --- |
@@ -58,7 +58,7 @@ Add like bonuses across relics, enchantments, promotion, mastery, awakening, gui
 
 Keep permanent builds near a maximum of +25% ordinary expected DPS and +25% effective health against either damage type compared with the same bare unit at the same level. The exhaustive 32-unit, 20-level all-caps preview gives maximum ratios of 1.209 for DPS, 1.251 for physical effective HP, and 1.234 for magical effective HP. Whole-health rounding has a tolerance of one percentage point; these are arithmetic checks, not evidence of encounter balance. Temporary skills and conditional procs require their own practical budget and playtests.
 
-The version 3 reference retunes all 100 relic stat packages and all 10 enchantments to this smaller budget. Item attack recovery and range bonuses are now relative percentages rather than flat seconds or distance, and structure bonuses are structure-only percentages. Rarity mostly buys a bounded specialized effect; it does not guarantee much larger universal stats. Gear for early cards has the same caps and effect access as gear for late cards. The armory now provides a battle-stat comparison before equipping or removing a relic, including supplied/applied bonuses and excess above a cap. Both promoted relic slots use the same preview. The Forge also compares enchantment application, replacement and removal using the same shared bonus calculations. Extending the comparison to level upgrades remains a follow-up.
+The version 3 reference retunes all 100 relic stat packages to this smaller budget. Item attack recovery and range bonuses are now relative percentages rather than flat seconds or distance, and structure bonuses are structure-only percentages. Rarity mostly buys a bounded specialized effect; it does not guarantee much larger universal stats. Gear for early cards has the same caps and effect access as gear for late cards. The armory now provides a battle-stat comparison before equipping or removing a relic, including supplied/applied bonuses and excess above a cap. Both promoted relic slots use the same preview. Extending the comparison to level upgrades remains a follow-up.
 
 ## Skills and weaknesses
 

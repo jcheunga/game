@@ -62,9 +62,11 @@ public sealed class AppliedWalletAdjustment
     /// <summary>Gold added to the save: negative for a refund, never taking the balance below zero.</summary>
     public int GoldApplied { get; set; }
     public int FoodApplied { get; set; }
+    public int ShardsApplied { get; set; }
     /// <summary>Refunded currency the player had already spent, which could not be taken back.</summary>
     public int GoldUnrecovered { get; set; }
     public int FoodUnrecovered { get; set; }
+    public int ShardsUnrecovered { get; set; }
     public long AppliedAtUnixSeconds { get; set; }
 }
 
@@ -199,9 +201,8 @@ public sealed class GameSaveData
     public int[] HardModeStars { get; set; } = [];
     public int HardModeHighestCleared { get; set; }
 
-    // v34: Enchantments
+    // v34: Essence (the RelicEnchantments key it came with is retired and ignored on load)
     public int Essence { get; set; }
-    public Dictionary<string, string> RelicEnchantments { get; set; } = new();
 
     // v34: Weekly Raid
     public string LastRaidWeek { get; set; } = "";

@@ -18,7 +18,7 @@ using Godot;
 public partial class StoreKitPurchaseReview : Node
 {
     private const string ProductId = "gold_pouch";
-    private const int ProductGold = 500;
+    private const int ProductGold = 400;
     private static readonly System.Net.Http.HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
     private FakeStoreKit _store = null!;
     private int _failures;
@@ -72,8 +72,8 @@ public partial class StoreKitPurchaseReview : Node
         typeof(NativeIAPService).GetMethod("TryInitializeApple", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(iap, null);
         Check(iap.IsAvailable && _store.Profile == state.PlayerProfileId, "NativeIAPService passes the player's profile ID to the plugin at launch");
         Check(_store.UnfinishedChecks == 1, "It checks for unfinished transactions at launch");
-        Check(await Until(() => ShopProductCatalog.GetAll().All(p => iap.GetCachedProductInfo(p.Id) != null)) && ShopProductCatalog.GetAll().Count == 10,
-            "The ten products' App Store prices reach the shop");
+        Check(await Until(() => ShopProductCatalog.GetAll().All(p => iap.GetCachedProductInfo(p.Id) != null)) && ShopProductCatalog.GetAll().Count == 14,
+            "The fourteen products' App Store prices reach the shop");
         var treasury = iap.GetCachedProductInfo("gold_treasury");
         Check(treasury?.FormattedPrice == "$19.99" && treasury.PriceMicros == 19_990_000 && treasury.CurrencyCode == "USD"
             && iap.GetLocalizedPrice("gold_treasury") == "$19.99", "Localized price, micros and currency are kept");

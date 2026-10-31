@@ -13,10 +13,10 @@ namespace CrownroadServer;
 /// entries and leaves a wallet_adjustments row. The server never edits the
 /// player's save: the device fetches its adjustments (GET /wallet/adjustments),
 /// applies each one once by ID, and reports what it could take back
-/// (POST /wallet/adjustments/ack). Gold or food already spent is not taken
-/// below zero; the device records the shortfall and the acknowledgement stores
-/// it here. The Adventurer's Kit's unit unlock is kept (see docs/DEPLOYMENT.md,
-/// "Refunds").
+/// (POST /wallet/adjustments/ack). Gold, food or relic shards already spent
+/// are not taken below zero; the device records the shortfall and the
+/// acknowledgement stores it here. The Adventurer's Kit's unit unlock is kept
+/// (see docs/DEPLOYMENT.md, "Refunds").
 /// </summary>
 public static class PurchaseRefunds
 {
@@ -50,7 +50,7 @@ public static class PurchaseRefunds
     /// </summary>
     public sealed record Outcome(string Status, string EventId, string PurchaseId, string AdjustmentId, string ProfileId);
 
-    private sealed record PurchaseRow(string PurchaseId, string ProfileId, string ProductId, string Platform, int Gold, int Food, bool UnitUnlock);
+    private sealed record PurchaseRow(string PurchaseId, string ProfileId, string ProductId, string Platform, int Gold, int Food, int Shards, bool UnitUnlock);
 
     public static Outcome Record(StoreSignal signal, Action action)
     {
@@ -141,8 +141,8 @@ public static class PurchaseRefunds
         var adjustmentId = NewId("ADJ");
         using (var adjustment = Command(conn, tx, """
             INSERT INTO wallet_adjustments (adjustment_id, profile_id, purchase_id, product_id, kind, gold_delta, food_delta,
-                unit_unlock_kept, reverses_adjustment_id, event_id, reason, created_at)
-            VALUES (@id, @profile, @pid, @product, @kind, @gold, @food, @unitKept, @reverses, @event, @reason, @now)
+                shards_delta, unit_unlock_kept, reverses_adjustment_id, event_id, reason, created_at)
+            VALUES (@id, @profile, @pid, @product, @kind, @gold, @food, @shards, @unitKept, @reverses, @event, @reason, @now)
         """))
         {
             adjustment.Parameters.AddWithValue("@id", adjustmentId);
@@ -152,6 +152,7 @@ public static class PurchaseRefunds
             adjustment.Parameters.AddWithValue("@kind", kind);
             adjustment.Parameters.AddWithValue("@gold", sign * purchase.Gold);
             adjustment.Parameters.AddWithValue("@food", sign * purchase.Food);
+            adjustment.Parameters.AddWithValue("@shards", sign * purchase.Shards);
             // The kit's unit stays unlocked: it may be leveled, equipped and in
             // the loadout, and the kit can never be bought again.
             adjustment.Parameters.AddWithValue("@unitKept", purchase.UnitUnlock ? 1 : 0);
@@ -162,7 +163,7 @@ public static class PurchaseRefunds
             adjustment.ExecuteNonQuery();
         }
 
-        foreach (var (currency, amount) in new[] { ("gold", purchase.Gold), ("food", purchase.Food) })
+        foreach (var (currency, amount) in new[] { ("gold", purchase.Gold), ("food", purchase.Food), ("shards", purchase.Shards) })
         {
             if (amount <= 0) continue;
             using var ledger = Command(conn, tx, """
@@ -183,12 +184,14 @@ public static class PurchaseRefunds
         // The server wallet counts paid currency only, so it always holds at
         // least what the purchase credited and never goes below zero here.
         using (var wallet = Command(conn, tx, """
-            UPDATE player_wallets SET gold_balance = gold_balance + @gold, food_balance = food_balance + @food, updated_at = @now
+            UPDATE player_wallets SET gold_balance = gold_balance + @gold, food_balance = food_balance + @food,
+                shards_balance = shards_balance + @shards, updated_at = @now
             WHERE profile_id = @profile
         """))
         {
             wallet.Parameters.AddWithValue("@gold", sign * purchase.Gold);
             wallet.Parameters.AddWithValue("@food", sign * purchase.Food);
+            wallet.Parameters.AddWithValue("@shards", sign * purchase.Shards);
             wallet.Parameters.AddWithValue("@now", now);
             wallet.Parameters.AddWithValue("@profile", purchase.ProfileId);
             wallet.ExecuteNonQuery();
@@ -244,7 +247,7 @@ public static class PurchaseRefunds
         {
             if (string.IsNullOrWhiteSpace(value)) continue;
             using var cmd = Command(conn, tx, $"""
-                SELECT purchase_id, profile_id, product_id, platform, gold_credited, food_credited, granted_unit_unlock
+                SELECT purchase_id, profile_id, product_id, platform, gold_credited, food_credited, shards_credited, granted_unit_unlock
                 FROM purchases WHERE {column} = @value AND (@platform = '' OR platform = @platform)
                 ORDER BY id LIMIT 1
             """);
@@ -255,7 +258,8 @@ public static class PurchaseRefunds
             {
                 return new PurchaseRow(
                     reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
-                    Database.ToInt32(reader.GetValue(4)), Database.ToInt32(reader.GetValue(5)), Database.ToInt32(reader.GetValue(6)) != 0);
+                    Database.ToInt32(reader.GetValue(4)), Database.ToInt32(reader.GetValue(5)), Database.ToInt32(reader.GetValue(6)),
+                    Database.ToInt32(reader.GetValue(7)) != 0);
             }
         }
         return null;
@@ -287,7 +291,7 @@ public static class PurchaseRefunds
         using var conn = Database.Open();
         using var cmd = Command(conn, null, """
             SELECT adjustment_id, purchase_id, product_id, kind, gold_delta, food_delta, unit_unlock_kept,
-                reverses_adjustment_id, reason, created_at, acknowledged_at
+                reverses_adjustment_id, reason, created_at, acknowledged_at, shards_delta
             FROM wallet_adjustments WHERE profile_id = @pid ORDER BY id DESC LIMIT 200
         """);
         cmd.Parameters.AddWithValue("@pid", profileId);
@@ -303,6 +307,7 @@ public static class PurchaseRefunds
                 kind = reader.GetString(3),
                 goldDelta = Database.ToInt32(reader.GetValue(4)),
                 foodDelta = Database.ToInt32(reader.GetValue(5)),
+                shardsDelta = Database.ToInt32(reader.GetValue(11)),
                 unitUnlockKept = Database.ToInt32(reader.GetValue(6)) != 0,
                 reversesAdjustmentId = reader.GetString(7),
                 reason = reader.GetString(8),
@@ -315,8 +320,8 @@ public static class PurchaseRefunds
     }
 
     /// <summary>
-    /// The device reports what it applied: for a refund, the gold and food it
-    /// could take back (negative, never more than the adjustment). The first
+    /// The device reports what it applied: for a refund, the gold, food and
+    /// shards it could take back (negative, never more than the adjustment). The first
     /// acknowledgement is kept; the difference is the unrecovered shortfall.
     /// </summary>
     public static async Task<IResult> Acknowledge(HttpRequest request)
@@ -335,39 +340,43 @@ public static class PurchaseRefunds
             return SessionAuth.Unauthorized();
 
         using var conn = Database.Open();
-        (int GoldDelta, int FoodDelta, long AcknowledgedAt, int GoldApplied, int FoodApplied)? Stored()
+        (int GoldDelta, int FoodDelta, int ShardsDelta, long AcknowledgedAt, int GoldApplied, int FoodApplied, int ShardsApplied)? Stored()
         {
             using var read = Command(conn, null, """
-                SELECT gold_delta, food_delta, acknowledged_at, gold_applied, food_applied
+                SELECT gold_delta, food_delta, shards_delta, acknowledged_at, gold_applied, food_applied, shards_applied
                 FROM wallet_adjustments WHERE adjustment_id = @id AND profile_id = @pid
             """);
             read.Parameters.AddWithValue("@id", adjustmentId);
             read.Parameters.AddWithValue("@pid", profileId);
             using var reader = read.ExecuteReader();
             if (!reader.Read()) return null;
-            return (Database.ToInt32(reader.GetValue(0)), Database.ToInt32(reader.GetValue(1)), Database.ToInt64(reader.GetValue(2)),
-                Database.ToInt32(reader.GetValue(3)), Database.ToInt32(reader.GetValue(4)));
+            return (Database.ToInt32(reader.GetValue(0)), Database.ToInt32(reader.GetValue(1)), Database.ToInt32(reader.GetValue(2)),
+                Database.ToInt64(reader.GetValue(3)), Database.ToInt32(reader.GetValue(4)), Database.ToInt32(reader.GetValue(5)),
+                Database.ToInt32(reader.GetValue(6)));
         }
 
         if (Stored() is not { } row) return Results.NotFound(new { error = "unknown adjustment" });
-        var (goldDelta, foodDelta, acknowledgedAt, goldApplied, foodApplied) = row;
+        var (goldDelta, foodDelta, shardsDelta, acknowledgedAt, goldApplied, foodApplied, shardsApplied) = row;
         var status = "already_acknowledged";
         if (acknowledgedAt == 0)
         {
             // A device can only apply part of an adjustment, in its direction.
             var gold = Math.Clamp(Int(body, "goldApplied"), Math.Min(0, goldDelta), Math.Max(0, goldDelta));
             var food = Math.Clamp(Int(body, "foodApplied"), Math.Min(0, foodDelta), Math.Max(0, foodDelta));
+            var shards = Math.Clamp(Int(body, "shardsApplied"), Math.Min(0, shardsDelta), Math.Max(0, shardsDelta));
             using var update = Command(conn, null, """
-                UPDATE wallet_adjustments SET acknowledged_at = @now, gold_applied = @gold, food_applied = @food
+                UPDATE wallet_adjustments SET acknowledged_at = @now, gold_applied = @gold, food_applied = @food, shards_applied = @shards
                 WHERE adjustment_id = @id AND profile_id = @pid AND acknowledged_at = 0
             """);
             update.Parameters.AddWithValue("@now", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             update.Parameters.AddWithValue("@gold", gold);
             update.Parameters.AddWithValue("@food", food);
+            update.Parameters.AddWithValue("@shards", shards);
             update.Parameters.AddWithValue("@id", adjustmentId);
             update.Parameters.AddWithValue("@pid", profileId);
-            if (update.ExecuteNonQuery() > 0) (status, goldApplied, foodApplied) = ("ok", gold, food);
-            else if (Stored() is { } winner) (goldApplied, foodApplied) = (winner.GoldApplied, winner.FoodApplied); // another device acknowledged first
+            if (update.ExecuteNonQuery() > 0) (status, goldApplied, foodApplied, shardsApplied) = ("ok", gold, food, shards);
+            else if (Stored() is { } winner) // another device acknowledged first
+                (goldApplied, foodApplied, shardsApplied) = (winner.GoldApplied, winner.FoodApplied, winner.ShardsApplied);
         }
 
         return Results.Ok(new
@@ -376,8 +385,10 @@ public static class PurchaseRefunds
             adjustmentId,
             goldApplied,
             foodApplied,
+            shardsApplied,
             goldUnrecovered = Math.Abs(goldDelta - goldApplied),
-            foodUnrecovered = Math.Abs(foodDelta - foodApplied)
+            foodUnrecovered = Math.Abs(foodDelta - foodApplied),
+            shardsUnrecovered = Math.Abs(shardsDelta - shardsApplied)
         });
     }
 
@@ -424,7 +435,8 @@ public static class PurchaseRefunds
         using var cmd = Command(conn, null, """
             SELECT e.event_id, e.source, e.event_type, e.environment, e.transaction_id, e.purchase_id, e.outcome, e.detail, e.received_at,
                 COALESCE(a.adjustment_id, ''), COALESCE(a.profile_id, ''), COALESCE(a.gold_delta, 0), COALESCE(a.food_delta, 0),
-                COALESCE(a.acknowledged_at, 0), COALESCE(a.gold_applied, 0), COALESCE(a.food_applied, 0)
+                COALESCE(a.acknowledged_at, 0), COALESCE(a.gold_applied, 0), COALESCE(a.food_applied, 0),
+                COALESCE(a.shards_delta, 0), COALESCE(a.shards_applied, 0)
             FROM store_events e LEFT JOIN wallet_adjustments a ON a.event_id = e.event_id
             ORDER BY e.received_at DESC, e.event_id DESC LIMIT 100
         """);
@@ -434,6 +446,7 @@ public static class PurchaseRefunds
         {
             var goldDelta = Database.ToInt32(reader.GetValue(11));
             var foodDelta = Database.ToInt32(reader.GetValue(12));
+            var shardsDelta = Database.ToInt32(reader.GetValue(16));
             var acknowledged = Database.ToInt64(reader.GetValue(13)) > 0;
             events.Add(new
             {
@@ -450,9 +463,11 @@ public static class PurchaseRefunds
                 profileId = reader.GetString(10),
                 goldDelta,
                 foodDelta,
+                shardsDelta,
                 acknowledged,
                 goldUnrecovered = acknowledged ? Math.Abs(goldDelta - Database.ToInt32(reader.GetValue(14))) : 0,
-                foodUnrecovered = acknowledged ? Math.Abs(foodDelta - Database.ToInt32(reader.GetValue(15))) : 0
+                foodUnrecovered = acknowledged ? Math.Abs(foodDelta - Database.ToInt32(reader.GetValue(15))) : 0,
+                shardsUnrecovered = acknowledged ? Math.Abs(shardsDelta - Database.ToInt32(reader.GetValue(17))) : 0
             });
         }
         return Results.Ok(new { status = "ok", events });

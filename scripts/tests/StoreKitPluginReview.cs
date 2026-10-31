@@ -22,7 +22,7 @@ using Godot;
 public partial class StoreKitPluginReview : Node
 {
     private const string Pouch = "com.crownroad.gold_pouch";
-    private const int PouchGold = 500;
+    private const int PouchGold = 400;
     private const string HandoffPath = "user://storekit-plugin-review.txt";
     private static readonly System.Net.Http.HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
     private readonly List<Godot.Collections.Dictionary> _completed = new();
@@ -113,7 +113,7 @@ public partial class StoreKitPluginReview : Node
         Godot.Collections.Array products = null, invalid = null;
         await Until(() => _productAnswers.Any(answer => answer.Invalid.Count > 0), 10);
         if (_productAnswers.Any(answer => answer.Invalid.Count > 0)) (products, invalid) = _productAnswers.First(answer => answer.Invalid.Count > 0);
-        Check(products?.Count == 10, $"The ten products load from the StoreKit configuration ({products?.Count})");
+        Check(products?.Count == 14, $"The fourteen products load from the StoreKit configuration ({products?.Count})");
         Check(invalid?.Count == 1 && invalid[0].AsString() == "com.crownroad.not_a_product", "An unknown product ID is reported as invalid");
         foreach (var item in products ?? new())
         {

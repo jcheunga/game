@@ -75,17 +75,4 @@ public partial class GameState
         }
         return result;
     }
-
-    public IReadOnlyList<EnchantmentDefinition> GetBattleEnchantments(string unitId)
-    {
-        var result=new List<EnchantmentDefinition>();
-        var first=GetRelicEnchantment(GetEquippedRelicId(unitId));
-        if(first!=null) result.Add(first);
-        if(_promotedUnitIds.Contains(unitId))
-        {
-            var second=GetRelicEnchantment(GetEquippedRelicId2(unitId));
-            if(second!=null) result.Add(second);
-        }
-        return result;
-    }
 }

@@ -53,13 +53,6 @@ public partial class ForgeMenu : RoyalScreen
         BuildCraft(spec);
         Footer(spec, "armory", "icon-armory", "Armory", () => SceneRouter.Instance.GoToShop(3));
         _layer.AddChild(MapNavigation.Fixed(spec.Rect("button.map"), Close));
-        // Enchantments sits between the two painted footer slabs, on the same slate, centred in the gap.
-        var enchant = RoyalButton.Over(new Rect2(491, 651, 300, 52), "Enchantments",
-            () => ForgeEnchantmentInspector.Show(this, id => { _dismantleId = id; RefreshUi(); }, _dismantleId), 6);
-        enchant.SetStates(RoyalKit.Slice("button-slate", 14), 6);
-        enchant.Arrange(RoyalText.Caps("Enchantments", 18, ModalUi.Cream, 700), RealmUi.Icon("crystal"), new Vector2(28, 28));
-        enchant.TooltipText = $"Enchant an owned relic · {state.Essence} Essence available";
-        _layer.AddChild(enchant);
     }
 
     private RoyalButton Action(RoyalSpec spec, string key, string icon, string text, Action run, bool enabled, string hint)
@@ -120,12 +113,6 @@ public partial class ForgeMenu : RoyalScreen
                 TooltipText = $"{relic.DisplayName} · {relic.Rarity} · {RelicForgeCatalog.GetDismantleShards(relic.Rarity)} shards", MouseDefaultCursorShape = CursorShape.PointingHand };
             slot.SetStates(RoyalKit.Slice(selected ? "forge-slot-selected" : Frame(relic), 10), 6);
             slot.AddChild(Art(relic, new Rect2(8, 7, rect.Size.X - 16, rect.Size.Y - 14), inFuse));
-            var enchantment=state.GetRelicEnchantment(relic.Id);
-            if(enchantment!=null)
-            {
-                slot.AddChild(RoyalKit.Image("crystal",new Rect2(rect.Size.X-26,rect.Size.Y-26,20,20),RealmUi.Gold));
-                slot.TooltipText+=$" · {enchantment.Title}";
-            }
             if (selected) slot.AddChild(RoyalKit.Image("forge-check", new Rect2(4, 4, 26, 27)));
             var id = relic.Id;
             slot.Pressed += () => { _dismantleId = id; RefreshUi(); };

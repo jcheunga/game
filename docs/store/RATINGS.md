@@ -30,8 +30,8 @@ Each answer below rests on these facts:
 | Ads | None. No ad SDK and no advertising ID | `docs/STORE_PRIVACY_ANSWERS.md` |
 | Gambling or simulated gambling | None. No wagers, slot machines, card games or wheels | Search of `scripts/` |
 | Paid random items | **None.** The Adventurer's Kit (US$4.99) recruits a fixed troop: the first one the player doesn't own, by lowest unlock stage, then roster order. The card names it before **Buy** ("Recruits Militia" on a fresh save) | `NextKitUnitId` in `scripts/core/GameState.cs`, `StorePackCard.cs` |
-| Other random rewards | Free only: relic fusion (3 relics in, 1 random relic of the next rarity out, no currency), expedition relic drops (no cost to start), bounty templates. None is sold. The relics that go into a fusion can be crafted with shards and gold, so a player can reach a random relic through gold they bought. That indirect path is read as No below **[Legal]** | `TryFuseRelics`, `RelicForgeCatalog`, `ExpeditionCatalog`, `BountyBoardCatalog` |
-| Purchases | Ten packs of gold, food or both. Gold and food are also earned in play and can't be cashed out | `data/shop_products.json` |
+| Other random rewards | Free only: relic fusion (3 relics in, 1 random relic of the next rarity out, no currency), expedition relic drops (no cost to start), bounty templates. None is sold. The relics that go into a fusion can be crafted with shards and gold, and both are sold (relic shard packs since 2026-10-31), so a player can craft fusion inputs entirely from currency they bought and reach a random relic. That indirect path is read as No below **[Legal]** | `TryFuseRelics`, `RelicForgeCatalog`, `ExpeditionCatalog`, `BountyBoardCatalog` |
+| Purchases | Fourteen packs of gold, food, relic shards, or gold and food together. Gold, food and shards are also earned in play and can't be cashed out | `data/shop_products.json` |
 | Contests | Seeded challenge boards and a daily board with score tables (anonymous tags). Arena tiers against generated rivals on the device. Tower and Endless bests | `MultiplayerMenu.cs`, `LeaderboardTag.cs`, `ArenaCatalog.cs` |
 | Web access | None in the app. The system browser opens three pages of our website from Settings → Account (**Privacy policy**, **Terms of use**, **Help and support**), and on Android and desktop only, Apple's and Google's sign-in pages. The iPhone has no browser sign-in | `SettingsMenu.cs`, `SiteLinks.cs`, `AccountDialog.cs` |
 | Location | Not used | `export_presets.cfg` permissions |
@@ -173,7 +173,7 @@ exact wording in the console: IARC words them by topic, not as Apple does.
 | Does the app share the user's current location? | No | |
 | Does the app share personal information with third parties? | No | `docs/STORE_PRIVACY_ANSWERS.md` |
 | Digital purchases | Yes | Ten packs |
-| Purchases with random items (loot boxes) | **No** | IARC counts items bought with real money, or with currency bought with real money, whose contents the player doesn't know beforehand. The Adventurer's Kit names its troop on the card, and no random item costs gold or food (relic fusion is free; see the facts table) |
+| Purchases with random items (loot boxes) | **No** | IARC counts items bought with real money, or with currency bought with real money, whose contents the player doesn't know beforehand. The Adventurer's Kit names its troop on the card, and no random item costs gold, food or relic shards (relic fusion is free; see the facts table) |
 | Unrestricted internet access | No | No in-app browser |
 | Is the app a web browser or search engine? | No | |
 

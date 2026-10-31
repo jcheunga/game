@@ -186,7 +186,6 @@ public partial class ContentRevampSmoke : Node
             Call(state,"ApplySavedData",fixture);
             foreach(var def in legacy)Check(state.IsUnitOwned(def.Id) && state.GetUnitLevel(def.Id)==5 && state.GetActiveDeckUnits().Any(u=>u.Id==def.Id),$"Legacy {def.DisplayName} keeps ownership, level and deck access");
             CheckRelicEquipmentPreview(state);
-            CheckEnchantments(state);
             CheckProgressionExpansion(state);
         }
         catch(Exception e) {GD.PrintErr(e);_failures++;}
@@ -206,7 +205,7 @@ public partial class ContentRevampSmoke : Node
         fixture.ActiveDeckUnitIds=new[]{"player_brawler","player_shooter"};
         fixture.PromotedUnitIds=new[]{"player_brawler"};
         fixture.OwnedEquipmentIds=new[]{"relic_sharpened_edge","relic_guardian_shield","relic_tower_charm"};
-        fixture.UnitEquipmentSlots.Clear();fixture.UnitEquipmentSlot2.Clear();fixture.RelicEnchantments.Clear();
+        fixture.UnitEquipmentSlots.Clear();fixture.UnitEquipmentSlot2.Clear();
         Call(state,"ApplySavedData",fixture);
         var sword=GameData.GetUnit("player_brawler");var guardian=GameData.GetEquipment("relic_guardian_shield");
         Check(state.TryEquipItem(sword.Id,"relic_sharpened_edge"),"An owned relic equips to the first slot");
@@ -215,10 +214,9 @@ public partial class ContentRevampSmoke : Node
         Check(preview.CanApply && preview.After.Armor>preview.Current.Armor && preview.After.AttackDamage<preview.Current.AttackDamage,"Relic replacement previews gains and the removed item's damage loss");
         Check(savedBefore==System.Text.Json.JsonSerializer.Serialize(state.BuildSaveData()),"Equipment previews do not mutate or save progression");
         Check(state.TryEquipItem(sword.Id,guardian.Id) && Math.Abs(state.BuildPlayerUnitStats(sword).Armor-preview.After.Armor)<.001f && Math.Abs(state.BuildPlayerUnitStats(sword).AttackDamage-preview.After.AttackDamage)<.001f,"Confirmed equipment matches the preview's battle stats");
-        Check(state.TryApplyEnchantment(guardian.Id,"ench_thorns",out _),"An equipped relic can retain its owned enchantment");
         var second=state.BuildRelicEquipmentPreview(sword.Id,GameData.GetEquipment("relic_tower_charm"),2);
         var armorLimit=second.Limits.Single(l=>l.Label=="Armor");
-        Check(Math.Abs(armorLimit.Supplied-14.6f)<.01f && armorLimit.Applied==10 && Math.Abs(armorLimit.Excess-4.6f)<.01f,"Slot comparison explains the combined relic and enchantment armor cap");
+        Check(Math.Abs(armorLimit.Supplied-11.6f)<.01f && armorLimit.Applied==10 && Math.Abs(armorLimit.Excess-1.6f)<.01f,"Slot comparison explains the combined relic armor cap");
         Check(state.TryEquipItem2(sword.Id,"relic_tower_charm") && state.BuildPlayerUnitStats(sword).Armor==second.After.Armor,"Second-slot confirmation uses the same shared bonus cap");
         Check(!state.TryEquipItem(sword.Id,"relic_tower_charm") && !state.TryEquipItem("player_shooter","relic_tower_charm"),"A second-slot relic cannot also occupy either ally's first slot");
         Check(!state.TryEquipItem2(sword.Id,guardian.Id),"A first-slot relic cannot also occupy the second slot");
@@ -226,7 +224,7 @@ public partial class ContentRevampSmoke : Node
         var remove=state.BuildRelicEquipmentPreview(sword.Id,null,2);
         Check(remove.CanApply && remove.After.Armor<remove.Current.Armor,"Removal preview includes loss of second-slot bonuses");
         Check(state.TryUnequipRelic(sword.Id,2,out _) && state.GetUnitEquipment(sword.Id)?.Id==guardian.Id,"Removing the second relic preserves the first slot");
-        Check(state.GetOwnedEquipment().Contains("relic_tower_charm") && state.GetRelicEnchantment(guardian.Id)?.Id=="ench_thorns","Removal preserves collection ownership and other relic enchantments");
+        Check(state.GetOwnedEquipment().Contains("relic_tower_charm"),"Removal preserves collection ownership");
         state.ReloadFromDisk();
         Check(state.GetUnitEquipment(sword.Id)?.Id==guardian.Id && state.GetUnitEquipment2(sword.Id)==null,"Relic slot changes survive saving and reload");
         var unowned=state.BuildRelicEquipmentPreview(sword.Id,GameData.GetEquipment("relic_war_brand"));

@@ -361,7 +361,7 @@ requirement until a migration and both signed exports have been verified.
 
 - [ ] Create the Play Console app for `com.crownroad.game`; complete developer
   verification and Play App Signing, secure the upload keystore, and create
-  the ten one-time products from the catalog. The preset targets API 36, but
+  the fourteen one-time products from the catalog. The preset targets API 36, but
   recheck [Google's current target-API rule](https://support.google.com/googleplay/android-developer/answer/11926878)
   at submission time.
 - [ ] Use a tested Godot Mono version with matching Android export templates,

@@ -18,7 +18,7 @@ Units level from 1 to 20. Each level adds 1.5% of base health and 1% of base ord
 
 Physical resistance comes from `100 × armor / (100 + armor)` plus direct resistance points, capped at 75%. Magical resistance is separate, also capped at 75%. Critical damage is displayed as bonus damage: +50% produces a 150% hit. Physical, magical and scripted true damage have explicit paths.
 
-All permanent sources join one capped budget, including relics, enchantments, promotion, mastery, awakening, guild/account bonuses and passive squad synergies. Combined caps are +10% health/damage/speed/reach/structure damage, +10 armor, +0.5 physical resistance points, +8 magic resistance points, +5 critical chance points, +10 critical damage points, 5% attack interval reduction and 10% deployment cooldown reduction. Conditional skills have separate cooldowns, finite charges, target limits or other restrictions.
+All permanent sources join one capped budget, including relics, promotion, mastery, awakening, guild/account bonuses and passive squad synergies. Combined caps are +10% health/damage/speed/reach/structure damage, +10 armor, +0.5 physical resistance points, +8 magic resistance points, +5 critical chance points, +10 critical damage points, 5% attack interval reduction and 10% deployment cooldown reduction. Conditional skills have separate cooldowns, finite charges, target limits or other restrictions.
 
 Spells retain levels 1–3. Flat damage, healing and durability gain 5% per upgrade. Ratios, crowd-control duration, displacement distance, charges and resource income keep their authored values.
 
@@ -57,15 +57,15 @@ Run `python3 scripts/tools/revamp_content.py` to rebuild playable units, equipme
 
 The armory now shows armor, resistance, critical, reach, recovery and structure bonuses alongside health and damage. The relic detail card lists every bonus, even for an unowned relic, so players can plan a build before acquiring it.
 
-Equipping happens on the relics page itself (no modal): choosing an ally shows a before/after comparison using the same calculations as battle. It includes the item being replaced, its enchantment, both relic slots, promotion, squad bonuses and other permanent sources. Nothing equips until the player uses the equip button. Removing an item also has a comparison before confirmation.
+Equipping happens on the relics page itself (no modal): choosing an ally shows a before/after comparison using the same calculations as battle. It includes the item being replaced, both relic slots, promotion, squad bonuses and other permanent sources. Nothing equips until the player uses the equip button. Removing an item also has a comparison before confirmation.
 
-Promoted allies can choose slot 1 or slot 2. Unpromoted allies see the second slot as locked. A relic can occupy only one slot across the warband; both equip paths enforce that rule. Removing it preserves ownership and its enchantment.
+Promoted allies can choose slot 1 or slot 2. Unpromoted allies see the second slot as locked. A relic can occupy only one slot across the warband; both equip paths enforce that rule. Removing it preserves ownership.
 
-The comparison shows supplied and applied bonuses when the shared limits discard excess. For example, Guardian Shield with Thorns plus Tower Charm supplies 14.6 armor points, but the permanent layer applies 10. A wearer already receiving 8.6 points gains only another 1.4. The displayed physical resistance derives from the applied armor.
+The comparison shows supplied and applied bonuses when the shared limits discard excess. For example, Guardian Shield plus Tower Charm supplies 11.6 armor points, but the permanent layer applies 10. A wearer already receiving 8.6 points gains only another 1.4. The displayed physical resistance derives from the applied armor.
 
 ## Next content priorities
 
-- **Forge enchantments — implemented:** all ten effects, Gold/Essence prices, actual wearer stat comparisons, shared caps, replacement and free removal are now accessible. See [Forge enchantments](ENCHANTMENTS.md).
+- **Forge enchantments — removed (2026-10-31):** the ten relic enchantments added only 1–3% inside the shared caps, so they were retired with their Forge pop-up. Essence now buys awakening tokens only; old saves ignore their enchantment key.
 - **Combat feedback and enemy teaching — implemented:** rectangular cast warnings, status badges, critical callouts, first-sighting counter cards and Pause → Battle guide.
 - **Boss rush — implemented:** all 14 commanders, shallow levels 2–20, bounded reinforcements, between-round regrouping and persistent results. The no-equipment normal-speed squad cleared 13 commanders; the final commander clears with earned relics and level-3 defensive wagon upgrades. The fourteen transitions and results also pass the mechanics review.
 - **Campaign balance — first pass:** stage 80 was retuned through encounter composition, and an early-unit squad cleared it at normal speed. Stage 95 now also clears at normal speed with three stars after its composition adjustment. Accelerated runs are exploratory only.
@@ -73,11 +73,9 @@ The comparison shows supplied and applied bonuses when the shared limits discard
 
 ## Validation and practical limits
 
-The game builds without warnings or errors. Repository verification passed **11,343 data checks and 86 backend tests**, and built the website. The content review passed **724 checks**, covering all registered unit/enemy content actions, the twenty-level stat export, permanent caps, damage types, critical hits, cast interruption, one-time return, paired deployment, utility dispatch, finite tactical pulses, resource eligibility, saved recruitment, retained legacy deck access, equipment comparisons and all ten Forge enchantments. The separate courage review passed **55 checks** for desktop mouse and phone touch collection, expiry, pause, seed reproducibility and drop farming exclusions. The progression reward review passed **31 checks** for claims, save round trips and promotion.
+The game builds without warnings or errors. Repository verification passed **11,343 data checks and 86 backend tests**, and built the website. The content review passed **724 checks**, covering all registered unit/enemy content actions, the twenty-level stat export, permanent caps, damage types, critical hits, cast interruption, one-time return, paired deployment, utility dispatch, finite tactical pulses, resource eligibility, saved recruitment, retained legacy deck access, and equipment comparisons. The separate courage review passed **55 checks** for desktop mouse and phone touch collection, expiry, pause, seed reproducibility and drop farming exclusions. The progression reward review passed **31 checks** for claims, save round trips and promotion.
 
-The equipment review passed **29 UI checks** across desktop and phone layouts: native ally/slot selection, gain/loss previews, cap explanations, deliberate equip/removal, locked slots, unowned previews, persistent action buttons and preservation of map position and travel supplies. The stat/save checks confirm that the preview matches the equipped battle stats, includes enchantments and prevents cross-slot duplicates. These are engine UI checks; physical device playtesting remains part of the wider presentation pass.
-
-The Forge enchantment review passed **37 UI checks** across desktop and phone layouts, covering all ten choices, visible costs, actual second-slot wearer stats, application, replacement, free removal, save reload, affordability, stored relics and empty collections. The equipment review also passed again after sharing its stat comparison with the Forge.
+The equipment review passed **29 UI checks** across desktop and phone layouts: native ally/slot selection, gain/loss previews, cap explanations, deliberate equip/removal, locked slots, unowned previews, persistent action buttons and preservation of map position and travel supplies. The stat/save checks confirm that the preview matches the equipped battle stats and prevents cross-slot duplicates. These are engine UI checks; physical device playtesting remains part of the wider presentation pass.
 
 Nine selected campaign benchmark encounters—stages 1, 3, 4, 10, 14, 30, 54, 94 and 100—won at suggested levels without equipment. A squad using Militia, Spearman, Swordsman, Archer and Field Medic also won stages 94 and 100; it originally lost stage 80. The current normal-speed run clears the retuned encounter with three stars in 186 seconds, without equipment. These are scripted engine benchmarks, not a claim that all compositions or all 100 encounters have been manually balanced.
 
@@ -92,7 +90,6 @@ godot --headless --path . scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=c
 godot --headless --path . scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-local-rewards --progression-rewards
 godot --path . scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-local-content --armory-details
 godot --path . scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-local-equipment --equipment-preview
-godot --path . scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-local-enchantments --enchantments
 ```
 
 The expansion interface review passed **21 checks** across desktop and phone layouts for awakening, collection claims, skin selection, boss-rush launch and the battle guide.

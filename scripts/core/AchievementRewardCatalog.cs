@@ -49,7 +49,6 @@ public static class AchievementRewardCatalog
 		new("first_forge", "gold", 150, "+150 gold"),
 		new("codex_10", "food", 8, "+8 food"),
 		new("codex_complete", "essence", 12, "+12 essence"),
-		new("first_enchantment", "gold", 200, "+200 gold"),
 
 		// Mastery
 		new("max_unit", "gold", 300, "+300 gold"),

@@ -543,7 +543,7 @@ public partial class NativeIAPService : Node
 					{
 						Success = false,
 						ProductId = productId,
-						ErrorMessage = "Native IAP not available on this platform. Use Stripe."
+						ErrorMessage = "Native IAP not available on this platform."
 					});
 					_pendingPurchaseCallback = null;
 				}

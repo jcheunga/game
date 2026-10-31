@@ -270,8 +270,8 @@ Play yet.
   internal testing track. Play only offers in-app products once a build with
   the billing library is uploaded, and purchases only work in a build Play
   knows, installed by a tester.
-- [ ] Create the ten one-time products with the Google product IDs in
-  `data/shop_products.json` (`gold_pouch` through `campaign_resupply`), with
+- [ ] Create the fourteen one-time products with the Google product IDs in
+  `data/shop_products.json` (`gold_pouch` through `shard_reliquary`), with
   prices and titles, and activate them.
 - [ ] In Google Cloud, turn on the **Google Play Android Developer API**,
   create a service account and download a JSON key for it. Save it as
@@ -313,9 +313,9 @@ handling of every outcome passes on desktop
 
 - [ ] In App Store Connect, accept the Paid Apps Agreement and fill in the tax
   and banking details.
-- [ ] Create the ten in-app purchases, as **consumables**, with the product
+- [ ] Create the fourteen in-app purchases, as **consumables**, with the product
   IDs in `data/shop_products.json` (`com.crownroad.gold_pouch` through
-  `com.crownroad.campaign_resupply`), prices, localizations and review
+  `com.crownroad.shard_reliquary`), prices, localizations and review
   screenshots. The Adventurer's Kit's type follows the decision in section 1.
   The first ones go to review with a new app version.
 - [ ] Create an **In-App Purchase** key (Users and Access → Integrations) and

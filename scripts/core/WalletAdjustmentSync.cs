@@ -118,6 +118,7 @@ public static class WalletAdjustmentSync
                     Kind = Text(item, "kind"),
                     GoldDelta = Int(item, "goldDelta"),
                     FoodDelta = Int(item, "foodDelta"),
+                    ShardsDelta = Int(item, "shardsDelta"),
                     ReversesAdjustmentId = Text(item, "reversesAdjustmentId"),
                     Acknowledged = item.TryGetProperty("acknowledged", out var acknowledged) && acknowledged.ValueKind == JsonValueKind.True
                 });
@@ -137,6 +138,7 @@ public static class WalletAdjustmentSync
             writer.WriteString("adjustmentId", record.AdjustmentId);
             writer.WriteNumber("goldApplied", record.GoldApplied);
             writer.WriteNumber("foodApplied", record.FoodApplied);
+            writer.WriteNumber("shardsApplied", record.ShardsApplied);
             writer.WriteEndObject();
         }
 

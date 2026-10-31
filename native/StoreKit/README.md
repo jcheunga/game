@@ -71,7 +71,7 @@ after updating `GODOT_TAG`.
 
 ## Testing purchases locally
 
-`Crownroad.storekit` lists the ten products of `data/shop_products.json`, all
+`Crownroad.storekit` lists the fourteen products of `data/shop_products.json`, all
 consumables, with their US prices. Run `make_storekit_config.py` again after
 changing the catalog. With it, Xcode serves the products itself, so purchases
 work in a simulator without App Store Connect or a sandbox account. Apple's
@@ -93,7 +93,7 @@ catalog or save:
 
 | Phase | Checks |
 |---|---|
-| buy | a blank profile disables purchases; the ten products load with localized prices, micros and currency, and an unknown ID is reported; a purchase returns a transaction whose signed payload carries the `appAccountToken` the server derives from the player's profile ID; it stays unfinished until the server has recorded it, then finishes; the server wallet holds the gold |
+| buy | a blank profile disables purchases; the fourteen products load with localized prices, micros and currency, and an unknown ID is reported; a purchase returns a transaction whose signed payload carries the `appAccountToken` the server derives from the player's profile ID; it stays unfinished until the server has recorded it, then finishes; the server wallet holds the gold |
 | clean (after a relaunch) | nothing is left unfinished |
 | unverified | a purchase whose signature fails verification returns no transaction to grant |
 | ask-to-buy | the purchase reports pending without a transaction; once approved it arrives through `Transaction.updates`, is recorded and finished |

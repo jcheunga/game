@@ -6457,6 +6457,11 @@ public partial class GameState : Node
 			Food += result.FoodCredited;
 		}
 
+		if (result.ShardsCredited > 0)
+		{
+			RelicShards += result.ShardsCredited;
+		}
+
 		if (!string.IsNullOrWhiteSpace(result.ProductId))
 		{
 			_purchasedProductIds.Add(result.ProductId);

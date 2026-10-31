@@ -406,6 +406,10 @@ public static class StorePurchaseVerification
         ["food_provisions"] = new("food_provisions", "com.crownroad.food_provisions"),
         ["food_stockpile"] = new("food_stockpile", "com.crownroad.food_stockpile"),
         ["food_granary"] = new("food_granary", "com.crownroad.food_granary"),
+        ["shard_pouch"] = new("shard_pouch", "com.crownroad.shard_pouch"),
+        ["shard_casket"] = new("shard_casket", "com.crownroad.shard_casket"),
+        ["shard_coffer"] = new("shard_coffer", "com.crownroad.shard_coffer"),
+        ["shard_reliquary"] = new("shard_reliquary", "com.crownroad.shard_reliquary"),
         ["starter_kit"] = new("starter_kit", "com.crownroad.starter_kit"),
         ["campaign_resupply"] = new("campaign_resupply", "com.crownroad.campaign_resupply")
     };

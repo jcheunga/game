@@ -1317,6 +1317,7 @@ public static class Endpoints
         string purchaseId,
         int gold,
         int food,
+        int shards,
         bool unitUnlock,
         long now)
     {
@@ -1324,17 +1325,19 @@ public static class Endpoints
         {
             wallet.Transaction = tx;
             wallet.CommandText = """
-                INSERT INTO player_wallets (profile_id, gold_balance, food_balance, unit_unlock_balance, updated_at)
-                VALUES (@pid, @gold, @food, @units, @now)
+                INSERT INTO player_wallets (profile_id, gold_balance, food_balance, shards_balance, unit_unlock_balance, updated_at)
+                VALUES (@pid, @gold, @food, @shards, @units, @now)
                 ON CONFLICT(profile_id) DO UPDATE SET
                     gold_balance = player_wallets.gold_balance + @gold,
                     food_balance = player_wallets.food_balance + @food,
+                    shards_balance = player_wallets.shards_balance + @shards,
                     unit_unlock_balance = player_wallets.unit_unlock_balance + @units,
                     updated_at = @now
             """;
             wallet.Parameters.AddWithValue("@pid", profileId);
             wallet.Parameters.AddWithValue("@gold", gold);
             wallet.Parameters.AddWithValue("@food", food);
+            wallet.Parameters.AddWithValue("@shards", shards);
             wallet.Parameters.AddWithValue("@units", unitUnlock ? 1 : 0);
             wallet.Parameters.AddWithValue("@now", now);
             wallet.ExecuteNonQuery();
@@ -1342,6 +1345,7 @@ public static class Endpoints
 
         AddWalletLedgerEntry(conn, tx, profileId, purchaseId, "gold", gold, now);
         AddWalletLedgerEntry(conn, tx, profileId, purchaseId, "food", food, now);
+        AddWalletLedgerEntry(conn, tx, profileId, purchaseId, "shards", shards, now);
         AddWalletLedgerEntry(conn, tx, profileId, purchaseId, "unit_unlock", unitUnlock ? 1 : 0, now);
     }
 
@@ -1385,7 +1389,7 @@ public static class Endpoints
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT gold_balance, food_balance, unit_unlock_balance, updated_at
+            SELECT gold_balance, food_balance, unit_unlock_balance, updated_at, shards_balance
             FROM player_wallets WHERE profile_id = @pid
         """;
         cmd.Parameters.AddWithValue("@pid", profileId);
@@ -1397,6 +1401,7 @@ public static class Endpoints
                 status = "ok",
                 goldBalance = 0,
                 foodBalance = 0,
+                shardsBalance = 0,
                 unitUnlockBalance = 0,
                 updatedAtUnixSeconds = 0
             });
@@ -1407,6 +1412,7 @@ public static class Endpoints
             status = "ok",
             goldBalance = reader.GetInt32(0),
             foodBalance = reader.GetInt32(1),
+            shardsBalance = Database.ToInt32(reader.GetValue(4)),
             unitUnlockBalance = reader.GetInt32(2),
             updatedAtUnixSeconds = reader.GetInt64(3)
         });
@@ -1414,18 +1420,24 @@ public static class Endpoints
 
     // ── Purchase Validation ─────────────────────────────────
 
-    private static readonly Dictionary<string, (int Gold, int Food, bool UnitUnlock)> ProductRewards = new()
+    // What each pack credits, bonus included. Every product here also needs its store IDs
+    // (StorePurchaseVerification.ProductStoreIds) and a Stripe price (StripePriceMap, ProductToStripePriceId).
+    internal static readonly Dictionary<string, (int Gold, int Food, int Shards, bool UnitUnlock)> ProductRewards = new()
     {
-        ["gold_pouch"] = (500, 0, false),
-        ["gold_chest"] = (2200, 0, false),
-        ["gold_warchest"] = (6900, 0, false),
-        ["gold_treasury"] = (18000, 0, false),
-        ["food_rations"] = (0, 20, false),
-        ["food_provisions"] = (0, 65, false),
-        ["food_stockpile"] = (0, 170, false),
-        ["food_granary"] = (0, 460, false),
-        ["starter_kit"] = (800, 30, true),
-        ["campaign_resupply"] = (3000, 80, false),
+        ["gold_pouch"] = (500, 0, 0, false),
+        ["gold_chest"] = (2200, 0, 0, false),
+        ["gold_warchest"] = (6900, 0, 0, false),
+        ["gold_treasury"] = (18000, 0, 0, false),
+        ["food_rations"] = (0, 20, 0, false),
+        ["food_provisions"] = (0, 65, 0, false),
+        ["food_stockpile"] = (0, 170, 0, false),
+        ["food_granary"] = (0, 460, 0, false),
+        ["shard_pouch"] = (0, 0, 12, false),
+        ["shard_casket"] = (0, 0, 55, false),
+        ["shard_coffer"] = (0, 0, 150, false),
+        ["shard_reliquary"] = (0, 0, 340, false),
+        ["starter_kit"] = (800, 30, 0, true),
+        ["campaign_resupply"] = (3000, 80, 0, false),
     };
 
     private static bool AllowsDevelopmentPurchaseClaims() =>
@@ -1528,9 +1540,9 @@ public static class Endpoints
         ins.Transaction = tx;
         ins.CommandText = """
             INSERT INTO purchases (purchase_id, profile_id, product_id, platform, receipt_token, transaction_id,
-                gold_credited, food_credited, granted_unit_unlock, status, purchased_at)
+                gold_credited, food_credited, shards_credited, granted_unit_unlock, status, purchased_at)
             VALUES (@purchaseId, @pid, @productId, @platform, @receipt, @tid,
-                @gold, @food, @unitUnlock, 'validated', @now)
+                @gold, @food, @shards, @unitUnlock, 'validated', @now)
             ON CONFLICT (transaction_id) WHERE transaction_id <> '' DO NOTHING
         """;
         ins.Parameters.AddWithValue("@purchaseId", purchaseId);
@@ -1543,6 +1555,7 @@ public static class Endpoints
         ins.Parameters.AddWithValue("@tid", transactionId);
         ins.Parameters.AddWithValue("@gold", reward.Gold);
         ins.Parameters.AddWithValue("@food", reward.Food);
+        ins.Parameters.AddWithValue("@shards", reward.Shards);
         ins.Parameters.AddWithValue("@unitUnlock", reward.UnitUnlock ? 1 : 0);
         ins.Parameters.AddWithValue("@now", now);
         if (ins.ExecuteNonQuery() == 0)
@@ -1557,7 +1570,7 @@ public static class Endpoints
         }
 
         EnsurePlayer(conn, tx, profileId, now);
-        CreditWallet(conn, tx, profileId, purchaseId, reward.Gold, reward.Food, reward.UnitUnlock, now);
+        CreditWallet(conn, tx, profileId, purchaseId, reward.Gold, reward.Food, reward.Shards, reward.UnitUnlock, now);
         tx.Commit();
 
         return Results.Ok(new
@@ -1568,20 +1581,21 @@ public static class Endpoints
             productId,
             goldCredited = reward.Gold,
             foodCredited = reward.Food,
+            shardsCredited = reward.Shards,
             grantedUnitUnlock = reward.UnitUnlock,
             validatedAtUnixSeconds = now
         });
     }
 
     private sealed record RecordedPurchase(
-        string ProfileId, string ProductId, string PurchaseId, int Gold, int Food, bool UnitUnlock, long RecordedAt, string Status);
+        string ProfileId, string ProductId, string PurchaseId, int Gold, int Food, int Shards, bool UnitUnlock, long RecordedAt, string Status);
 
     private static RecordedPurchase? FindRecordedPurchase(DbConnection conn, DbTransaction? tx, string transactionId)
     {
         using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;
         cmd.CommandText = """
-            SELECT profile_id, product_id, purchase_id, gold_credited, food_credited, granted_unit_unlock, purchased_at, status
+            SELECT profile_id, product_id, purchase_id, gold_credited, food_credited, granted_unit_unlock, purchased_at, status, shards_credited
             FROM purchases WHERE transaction_id = @tid AND transaction_id != '' LIMIT 1
         """;
         cmd.Parameters.AddWithValue("@tid", transactionId);
@@ -1593,6 +1607,7 @@ public static class Endpoints
             reader.GetString(2),
             Database.ToInt32(reader.GetValue(3)),
             Database.ToInt32(reader.GetValue(4)),
+            Database.ToInt32(reader.GetValue(8)),
             Database.ToInt32(reader.GetValue(5)) != 0,
             Database.ToInt64(reader.GetValue(6)),
             reader.GetString(7));
@@ -1656,6 +1671,7 @@ public static class Endpoints
             productId = recorded.ProductId,
             goldCredited = recorded.Gold,
             foodCredited = recorded.Food,
+            shardsCredited = recorded.Shards,
             grantedUnitUnlock = recorded.UnitUnlock,
             validatedAtUnixSeconds = recorded.RecordedAt
         });
@@ -1674,7 +1690,7 @@ public static class Endpoints
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT purchase_id, product_id, platform, gold_credited, food_credited, purchased_at, status
+            SELECT purchase_id, product_id, platform, gold_credited, food_credited, purchased_at, status, shards_credited
             FROM purchases WHERE profile_id = @pid ORDER BY purchased_at DESC LIMIT 50
         """;
         cmd.Parameters.AddWithValue("@pid", profileId);
@@ -1690,6 +1706,7 @@ public static class Endpoints
                 platform = reader.GetString(2),
                 goldCredited = reader.GetInt32(3),
                 foodCredited = reader.GetInt32(4),
+                shardsCredited = Database.ToInt32(reader.GetValue(7)),
                 purchasedAtUnixSeconds = reader.GetInt64(5),
                 status = reader.GetString(6)
             });
@@ -1708,6 +1725,7 @@ public static class Endpoints
                 productId = id,
                 goldAmount = reward.Gold,
                 foodAmount = reward.Food,
+                shardsAmount = reward.Shards,
                 grantsUnitUnlock = reward.UnitUnlock
             });
         }
@@ -2007,7 +2025,7 @@ public static class Endpoints
 
     // ── Stripe Checkout ─────────────────────────────────────
 
-    private static readonly Dictionary<string, (string ProductId, int PriceCents, string Label)> StripePriceMap = new()
+    internal static readonly Dictionary<string, (string ProductId, int PriceCents, string Label)> StripePriceMap = new()
     {
         ["price_gold_pouch"] = ("gold_pouch", 99, "Pouch of Gold"),
         ["price_gold_chest"] = ("gold_chest", 399, "Chest of Gold"),
@@ -2017,11 +2035,15 @@ public static class Endpoints
         ["price_food_provisions"] = ("food_provisions", 299, "Caravan Provisions"),
         ["price_food_stockpile"] = ("food_stockpile", 699, "Siege Stockpile"),
         ["price_food_granary"] = ("food_granary", 1499, "Royal Granary"),
+        ["price_shard_pouch"] = ("shard_pouch", 99, "Pouch of Shards"),
+        ["price_shard_casket"] = ("shard_casket", 399, "Casket of Shards"),
+        ["price_shard_coffer"] = ("shard_coffer", 999, "Crystal Coffer"),
+        ["price_shard_reliquary"] = ("shard_reliquary", 1999, "Royal Reliquary"),
         ["price_starter_kit"] = ("starter_kit", 499, "Adventurer's Kit"),
         ["price_campaign_resupply"] = ("campaign_resupply", 799, "Campaign Resupply"),
     };
 
-    private static readonly Dictionary<string, string> ProductToStripePriceId = new()
+    internal static readonly Dictionary<string, string> ProductToStripePriceId = new()
     {
         ["gold_pouch"] = "price_gold_pouch",
         ["gold_chest"] = "price_gold_chest",
@@ -2031,6 +2053,10 @@ public static class Endpoints
         ["food_provisions"] = "price_food_provisions",
         ["food_stockpile"] = "price_food_stockpile",
         ["food_granary"] = "price_food_granary",
+        ["shard_pouch"] = "price_shard_pouch",
+        ["shard_casket"] = "price_shard_casket",
+        ["shard_coffer"] = "price_shard_coffer",
+        ["shard_reliquary"] = "price_shard_reliquary",
         ["starter_kit"] = "price_starter_kit",
         ["campaign_resupply"] = "price_campaign_resupply",
     };
@@ -2215,9 +2241,9 @@ public static class Endpoints
         ins.Transaction = tx;
         ins.CommandText = """
             INSERT INTO purchases (purchase_id, profile_id, product_id, platform, receipt_token, transaction_id,
-                gold_credited, food_credited, granted_unit_unlock, status, purchased_at)
+                gold_credited, food_credited, shards_credited, granted_unit_unlock, status, purchased_at)
             VALUES (@purchaseId, @pid, @productId, 'stripe', @receipt, @tid,
-                @gold, @food, @unitUnlock, 'validated', @now)
+                @gold, @food, @shards, @unitUnlock, 'validated', @now)
             ON CONFLICT (transaction_id) WHERE transaction_id <> '' DO NOTHING
         """;
         ins.Parameters.AddWithValue("@purchaseId", purchaseId);
@@ -2227,6 +2253,7 @@ public static class Endpoints
         ins.Parameters.AddWithValue("@tid", transactionId);
         ins.Parameters.AddWithValue("@gold", reward.Gold);
         ins.Parameters.AddWithValue("@food", reward.Food);
+        ins.Parameters.AddWithValue("@shards", reward.Shards);
         ins.Parameters.AddWithValue("@unitUnlock", reward.UnitUnlock ? 1 : 0);
         ins.Parameters.AddWithValue("@now", now);
         if (ins.ExecuteNonQuery() == 0)
@@ -2237,7 +2264,7 @@ public static class Endpoints
         }
 
         EnsurePlayer(conn, tx, profileId, now);
-        CreditWallet(conn, tx, profileId, purchaseId, reward.Gold, reward.Food, reward.UnitUnlock, now);
+        CreditWallet(conn, tx, profileId, purchaseId, reward.Gold, reward.Food, reward.Shards, reward.UnitUnlock, now);
         tx.Commit();
 
         return Results.Ok(new
@@ -2247,7 +2274,8 @@ public static class Endpoints
             purchaseId,
             productId,
             goldCredited = reward.Gold,
-            foodCredited = reward.Food
+            foodCredited = reward.Food,
+            shardsCredited = reward.Shards
         });
     }
 

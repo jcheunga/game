@@ -248,7 +248,7 @@ live until `legal_name`, `support_email`, `governing_law` and
 
 ## In-app products
 
-All ten products come from `data/shop_products.json`. The grants are the
+All fourteen products come from `data/shop_products.json`. The grants are the
 catalog's amount plus its bonus, which matches what the server credits
 (`ProductRewards` in `server/Endpoints.cs`). Prices are the catalog's
 reference US dollar prices. Prices in other currencies: `[set in each
@@ -272,7 +272,8 @@ Both stores:
 What the currencies do, for the descriptions: gold recruits and levels
 troops, scribes spells, upgrades the war wagon and pays for the forge. Food
 starts battles (2 each) and opens map tiles (1 each), and refills by itself, 2
-every 5 minutes up to 24 (`data/stages.json`, `GameState.Food.cs`).
+every 5 minutes up to 24 (`data/stages.json`, `GameState.Food.cs`). Relic shards and gold craft relics at the forge (4 to 40 shards a relic,
+`RelicForgeCatalog.cs`); players also get shards by dismantling relics.
 
 ### Pouch of Gold
 
@@ -520,6 +521,130 @@ Royal Granary (460 food)
 **Play description** · 151 / 200 characters
 ```text
 The kingdom's granary: 460 food, of which 60 is a bonus. Food starts battles and opens new tiles on the zone maps. It also refills by itself over time.
+```
+
+### Pouch of Shards
+
+- IDs: Apple `com.crownroad.shard_pouch` · Play `shard_pouch`
+- Grants: 12 relic shards
+- Reference price: US$0.99
+- Type: consumable on both stores
+
+<!-- field: iap.shard_pouch.apple-name | limit: 30 -->
+**Apple display name** · 15 / 30 characters
+```text
+Pouch of Shards
+```
+
+<!-- field: iap.shard_pouch.apple-description | limit: 45 -->
+**Apple description** · 35 / 45 characters
+```text
+12 relic shards for crafting relics
+```
+
+<!-- field: iap.shard_pouch.play-name | limit: 55 -->
+**Play name** · 27 / 55 characters
+```text
+Pouch of Shards (12 shards)
+```
+
+<!-- field: iap.shard_pouch.play-description | limit: 200 -->
+**Play description** · 110 / 200 characters
+```text
+A handful of 12 relic shards. Relic shards and gold craft new relics at the forge, enough here for a rare one.
+```
+
+### Casket of Shards
+
+- IDs: Apple `com.crownroad.shard_casket` · Play `shard_casket`
+- Grants: 55 relic shards (50 plus a 5 bonus)
+- Reference price: US$3.99
+- Type: consumable on both stores
+
+<!-- field: iap.shard_casket.apple-name | limit: 30 -->
+**Apple display name** · 16 / 30 characters
+```text
+Casket of Shards
+```
+
+<!-- field: iap.shard_casket.apple-description | limit: 45 -->
+**Apple description** · 34 / 45 characters
+```text
+55 relic shards: 50 plus a 5 bonus
+```
+
+<!-- field: iap.shard_casket.play-name | limit: 55 -->
+**Play name** · 28 / 55 characters
+```text
+Casket of Shards (55 shards)
+```
+
+<!-- field: iap.shard_casket.play-description | limit: 200 -->
+**Play description** · 136 / 200 characters
+```text
+A casket of 55 relic shards, of which 5 are a bonus. Relic shards and gold craft new relics at the forge, enough here for two epic ones.
+```
+
+### Crystal Coffer
+
+- IDs: Apple `com.crownroad.shard_coffer` · Play `shard_coffer`
+- Grants: 150 relic shards (130 plus a 20 bonus)
+- Reference price: US$9.99
+- Type: consumable on both stores
+
+<!-- field: iap.shard_coffer.apple-name | limit: 30 -->
+**Apple display name** · 14 / 30 characters
+```text
+Crystal Coffer
+```
+
+<!-- field: iap.shard_coffer.apple-description | limit: 45 -->
+**Apple description** · 37 / 45 characters
+```text
+150 relic shards: 130 plus a 20 bonus
+```
+
+<!-- field: iap.shard_coffer.play-name | limit: 55 -->
+**Play name** · 27 / 55 characters
+```text
+Crystal Coffer (150 shards)
+```
+
+<!-- field: iap.shard_coffer.play-description | limit: 200 -->
+**Play description** · 138 / 200 characters
+```text
+A coffer of 150 relic shards, of which 20 are a bonus. Relic shards and gold craft new relics at the forge, enough here for six epic ones.
+```
+
+### Royal Reliquary
+
+- IDs: Apple `com.crownroad.shard_reliquary` · Play `shard_reliquary`
+- Grants: 340 relic shards (280 plus a 60 bonus)
+- Reference price: US$19.99
+- Type: consumable on both stores
+
+<!-- field: iap.shard_reliquary.apple-name | limit: 30 -->
+**Apple display name** · 15 / 30 characters
+```text
+Royal Reliquary
+```
+
+<!-- field: iap.shard_reliquary.apple-description | limit: 45 -->
+**Apple description** · 37 / 45 characters
+```text
+340 relic shards: 280 plus a 60 bonus
+```
+
+<!-- field: iap.shard_reliquary.play-name | limit: 55 -->
+**Play name** · 28 / 55 characters
+```text
+Royal Reliquary (340 shards)
+```
+
+<!-- field: iap.shard_reliquary.play-description | limit: 200 -->
+**Play description** · 152 / 200 characters
+```text
+The kingdom's reliquary: 340 relic shards, of which 60 are a bonus. Relic shards and gold craft new relics at the forge, enough for eight hardened ones.
 ```
 
 ### Adventurer's Kit

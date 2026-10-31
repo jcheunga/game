@@ -99,7 +99,7 @@ public partial class StorePackCard : Control
 
     private void BuildAmount()
     {
-        _amountIcon = Picture(HomeMapArt.Icon(Product.CurrencyType == "food" ? "food" : "gold"));
+        _amountIcon = Picture(Product.CurrencyType switch { "food" => HomeMapArt.Icon("food"), "shards" => RoyalKit.Texture("forge-shard"), _ => HomeMapArt.Icon("gold") });
         _amount = RoyalText.Title(Product.TotalCurrencyAmount.ToString("N0"), 19);
         _amount.MinimumFontSize = 12;
         AddChild(_amount);
@@ -238,7 +238,7 @@ public partial class StorePackCard : Control
     private static GradientTexture2D Glow(string category)
     {
         if (Glows.TryGetValue(category, out var glow)) return glow;
-        var tint = category switch { "food" => new Color(.98f, .8f, .45f), "mixed" => new Color(.45f, .78f, .9f), _ => new Color(1f, .78f, .36f) };
+        var tint = category switch { "food" => new Color(.98f, .8f, .45f), "mixed" => new Color(.45f, .78f, .9f), "shards" => new Color(.72f, .55f, 1f), _ => new Color(1f, .78f, .36f) };
         var gradient = new Gradient { Offsets = new[] { 0f, .55f, 1f }, Colors = new[] { new Color(tint, .62f), new Color(tint, .2f), new Color(tint, 0) } };
         return Glows[category] = new GradientTexture2D { Gradient = gradient, Fill = GradientTexture2D.FillEnum.Radial, Width = 256, Height = 256,
             FillFrom = new Vector2(.5f, .55f), FillTo = new Vector2(.5f, .02f) };

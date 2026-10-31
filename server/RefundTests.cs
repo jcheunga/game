@@ -154,6 +154,9 @@ public static partial class ServerTests
     private static async Task<int> WalletGold(HttpClient client, string profileId) =>
         (await Get(client, $"/wallet?profileId={profileId}")).RootElement.GetProperty("goldBalance").GetInt32();
 
+    private static async Task<int> WalletShards(HttpClient client, string profileId) =>
+        (await Get(client, $"/wallet?profileId={profileId}")).RootElement.GetProperty("shardsBalance").GetInt32();
+
     // ── App Store ───────────────────────────────────────────
 
     private static async Task TestAppleRefundNotification(HttpClient client)
@@ -860,7 +863,178 @@ public static partial class ServerTests
         }
     }
 
+    // ── Relic shards ────────────────────────────────────────
+
+    private static async Task TestShardRefund(HttpClient client)
+    {
+        const string profile = "TEST-REFUND-SHARDS";
+        var purchaseId = await BuyForRefund(client, profile, "shard_pouch", "google", "GPA.0000-0000-0000-50001");
+        Assert(await WalletShards(client, profile) == 12, "expected the purchase to credit 12 shards to the server wallet");
+
+        var refund = await AdminRefund(client, new { purchaseId, note = "chargeback" });
+        Assert(refund.Status == HttpStatusCode.OK && refund.Body.GetProperty("status").GetString() == "refunded", $"expected the refund, got {refund.Body}");
+        var adjustmentId = refund.Body.GetProperty("adjustmentId").GetString()!;
+        var adjustment = (await Adjustments(client, profile)).Single();
+        Assert(adjustment.GetProperty("adjustmentId").GetString() == adjustmentId && adjustment.GetProperty("kind").GetString() == "refund" &&
+            adjustment.GetProperty("shardsDelta").GetInt32() == -12 && adjustment.GetProperty("goldDelta").GetInt32() == 0 &&
+            adjustment.GetProperty("foodDelta").GetInt32() == 0 && !adjustment.GetProperty("acknowledged").GetBoolean(),
+            $"expected a -12 shards refund adjustment, got {adjustment}");
+        Assert(PurchaseStatus(purchaseId) == "refunded" && LedgerSum(profile, "shards") == 0 && LedgerSum(profile, "gold") == 0,
+            "expected a reversing shards ledger entry that cancels the credit");
+        Assert(Database.ToInt64(RefundScalar("SELECT COUNT(*) FROM wallet_ledger WHERE purchase_id = @id AND currency_type = 'shards' AND reason = 'refund' AND amount = -12 AND adjustment_id = @adj",
+            ("@id", purchaseId), ("@adj", adjustmentId))) == 1, "expected one refund ledger entry of -12 shards under the adjustment");
+        Assert(await WalletShards(client, profile) == 0, "expected the server wallet to give the shards back");
+
+        // The player spent 7 of them: the device could take back only 5.
+        var ack = (await Post(client, "/wallet/adjustments/ack", new { profileId = profile, adjustmentId, shardsApplied = -5 }, profile)).RootElement;
+        Assert(ack.GetProperty("status").GetString() == "ok" && ack.GetProperty("shardsApplied").GetInt32() == -5 &&
+            ack.GetProperty("shardsUnrecovered").GetInt32() == 7 && ack.GetProperty("goldUnrecovered").GetInt32() == 0 &&
+            ack.GetProperty("foodUnrecovered").GetInt32() == 0, $"expected the 7-shard shortfall to be recorded, got {ack}");
+        Assert(Database.ToInt64(RefundScalar("SELECT shards_applied FROM wallet_adjustments WHERE adjustment_id = @id", ("@id", adjustmentId))) == -5,
+            "expected what the device took back in the audit trail");
+        var later = (await Post(client, "/wallet/adjustments/ack", new { profileId = profile, adjustmentId, shardsApplied = -12 }, profile)).RootElement;
+        Assert(later.GetProperty("status").GetString() == "already_acknowledged" && later.GetProperty("shardsApplied").GetInt32() == -5 &&
+            later.GetProperty("shardsUnrecovered").GetInt32() == 7, $"expected the first acknowledgement to be kept, got {later}");
+
+        var audit = (await GetAdmin(client, "/admin/refunds")).RootElement.GetProperty("events").EnumerateArray()
+            .Single(e => e.GetProperty("adjustmentId").GetString() == adjustmentId);
+        Assert(audit.GetProperty("shardsDelta").GetInt32() == -12 && audit.GetProperty("shardsUnrecovered").GetInt32() == 7 && audit.GetProperty("acknowledged").GetBoolean(),
+            $"expected the admin list to show the shards taken back and the shortfall, got {audit}");
+
+        var lookup = (await GetAdmin(client, $"/admin/support/player?profileId={profile}")).RootElement;
+        var bought = lookup.GetProperty("purchases").EnumerateArray().Single(p => p.GetProperty("purchaseId").GetString() == purchaseId);
+        var adjusted = lookup.GetProperty("adjustments").EnumerateArray().Single(a => a.GetProperty("adjustmentId").GetString() == adjustmentId);
+        Assert(bought.GetProperty("shardsCredited").GetInt64() == 12 && adjusted.GetProperty("shardsDelta").GetInt64() == -12 &&
+            adjusted.GetProperty("shardsApplied").GetInt64() == -5 && lookup.GetProperty("wallet").GetProperty("shards").GetInt64() == 0 &&
+            lookup.GetProperty("ledger").EnumerateArray().Count(e => e.GetProperty("currency").GetString() == "shards") == 2,
+            $"expected the support lookup to show the shards bought, refunded and taken back, got {lookup}");
+
+        // The refund is reversed: the shards come back once, and a device cannot claim more than that.
+        var reinstated = await AdminRefund(client, new { purchaseId, action = "reinstate" });
+        Assert(reinstated.Body.GetProperty("status").GetString() == "reinstated", $"expected the reinstatement, got {reinstated.Body}");
+        var reversal = (await Adjustments(client, profile)).Last();
+        Assert(reversal.GetProperty("kind").GetString() == "refund_reversed" && reversal.GetProperty("shardsDelta").GetInt32() == 12 &&
+            reversal.GetProperty("reversesAdjustmentId").GetString() == adjustmentId, $"expected a +12 shards reversal naming the refund, got {reversal}");
+        Assert(LedgerSum(profile, "shards") == 12 && await WalletShards(client, profile) == 12, "expected the reversal to restore the ledger and wallet");
+        var reversalAck = (await Post(client, "/wallet/adjustments/ack", new { profileId = profile, adjustmentId = reversal.GetProperty("adjustmentId").GetString(), shardsApplied = 40 }, profile)).RootElement;
+        Assert(reversalAck.GetProperty("shardsApplied").GetInt32() == 12 && reversalAck.GetProperty("shardsUnrecovered").GetInt32() == 0,
+            $"expected a reversal acknowledgement to be clamped to what it gives back, got {reversalAck}");
+
+        // A device cannot claim to have taken back more than owed, or to have added shards.
+        var second = await AdminRefund(client, new { purchaseId = await BuyForRefund(client, profile, "shard_casket", "google", "GPA.0000-0000-0000-50002") });
+        var secondId = second.Body.GetProperty("adjustmentId").GetString();
+        var clamped = (await Post(client, "/wallet/adjustments/ack", new { profileId = profile, adjustmentId = secondId, shardsApplied = -9999 }, profile)).RootElement;
+        Assert(clamped.GetProperty("shardsApplied").GetInt32() == -55 && clamped.GetProperty("shardsUnrecovered").GetInt32() == 0,
+            $"expected an out-of-range acknowledgement to be clamped, got {clamped}");
+        var third = await AdminRefund(client, new { purchaseId = await BuyForRefund(client, profile, "shard_coffer", "google", "GPA.0000-0000-0000-50003") });
+        var added = (await Post(client, "/wallet/adjustments/ack", new { profileId = profile, adjustmentId = third.Body.GetProperty("adjustmentId").GetString(), shardsApplied = 40 }, profile)).RootElement;
+        Assert(added.GetProperty("shardsApplied").GetInt32() == 0 && added.GetProperty("shardsUnrecovered").GetInt32() == 150,
+            $"expected a refund acknowledgement that adds shards to apply nothing, got {added}");
+    }
+
+    private static async Task TestShardRefundAppleNotification(HttpClient client)
+    {
+        using var chain = AppleTestChain.Create();
+        await WithAppleNotifications(chain, async () =>
+        {
+            const string profile = "TEST-REFUND-SHARDS-APPLE";
+            const string transactionId = "2000000900050001";
+            var purchaseId = await BuyForRefund(client, profile, "shard_casket", "apple", transactionId);
+
+            // A refund naming another shard pack is not applied to this one.
+            var (mismatchStatus, mismatch) = await PostAppleNotification(client, chain.Sign(AppleNotification("REFUND", chain.Sign(AppleTransaction(transactionId, "com.crownroad.shard_pouch")))));
+            Assert(mismatchStatus == HttpStatusCode.OK && mismatch.GetProperty("status").GetString() == "product_mismatch" && PurchaseStatus(purchaseId) == "validated",
+                $"expected a product mismatch to be recorded without a refund, got {mismatch}");
+
+            var (status, body) = await PostAppleNotification(client, chain.Sign(AppleNotification("REFUND", chain.Sign(AppleTransaction(transactionId, "com.crownroad.shard_casket")))));
+            Assert(status == HttpStatusCode.OK && body.GetProperty("status").GetString() == "refunded", $"expected a signed REFUND of the casket to refund it, got {(int)status} {body}");
+            var adjustment = (await Adjustments(client, profile)).Single();
+            Assert(adjustment.GetProperty("shardsDelta").GetInt32() == -55 && adjustment.GetProperty("goldDelta").GetInt32() == 0,
+                $"expected a -55 shards adjustment, got {adjustment}");
+            Assert(LedgerSum(profile, "shards") == 0 && await WalletShards(client, profile) == 0, "expected the ledger and wallet to reverse the casket");
+
+            // The store hands the refunded transaction back: nothing is granted again.
+            var revalidated = (await Post(client, "/purchase/validate", new { profileId = profile, productId = "shard_casket", platform = "apple", receiptToken = $"receipt-{transactionId}", transactionId }, profile)).RootElement;
+            Assert(revalidated.GetProperty("status").GetString() == "refunded" && !revalidated.TryGetProperty("shardsCredited", out _) && await WalletShards(client, profile) == 0,
+                $"expected a refunded shard pack never to be handed back as a grant, got {revalidated}");
+        });
+    }
+
+    private static async Task TestSupportGrantShards(HttpClient client)
+    {
+        const string profile = "TEST-SUPPORT-GRANT-SHARDS";
+        await EnsureSession(client, profile);
+
+        async Task<(HttpStatusCode Status, JsonElement Body)> Grant(object body)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/admin/support/grant")
+            {
+                Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+            };
+            request.Headers.TryAddWithoutValidation("X-Admin-Api-Key", TestAdminApiKey);
+            using var response = await client.SendAsync(request);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync() is { Length: > 0 } text ? text : "{}");
+            return (response.StatusCode, json.RootElement.Clone());
+        }
+
+        Assert((await Grant(new { profileId = profile, shards = -1, note = "negative" })).Status == HttpStatusCode.BadRequest, "expected a negative shard grant to be refused");
+        Assert((await Grant(new { profileId = profile, shards = 1001, note = "typo" })).Status == HttpStatusCode.BadRequest, "expected a shard grant over the cap to be refused");
+
+        var granted = await Grant(new { profileId = profile, shards = 55, note = "ticket 9: casket never arrived" });
+        Assert(granted.Status == HttpStatusCode.OK && granted.Body.GetProperty("status").GetString() == "granted" && granted.Body.GetProperty("shards").GetInt64() == 55,
+            $"expected the operator to make good a lost shard pack, got {granted.Body}");
+        var adjustment = (await Adjustments(client, profile)).Single(a => a.GetProperty("kind").GetString() == "grant");
+        Assert(adjustment.GetProperty("shardsDelta").GetInt32() == 55 && adjustment.GetProperty("goldDelta").GetInt32() == 0 && !adjustment.GetProperty("acknowledged").GetBoolean(),
+            $"expected the device to be offered the shards, once, to apply, got {adjustment}");
+        Assert(LedgerSum(profile, "shards") == 55 && await WalletShards(client, profile) == 55, "expected the ledger and server wallet to hold the grant");
+        var ack = (await Post(client, "/wallet/adjustments/ack", new { profileId = profile, adjustmentId = adjustment.GetProperty("adjustmentId").GetString(), shardsApplied = 55 }, profile)).RootElement;
+        Assert(ack.GetProperty("status").GetString() == "ok" && ack.GetProperty("shardsApplied").GetInt32() == 55 && ack.GetProperty("shardsUnrecovered").GetInt32() == 0,
+            $"expected the device to report the whole grant applied, got {ack}");
+    }
+
     // ── Schema ──────────────────────────────────────────────
+
+    private static Task TestShardsMigration()
+    {
+        using var conn = Database.Open();
+        void Execute(string sql)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.ExecuteNonQuery();
+        }
+
+        // Tables from before schema 10, when nothing held shards, with a purchase, wallet and refund in them.
+        foreach (var (table, column) in new[] { ("purchases", "shards_credited"), ("player_wallets", "shards_balance"),
+                     ("wallet_adjustments", "shards_delta"), ("wallet_adjustments", "shards_applied") })
+            Execute($"ALTER TABLE {table} DROP COLUMN {column}");
+        Execute("INSERT INTO players (profile_id) VALUES ('LEGACY-SHARDS') ON CONFLICT (profile_id) DO NOTHING");
+        Execute("INSERT INTO purchases (purchase_id, profile_id, product_id, transaction_id, gold_credited) VALUES ('PUR-LEGACY-SHARDS', 'LEGACY-SHARDS', 'gold_pouch', 'txn-legacy-shards', 500)");
+        Execute("INSERT INTO player_wallets (profile_id, gold_balance, updated_at) VALUES ('LEGACY-SHARDS', 500, 1)");
+        Execute("INSERT INTO wallet_adjustments (adjustment_id, profile_id, purchase_id, kind, gold_delta, gold_applied, acknowledged_at) VALUES ('ADJ-LEGACY-SHARDS', 'LEGACY-SHARDS', 'PUR-LEGACY-SHARDS', 'refund', -500, -200, 1)");
+        Execute("DELETE FROM schema_version WHERE version >= 10");
+        Database.Initialize();
+
+        long Scalar(string sql) => Database.ToInt64(RefundScalar(sql), -1);
+        Assert(Scalar("SELECT MAX(version) FROM schema_version") == 10, "expected schema version 10");
+        Assert(Scalar("SELECT shards_credited FROM purchases WHERE purchase_id = 'PUR-LEGACY-SHARDS'") == 0 &&
+            Scalar("SELECT gold_credited FROM purchases WHERE purchase_id = 'PUR-LEGACY-SHARDS'") == 500, "expected an earlier purchase to keep its gold and credit no shards");
+        Assert(Scalar("SELECT shards_balance FROM player_wallets WHERE profile_id = 'LEGACY-SHARDS'") == 0 &&
+            Scalar("SELECT gold_balance FROM player_wallets WHERE profile_id = 'LEGACY-SHARDS'") == 500, "expected an earlier wallet to keep its gold and hold no shards");
+        Assert(Scalar("SELECT shards_delta FROM wallet_adjustments WHERE adjustment_id = 'ADJ-LEGACY-SHARDS'") == 0 &&
+            Scalar("SELECT shards_applied FROM wallet_adjustments WHERE adjustment_id = 'ADJ-LEGACY-SHARDS'") == 0 &&
+            Scalar("SELECT gold_applied FROM wallet_adjustments WHERE adjustment_id = 'ADJ-LEGACY-SHARDS'") == -200, "expected an earlier adjustment to keep its acknowledgement and owe no shards");
+
+        // A step stopped after adding its columns but before recording its version runs again cleanly.
+        Execute("DELETE FROM schema_version WHERE version >= 10");
+        Database.Initialize();
+        Database.Initialize();
+        Assert(Scalar("SELECT COUNT(*) FROM schema_version WHERE version = 10") == 1, "expected schema 10 recorded once");
+        Execute("UPDATE player_wallets SET shards_balance = shards_balance + 12 WHERE profile_id = 'LEGACY-SHARDS'");
+        Assert(Scalar("SELECT shards_balance FROM player_wallets WHERE profile_id = 'LEGACY-SHARDS'") == 12, "expected the new column to hold shards");
+        return Task.CompletedTask;
+    }
+
 
     private static Task TestRefundLedgerMigration()
     {

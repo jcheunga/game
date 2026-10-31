@@ -128,7 +128,7 @@
       "internalID": "6059038370",
       "localizations": [
         {
-          "description": "A starter bundle with gold, food, and a guaranteed unit unlock. Offered once.",
+          "description": "A starter bundle with gold, food, and your next troop, recruited at once. Offered once.",
           "displayName": "Adventurer's Kit",
           "locale": "en_US"
         }
@@ -150,6 +150,66 @@
       ],
       "productID": "com.crownroad.campaign_resupply",
       "referenceName": "Campaign Resupply",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "0.99",
+      "familyShareable": false,
+      "internalID": "6994406591",
+      "localizations": [
+        {
+          "description": "A handful of relic shards, enough for a rare relic at the forge.",
+          "displayName": "Pouch of Shards",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.shard_pouch",
+      "referenceName": "Pouch of Shards",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "3.99",
+      "familyShareable": false,
+      "internalID": "6049642424",
+      "localizations": [
+        {
+          "description": "A casket of relic shards, enough for two epic relics at the forge.",
+          "displayName": "Casket of Shards",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.shard_casket",
+      "referenceName": "Casket of Shards",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "6130831890",
+      "localizations": [
+        {
+          "description": "A heavy coffer of relic shards, enough for six epic relics at the forge.",
+          "displayName": "Crystal Coffer",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.shard_coffer",
+      "referenceName": "Crystal Coffer",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "19.99",
+      "familyShareable": false,
+      "internalID": "6896077687",
+      "localizations": [
+        {
+          "description": "The kingdom's own reliquary, enough shards for eight hardened relics.",
+          "displayName": "Royal Reliquary",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.shard_reliquary",
+      "referenceName": "Royal Reliquary",
       "type": "Consumable"
     }
   ],

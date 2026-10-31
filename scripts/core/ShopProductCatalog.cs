@@ -45,7 +45,7 @@ public sealed class ShopProduct
 				return string.Join("  +  ", parts);
 			}
 
-			var label = CurrencyType == "gold" ? "Gold" : "Food";
+			var label = CurrencyType switch { "gold" => "Gold", "shards" => "Shards", _ => "Food" };
 			return BonusAmount > 0
 				? $"{CurrencyAmount} + {BonusAmount} bonus {label}"
 				: $"{CurrencyAmount} {label}";

@@ -16,6 +16,7 @@ public sealed class WalletAdjustment
     /// <summary>What the purchase granted, signed: negative for a refund.</summary>
     public int GoldDelta { get; set; }
     public int FoodDelta { get; set; }
+    public int ShardsDelta { get; set; }
     public string ReversesAdjustmentId { get; set; } = "";
     /// <summary>The server already has a device's report of what it applied.</summary>
     public bool Acknowledged { get; set; }
@@ -66,10 +67,13 @@ public partial class GameState
                 {
                     var owedGold = Math.Max(0, -adjustment.GoldDelta);
                     var owedFood = Math.Max(0, -adjustment.FoodDelta);
+                    var owedShards = Math.Max(0, -adjustment.ShardsDelta);
                     applied.GoldApplied = -Math.Min(Math.Max(0, Gold), owedGold);
                     applied.FoodApplied = -Math.Min(Math.Max(0, Food), owedFood);
+                    applied.ShardsApplied = -Math.Min(Math.Max(0, RelicShards), owedShards);
                     applied.GoldUnrecovered = owedGold + applied.GoldApplied;
                     applied.FoodUnrecovered = owedFood + applied.FoodApplied;
+                    applied.ShardsUnrecovered = owedShards + applied.ShardsApplied;
                 }
                 break;
             case "refund_reversed":
@@ -77,12 +81,14 @@ public partial class GameState
                 {
                     applied.GoldApplied = Math.Min(-refund.GoldApplied, Math.Max(0, adjustment.GoldDelta));
                     applied.FoodApplied = Math.Min(-refund.FoodApplied, Math.Max(0, adjustment.FoodDelta));
+                    applied.ShardsApplied = Math.Min(-refund.ShardsApplied, Math.Max(0, adjustment.ShardsDelta));
                 }
                 break;
             case "grant":
                 // Support makes good what a purchase failed to deliver; it belongs to no purchase.
                 applied.GoldApplied = Math.Max(0, adjustment.GoldDelta);
                 applied.FoodApplied = Math.Max(0, adjustment.FoodDelta);
+                applied.ShardsApplied = Math.Max(0, adjustment.ShardsDelta);
                 break;
             default:
                 // Left for a newer build, which will apply it under the same ID.
@@ -91,6 +97,7 @@ public partial class GameState
 
         Gold += applied.GoldApplied;
         Food += applied.FoodApplied;
+        RelicShards += applied.ShardsApplied;
         _appliedWalletAdjustments[id] = applied;
         if (DescribeWalletAdjustment(applied, adjustment.ProductId) is { Length: > 0 } notice)
         {
@@ -121,24 +128,28 @@ public partial class GameState
     private static string DescribeWalletAdjustment(AppliedWalletAdjustment applied, string productId)
     {
         var product = ShopProductCatalog.GetById(productId)?.DisplayName ?? "A purchase";
-        static string Amounts(int gold, int food) => string.Join(" and ", new[]
+        static string[] Parts(int gold, int food, int shards) => new[]
         {
             gold > 0 ? $"{gold:N0} gold" : "",
-            food > 0 ? $"{food:N0} food" : ""
-        }.Where(part => part.Length > 0));
+            food > 0 ? $"{food:N0} food" : "",
+            shards > 0 ? $"{shards:N0} relic shards" : ""
+        }.Where(part => part.Length > 0).ToArray();
+        static string Amounts(int gold, int food, int shards) => string.Join(" and ", Parts(gold, food, shards));
 
         if (applied.Kind == "refund")
         {
-            var taken = Amounts(-applied.GoldApplied, -applied.FoodApplied);
-            var spent = Amounts(applied.GoldUnrecovered, applied.FoodUnrecovered);
+            var taken = Amounts(-applied.GoldApplied, -applied.FoodApplied, -applied.ShardsApplied);
+            var spent = Amounts(applied.GoldUnrecovered, applied.FoodUnrecovered, applied.ShardsUnrecovered);
             if (taken.Length == 0 && spent.Length == 0) return "";
+            // "its 12 relic shards were", "its 500 gold was": shards and several amounts are plural.
+            var plural = Parts(-applied.GoldApplied, -applied.FoodApplied, -applied.ShardsApplied).Length > 1 || applied.ShardsApplied != 0;
             var message = taken.Length > 0
-                ? $"{product} was refunded by the store, so its {taken} {(applied.GoldApplied != 0 && applied.FoodApplied != 0 ? "were" : "was")} taken back."
+                ? $"{product} was refunded by the store, so its {taken} {(plural ? "were" : "was")} taken back."
                 : $"{product} was refunded by the store.";
             return spent.Length > 0 ? $"{message} The other {spent} had already been spent." : message;
         }
 
-        var returned = Amounts(applied.GoldApplied, applied.FoodApplied);
+        var returned = Amounts(applied.GoldApplied, applied.FoodApplied, applied.ShardsApplied);
         if (applied.Kind == "grant") return returned.Length > 0 ? $"Support added {returned} to your caravan." : "";
         return returned.Length > 0 ? $"The store reversed the refund of {product}, so {returned} came back." : "";
     }
@@ -173,8 +184,10 @@ public partial class GameState
         Kind = applied.Kind ?? "",
         GoldApplied = applied.GoldApplied,
         FoodApplied = applied.FoodApplied,
+        ShardsApplied = applied.ShardsApplied,
         GoldUnrecovered = applied.GoldUnrecovered,
         FoodUnrecovered = applied.FoodUnrecovered,
+        ShardsUnrecovered = applied.ShardsUnrecovered,
         AppliedAtUnixSeconds = applied.AppliedAtUnixSeconds
     };
 }

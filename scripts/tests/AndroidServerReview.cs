@@ -64,7 +64,7 @@ public partial class AndroidServerReview : Node
             $"The game data loads ({GameData.Stages.Length} stages, {GameData.GetPlayerUnits().Count} player units, {GameData.GetPlayerSpells().Count} spells)");
         var waveFiles = DirAccess.GetFilesAt("res://data/waves").Count(file => file.EndsWith(".json"));
         Check(WaveVersions.All.Count == waveFiles + 1, $"Every wave version loads ({WaveVersions.All.Count})");
-        Check(ShopProductCatalog.GetAll().Count == 10, $"The shop catalog has its ten products ({ShopProductCatalog.GetAll().Count})");
+        Check(ShopProductCatalog.GetAll().Count == 14, $"The shop catalog has its fourteen products ({ShopProductCatalog.GetAll().Count})");
 
         var state = GameState.Instance;
         Check(state.PlayerAuthToken.Length == 0 && state.HighestUnlockedStage == 1, "The first launch starts as a new offline guest");

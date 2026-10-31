@@ -702,6 +702,18 @@ public static class Database
             LiveSettings.Initialize(conn);
             SetSchemaVersion(conn, 9);
         }
+
+        if (version < 10)
+        {
+            // Relic shards, a third paid currency beside gold and food: what a purchase credited, the
+            // server wallet's balance, and a refund or grant adjustment's delta and what the device
+            // applied of it. Safe to repeat.
+            TryAddColumn(conn, "purchases", "shards_credited", "INTEGER NOT NULL DEFAULT 0");
+            TryAddColumn(conn, "player_wallets", "shards_balance", "INTEGER NOT NULL DEFAULT 0");
+            TryAddColumn(conn, "wallet_adjustments", "shards_delta", "INTEGER NOT NULL DEFAULT 0");
+            TryAddColumn(conn, "wallet_adjustments", "shards_applied", "INTEGER NOT NULL DEFAULT 0");
+            SetSchemaVersion(conn, 10);
+        }
     }
 
     /// <summary>

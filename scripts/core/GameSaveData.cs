@@ -62,9 +62,11 @@ public sealed class AppliedWalletAdjustment
     /// <summary>Gold added to the save: negative for a refund, never taking the balance below zero.</summary>
     public int GoldApplied { get; set; }
     public int FoodApplied { get; set; }
+    public int ShardsApplied { get; set; }
     /// <summary>Refunded currency the player had already spent, which could not be taken back.</summary>
     public int GoldUnrecovered { get; set; }
     public int FoodUnrecovered { get; set; }
+    public int ShardsUnrecovered { get; set; }
     public long AppliedAtUnixSeconds { get; set; }
 }
 

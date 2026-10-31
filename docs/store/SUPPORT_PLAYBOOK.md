@@ -123,7 +123,7 @@ The player paid but the gold or food didn't arrive.
    and open the Royal storehouse: tap the gold amount at the top right of the
    home map. The game checks unfinished store purchases at launch and each
    time the storehouse opens (`NativeIAPService.RetryUnfinishedPurchases`).
-   The **Purchase info** tab shows the result. Most delays end here.
+   The **Purchases** tab shows the result. Most delays end here.
 2. **Look the purchase up.**
    - Google Play: look up by `transactionId=GPA.…`. The server stores
      Google's order ID.
@@ -189,7 +189,7 @@ enough. Today the only lever is the store refund.
    | --- | --- | --- |
    | Charged twice for two packs | Two purchases with different `transactionId` values, both `validated` | Both were delivered. If one was a mistake, refund it (Google: Play Console; Apple: reportaproblem.apple.com). The server takes that pack's currency back automatically, never below zero |
    | Adventurer's Kit paid twice | One `starter_kit` purchase. The second payment has no purchase: the server refused it (`already_purchased` in the log) | This should be rare: each time the storehouse opens, it checks the server's purchase history and marks the kit bought if this account bought it before, so the kit isn't offered again (`SyncOneTimePurchasesFromServerAsync`). A second payment means that check couldn't reach the server. Google: the game never acknowledges the second payment, and Google refunds it within 3 days. App Store: the game leaves it unfinished, and Apple keeps the money until the player asks at reportaproblem.apple.com. After that refund the game finishes the transaction by itself |
-   | One payment, currency arrived twice | One purchase | The server records each store transaction once, and the device applies each purchase ID once, even across restores (`AppliedPurchaseIds` is kept in the save and the cloud save). Check the **Purchase info** tab's "Purchases made" count against the purchases list. Bonus amounts often look like a double grant: a Chest of Gold is 2,000 plus 200 |
+   | One payment, currency arrived twice | One purchase | The server records each store transaction once, and the device applies each purchase ID once, even across restores (`AppliedPurchaseIds` is kept in the save and the cloud save). Check the **Purchases** tab's "Purchases made" count against the purchases list. Bonus amounts often look like a double grant: a Chest of Gold is 2,000 plus 200 |
    | One transaction on two players | Not possible | The store ties each purchase to a hash of the player ID, and the server answers `transaction_assigned` to anyone else |
 
 3. **A real double grant from one payment** would be a bug. Collect the

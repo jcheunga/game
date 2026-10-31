@@ -33,7 +33,7 @@ Checked against the code:
 | Settings | The gear ring at the top right of the home map (accessible name "Settings") | `MapMenu.Home.cs` |
 | Settings tabs | **Sound**, **Gameplay**, **Online**, **Account** | `SettingsMenu.cs` |
 | Store | Tap the gold amount at the top right of the home map ("Royal storehouse"), or the food amount ("Refill food"), or **More** → **Caravan** → **Store** | `MapMenu.Home.cs`, `CaravanHub.cs` |
-| Store tabs | **Gold**, **Rations**, **Bundles**, **Purchase info** | `CashShopMenu.cs` |
+| Store tabs | **Gold**, **Rations**, **Shards**, **Bundles**, **Purchases** | `CashShopMenu.cs` |
 | Buying | One tap on **Buy — $0.99** opens the App Store's or Google Play's own payment sheet, which is the confirmation | `StorePackCard.cs`, `CashShopMenu.cs` |
 | Account page | Settings → **Account** tab → **Account** row → **Manage**. The same page as on first launch, with **Back** at the bottom left | `SettingsMenu.cs`, `AccountDialog.cs` |
 | Sign-in buttons | iPhone and iPad: **Continue with Game Center**, then the **Email address** field and **Send code**, which becomes the **6-digit code** field and **Sign in**. Android: **Continue with Play Games**, the email fields, and **Continue with Apple** and **Continue with Google** only when the server reports them configured; otherwise they are left out, not greyed out. Desktop: the same, without Play Games. A guest's last button is **Play as guest**. Signed in, the page shows the account instead of the sign-in buttons, with **Sign out** and **Done** | `AccountDialog.cs`, `SignInButton.cs` |
@@ -61,7 +61,7 @@ TO PLAY A BATTLE
 Tap a site on the map, then Prepare battle, then Deploy. In battle, tap a troop card to send troops out of the war wagon, and drag a spell card onto the field. Destroying the enemy stronghold on the right wins the stage.
 
 IN-APP PURCHASES
-Open the Royal storehouse by tapping the gold amount at the top right of the home map, or from More > Caravan > Store. Packs are on the Gold, Rations and Bundles tabs. Tap Buy, then Confirm, then approve the App Store sheet. Our server checks each transaction with Apple before it adds the gold or food, and only then finishes the transaction. The Purchase info tab shows the result. The Adventurer's Kit can be bought once per account. It recruits a fixed troop, which its card names before you buy, so nothing sold is random.
+Open the Royal storehouse by tapping the gold amount at the top right of the home map, or from More > Caravan > Store. Packs are on the Gold, Rations, Shards and Bundles tabs. Tap Buy, then Confirm, then approve the App Store sheet. Our server checks each transaction with Apple before it adds the gold, food or relic shards, and only then finishes the transaction. The Purchases tab shows the result. The Adventurer's Kit can be bought once per account. It recruits a fixed troop, which its card names before you buy, so nothing sold is random.
 
 ACCOUNT DELETION
 Open Settings (the gear ring at the top right of the home map), choose the Account tab, then tap Delete on the Delete account row and confirm with Delete account. This works for guests and signed-in players. It deletes the account and its data from our server straight away, and starts the device again as a new guest. We keep only the purchase records the law requires, under a random code. Players who can't open the game can ask for deletion at https://crownroad.game/support#delete-data.

@@ -61,7 +61,7 @@ def main():
 
     catalog = json.loads((ROOT / "data/shop_products.json").read_text(encoding="utf-8"))
     products = catalog if isinstance(catalog, list) else catalog.get("products", [])
-    check("both", len(products) == 10 and all(p.get("appleProductId") and p.get("googleProductId") for p in products),
+    check("both", len(products) == 14 and all(p.get("appleProductId") and p.get("googleProductId") for p in products),
           f"{len(products)} shop products, each with App Store and Google Play IDs",
           "Every product in data/shop_products.json needs appleProductId and googleProductId.")
 

@@ -11,14 +11,15 @@ using Godot;
 /// </summary>
 public partial class CashShopMenu : Control
 {
-    private static readonly string[] Categories = { "Gold", "Rations", "Bundles", "Purchase info" };
-    private static readonly string[] TabGlyphs = { "storetab-gold", "storetab-rations", "storetab-bundles", "storetab-ledger" };
-    private static readonly string[] PackCategories = { "gold", "food", "mixed" };
-    private static readonly Vector2 TabSize = new(128, 40);
+    private static readonly string[] Categories = { "Gold", "Rations", "Shards", "Bundles", "Purchases" };
+    private static readonly string[] TabGlyphs = { "storetab-gold", "storetab-rations", "storetab-shards", "storetab-bundles", "storetab-ledger" };
+    private static readonly string[] PackCategories = { "gold", "food", "shards", "mixed" };
+    // Five tabs and the balances share the phone canvas's width.
+    private static readonly Vector2 TabSize = new(104, 40);
     private static readonly Color Muted = new("b9ad96"), Body = new("e9dfcb"), Heading = new("f3deaa");
-    private const int RationsPage = 1, LedgerPage = 3;
+    private const int RationsPage = 1, ShardsPage = 2, LedgerPage = 4;
     private readonly List<RoyalButton> _tabs = new();
-    private readonly Control[] _pages = new Control[4];
+    private readonly Control[] _pages = new Control[Categories.Length];
     private Control _balances = null !;
     private Label _statusLabel = null !;
     private Control _statusPlaceholder = null !;
@@ -276,6 +277,7 @@ public partial class CashShopMenu : Control
             _pages[i].Visible = i == index;
         StyleTabs();
         ShowRefill();
+        RebuildResourcesRow();
     }
 
     /// <summary>The achievements screen's tabs: slate with a cream glyph, the current page lit gold.</summary>
@@ -310,7 +312,10 @@ public partial class CashShopMenu : Control
         RefreshStatus();
     }
 
-    /// <summary>The home strip's parchment balances: gold, then rations against their recharge cap.</summary>
+    /// <summary>
+    /// The home strip's parchment balances: gold, then rations against their recharge cap, or relic shards
+    /// on the Shards page.
+    /// </summary>
     private void RebuildResourcesRow()
     {
         RealmUi.Clear(_balances);
@@ -320,7 +325,9 @@ public partial class CashShopMenu : Control
         bar.AddThemeStyleboxOverride("panel", RoyalKit.Scaled("res-bar", MobilePresentation.HudScale, 19, 0, 19, 0));
         _balances.AddChild(bar);
         var x = End;
-        var pairs = new[] { ("gold", state.Gold.ToString("N0")), ("food", $"{state.Food}/{GameState.FoodRechargeCap}") };
+        var shards = _selectedCategory == ShardsPage;
+        var pairs = new[] { (HomeMapArt.Icon("gold"), state.Gold.ToString("N0")),
+            shards ? (RoyalKit.Texture("forge-shard"), state.RelicShards.ToString("N0")) : (HomeMapArt.Icon("food"), $"{state.Food}/{GameState.FoodRechargeCap}") };
         for (var i = 0; i < pairs.Length; i++)
         {
             if (i > 0)
@@ -328,7 +335,7 @@ public partial class CashShopMenu : Control
                 _balances.AddChild(RoyalKit.Image("res-divider", new Rect2(x + Spacing, 7, Divider, Height - 14)));
                 x += 2 * Spacing + Divider;
             }
-            _balances.AddChild(new TextureRect { Texture = HomeMapArt.Icon(pairs[i].Item1), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            _balances.AddChild(new TextureRect { Texture = pairs[i].Item1, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, Position = new Vector2(x, (Height - Icon) / 2), Size = new Vector2(Icon, Icon),
                 MouseFilter = MouseFilterEnum.Ignore });
             x += Icon + Gap;
@@ -341,7 +348,7 @@ public partial class CashShopMenu : Control
         x += End;
         bar.Size = new Vector2(x, Height);
         _balances.CustomMinimumSize = new Vector2(x, Height);
-        _balances.TooltipText = _balances.AccessibilityName = $"Gold: {state.Gold:N0} · {state.FoodRechargeText}";
+        _balances.TooltipText = _balances.AccessibilityName = $"Gold: {state.Gold:N0} · " + (shards ? $"Relic shards: {state.RelicShards:N0}" : state.FoodRechargeText);
     }
 
     private void RebuildCategory(int page, string category)
@@ -498,6 +505,8 @@ public partial class CashShopMenu : Control
                 _statusLabel.Text += $"+{result.GoldCredited} Gold  ";
             if (result.FoodCredited > 0)
                 _statusLabel.Text += $"+{result.FoodCredited} Food  ";
+            if (result.ShardsCredited > 0)
+                _statusLabel.Text += $"+{result.ShardsCredited} Shards  ";
             if (result.GrantedUnitUnlock && GameState.Instance.LastKitUnitId.Length > 0)
                 _statusLabel.Text += $"\n+ {GameData.GetUnit(GameState.Instance.LastKitUnitId).DisplayName} recruited";
             AudioDirector.Instance?.PlayRewardClaim();
@@ -549,7 +558,8 @@ public partial class CashShopMenu : Control
         }
 
         Row("Purchases made", GameState.Instance.TotalPurchaseCount.ToString("N0"));
-        var refunds = GameState.Instance.GetAppliedWalletAdjustments().Count(a => a.Kind == "refund" && (a.GoldApplied != 0 || a.FoodApplied != 0 || a.GoldUnrecovered != 0 || a.FoodUnrecovered != 0));
+        var refunds = GameState.Instance.GetAppliedWalletAdjustments().Count(a => a.Kind == "refund" && (a.GoldApplied != 0 || a.FoodApplied != 0 || a.ShardsApplied != 0
+            || a.GoldUnrecovered != 0 || a.FoodUnrecovered != 0 || a.ShardsUnrecovered != 0));
         if (refunds > 0)
             Row("Refunded purchases taken back", refunds.ToString("N0"));
         var endpoint = GameState.Instance.PurchaseValidationEndpoint;

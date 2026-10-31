@@ -62,7 +62,7 @@ public partial class StoreKitShopReview : Node
             $"The game data loads ({GameData.Stages.Length} stages, {GameData.GetPlayerUnits().Count} player units, {GameData.GetPlayerSpells().Count} spells)");
         var waveFiles = DirAccess.GetFilesAt("res://data/waves").Count(file => file.EndsWith(".json"));
         Check(WaveVersions.All.Count == waveFiles + 1, $"Every wave version loads ({WaveVersions.All.Count})");
-        Check(ShopProductCatalog.GetAll().Count == 10, $"The shop catalog has its ten products ({ShopProductCatalog.GetAll().Count})");
+        Check(ShopProductCatalog.GetAll().Count == 14, $"The shop catalog has its fourteen products ({ShopProductCatalog.GetAll().Count})");
 
         var state = GameState.Instance;
         state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
@@ -92,7 +92,7 @@ public partial class StoreKitShopReview : Node
         store.Connect("purchase_completed", Callable.From<Godot.Collections.Dictionary>(t => _completed.Add(t["transaction_id"].AsString())));
         store.Connect("transaction_finished", Callable.From<string>(id => _finished.Add(id)));
         Check(await Until(() => ShopProductCatalog.GetAll().All(p => iap.GetCachedProductInfo(p.Id) != null)),
-            "The ten products' App Store prices reach the game");
+            "The fourteen products' App Store prices reach the game");
         Check(iap.GetLocalizedPrice(ProductId) == "$0.99" && iap.GetCachedProductInfo(ProductId)?.PriceMicros == 990_000,
             $"The pouch costs $0.99 ({iap.GetLocalizedPrice(ProductId)})");
 

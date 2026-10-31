@@ -175,6 +175,24 @@ public partial class SaveRoundTripReview : Node
             { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = resupply, ProductId = "campaign_resupply", Kind = "refund_reversed", GoldDelta = 3000, FoodDelta = 80, ReversesAdjustmentId = spentId });
         Check(reversal is { GoldApplied: 300, FoodApplied: 5 } && state.Gold == 300 && state.Food == 5, "A reversed refund gives back exactly what it took");
 
+        // Relic shard packs are credited, refunded and stopped at zero like gold and food.
+        var shardsBefore = state.RelicShards;
+        var casket = $"PUR-review-{Guid.NewGuid():N}";
+        Check(state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = casket, ProductId = "shard_casket", ShardsCredited = 55 })
+            && state.RelicShards == shardsBefore + 55, "A shard pack adds its relic shards");
+        var shardData = state.BuildSaveData();
+        shardData.RelicShards = 20;
+        SaveSystem.Instance.Save(shardData);
+        state.ReloadFromDisk();
+        var shardRefund = state.TryApplyWalletAdjustment(new WalletAdjustment
+            { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = casket, ProductId = "shard_casket", Kind = "refund", ShardsDelta = -55 });
+        Check(shardRefund is { ShardsApplied: -20, ShardsUnrecovered: 35 } && state.RelicShards == 0,
+            $"A shard refund larger than the balance stops at zero and records the rest (shards {state.RelicShards})");
+        Check(state.ConsumeWalletAdjustmentNotice().Contains("20 relic shards were taken back"), "The player is told how many shards went");
+        state.ReloadFromDisk();
+        Check(state.GetAppliedWalletAdjustment(shardRefund?.AdjustmentId ?? "") is { ShardsApplied: -20, ShardsUnrecovered: 35 },
+            "The shard refund survives a reload");
+
         // A refund of a purchase this save never received, and a kind this build does not know.
         gold = state.Gold;
         var stranger = Refund($"PUR-review-elsewhere-{Guid.NewGuid():N}", "gold_pouch", 500, 0);

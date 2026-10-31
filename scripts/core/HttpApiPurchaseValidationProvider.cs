@@ -32,6 +32,7 @@ public sealed class PurchaseValidationResult
 	public string ProductId { get; set; } = "";
 	public int GoldCredited { get; set; }
 	public int FoodCredited { get; set; }
+	public int ShardsCredited { get; set; }
 	public bool GrantedUnitUnlock { get; set; }
 	public long ValidatedAtUnixSeconds { get; set; }
 }
@@ -43,6 +44,7 @@ public sealed class PurchaseHistoryEntry
 	public string Platform { get; set; } = "";
 	public int GoldCredited { get; set; }
 	public int FoodCredited { get; set; }
+	public int ShardsCredited { get; set; }
 	public long PurchasedAtUnixSeconds { get; set; }
 }
 
@@ -141,6 +143,7 @@ public sealed class HttpApiPurchaseValidationProvider
 			ProductId = GetString(root, "productId", request.ProductId),
 			GoldCredited = GetInt(root, "goldCredited", 0),
 			FoodCredited = GetInt(root, "foodCredited", 0),
+			ShardsCredited = GetInt(root, "shardsCredited", 0),
 			GrantedUnitUnlock = GetBool(root, "grantedUnitUnlock", false),
 			ValidatedAtUnixSeconds = GetLong(root, "validatedAtUnixSeconds", request.RequestedAtUnixSeconds)
 		};
@@ -204,6 +207,7 @@ public sealed class HttpApiPurchaseValidationProvider
 					Platform = GetString(item, "platform", ""),
 					GoldCredited = GetInt(item, "goldCredited", 0),
 					FoodCredited = GetInt(item, "foodCredited", 0),
+					ShardsCredited = GetInt(item, "shardsCredited", 0),
 					PurchasedAtUnixSeconds = GetLong(item, "purchasedAtUnixSeconds", 0)
 				});
 			}

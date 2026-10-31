@@ -69,7 +69,7 @@ public static class SupportLookup
         }
 
         object? wallet = null;
-        using (var cmd = Command(conn, "SELECT gold_balance, food_balance, unit_unlock_balance, updated_at FROM player_wallets WHERE profile_id = @pid",
+        using (var cmd = Command(conn, "SELECT gold_balance, food_balance, unit_unlock_balance, updated_at, shards_balance FROM player_wallets WHERE profile_id = @pid",
             ("@pid", profileId)))
         using (var reader = cmd.ExecuteReader())
         {
@@ -79,6 +79,7 @@ public static class SupportLookup
                 {
                     gold = Database.ToInt64(reader.GetValue(0)),
                     food = Database.ToInt64(reader.GetValue(1)),
+                    shards = Database.ToInt64(reader.GetValue(4)),
                     unitUnlocks = Database.ToInt64(reader.GetValue(2)),
                     updatedAtUnixSeconds = Database.ToInt64(reader.GetValue(3))
                 };
@@ -88,7 +89,7 @@ public static class SupportLookup
         var purchases = new List<object>();
         using (var cmd = Command(conn, """
             SELECT purchase_id, product_id, platform, transaction_id, gold_credited, food_credited, granted_unit_unlock,
-                status, price_cents, purchased_at, refunded_at
+                status, price_cents, purchased_at, refunded_at, shards_credited
             FROM purchases WHERE profile_id = @pid ORDER BY purchased_at DESC, id DESC
         """, ("@pid", profileId)))
         using (var reader = cmd.ExecuteReader())
@@ -103,6 +104,7 @@ public static class SupportLookup
                     transactionId = reader.GetString(3),
                     goldCredited = Database.ToInt64(reader.GetValue(4)),
                     foodCredited = Database.ToInt64(reader.GetValue(5)),
+                    shardsCredited = Database.ToInt64(reader.GetValue(11)),
                     grantedUnitUnlock = Database.ToInt64(reader.GetValue(6)) != 0,
                     status = reader.GetString(7),
                     priceCents = Database.ToInt64(reader.GetValue(8)),
@@ -137,7 +139,7 @@ public static class SupportLookup
         var adjustments = new List<object>();
         using (var cmd = Command(conn, """
             SELECT adjustment_id, purchase_id, product_id, kind, gold_delta, food_delta, unit_unlock_kept, reason, event_id,
-                created_at, acknowledged_at, gold_applied, food_applied
+                created_at, acknowledged_at, gold_applied, food_applied, shards_delta, shards_applied
             FROM wallet_adjustments WHERE profile_id = @pid ORDER BY created_at DESC, id DESC
         """, ("@pid", profileId)))
         using (var reader = cmd.ExecuteReader())
@@ -152,6 +154,7 @@ public static class SupportLookup
                     kind = reader.GetString(3),
                     goldDelta = Database.ToInt64(reader.GetValue(4)),
                     foodDelta = Database.ToInt64(reader.GetValue(5)),
+                    shardsDelta = Database.ToInt64(reader.GetValue(13)),
                     unitUnlockKept = Database.ToInt64(reader.GetValue(6)) != 0,
                     reason = reader.GetString(7),
                     eventId = reader.GetString(8),
@@ -159,7 +162,8 @@ public static class SupportLookup
                     // Zero until the player's device has applied it.
                     appliedOnDeviceAtUnixSeconds = Database.ToInt64(reader.GetValue(10)),
                     goldApplied = Database.ToInt64(reader.GetValue(11)),
-                    foodApplied = Database.ToInt64(reader.GetValue(12))
+                    foodApplied = Database.ToInt64(reader.GetValue(12)),
+                    shardsApplied = Database.ToInt64(reader.GetValue(14))
                 });
             }
         }
@@ -232,17 +236,17 @@ public static class SupportLookup
     }
 
     /// <summary>
-    /// Makes good a paid pack that could not be delivered, instead of refunding it: credits gold and food as a
-    /// "grant" wallet adjustment, which the player's device applies once by ID the next time it opens the shop, and
-    /// records it in the ledger and the server wallet. Body: {"profileId", "gold", "food", "note"}; the note (why,
-    /// and the ticket) is required and kept with the adjustment for the audit trail.
+    /// Makes good a paid pack that could not be delivered, instead of refunding it: credits gold, food and relic
+    /// shards as a "grant" wallet adjustment, which the player's device applies once by ID the next time it opens the
+    /// shop, and records it in the ledger and the server wallet. Body: {"profileId", "gold", "food", "shards", "note"};
+    /// the note (why, and the ticket) is required and kept with the adjustment for the audit trail.
     /// </summary>
     public static async Task<IResult> AdminGrant(HttpRequest request)
     {
         if (AdminAuth.Require(request) is { } adminError) return adminError;
 
         string profileId, note;
-        long gold, food;
+        long gold, food, shards;
         try
         {
             using var body = await JsonDocument.ParseAsync(request.Body, cancellationToken: request.HttpContext.RequestAborted);
@@ -250,6 +254,7 @@ public static class SupportLookup
             note = Text(body.RootElement, "note");
             gold = Number(body.RootElement, "gold");
             food = Number(body.RootElement, "food");
+            shards = Number(body.RootElement, "shards");
         }
         catch (JsonException)
         {
@@ -257,8 +262,9 @@ public static class SupportLookup
         }
         if (profileId.Length == 0) return Results.BadRequest(new { error = "profile_id_required" });
         if (note.Length is 0 or > 200) return Results.BadRequest(new { error = "note_required_up_to_200_characters" });
-        if (gold < 0 || food < 0 || gold + food == 0 || gold > MaxGrantGold || food > MaxGrantFood)
-            return Results.BadRequest(new { error = $"grant_between_1_and_{MaxGrantGold}_gold_or_{MaxGrantFood}_food" });
+        if (gold < 0 || food < 0 || shards < 0 || gold + food + shards == 0 ||
+            gold > MaxGrantGold || food > MaxGrantFood || shards > MaxGrantShards)
+            return Results.BadRequest(new { error = $"grant_between_1_and_{MaxGrantGold}_gold_or_{MaxGrantFood}_food_or_{MaxGrantShards}_shards" });
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var adjustmentId = $"ADJ-{Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()}";
@@ -274,10 +280,11 @@ public static class SupportLookup
 
         Run("""
             INSERT INTO wallet_adjustments (adjustment_id, profile_id, purchase_id, product_id, kind, gold_delta, food_delta,
-                unit_unlock_kept, reverses_adjustment_id, event_id, reason, created_at)
-            VALUES (@id, @profile, '', '', 'grant', @gold, @food, 0, '', '', @reason, @now)
-        """, ("@id", adjustmentId), ("@profile", profileId), ("@gold", gold), ("@food", food), ("@reason", "support: " + note), ("@now", now));
-        foreach (var (currency, amount) in new[] { ("gold", gold), ("food", food) })
+                shards_delta, unit_unlock_kept, reverses_adjustment_id, event_id, reason, created_at)
+            VALUES (@id, @profile, '', '', 'grant', @gold, @food, @shards, 0, '', '', @reason, @now)
+        """, ("@id", adjustmentId), ("@profile", profileId), ("@gold", gold), ("@food", food), ("@shards", shards),
+            ("@reason", "support: " + note), ("@now", now));
+        foreach (var (currency, amount) in new[] { ("gold", gold), ("food", food), ("shards", shards) })
         {
             if (amount <= 0) continue;
             Run("""
@@ -287,16 +294,17 @@ public static class SupportLookup
                 ("@amount", amount), ("@adjustment", adjustmentId), ("@now", now));
         }
         Run("""
-            INSERT INTO player_wallets (profile_id, gold_balance, food_balance, unit_unlock_balance, updated_at)
-            VALUES (@profile, @gold, @food, 0, @now)
+            INSERT INTO player_wallets (profile_id, gold_balance, food_balance, shards_balance, unit_unlock_balance, updated_at)
+            VALUES (@profile, @gold, @food, @shards, 0, @now)
             ON CONFLICT (profile_id) DO UPDATE SET gold_balance = player_wallets.gold_balance + @gold,
-                food_balance = player_wallets.food_balance + @food, updated_at = @now
-        """, ("@profile", profileId), ("@gold", gold), ("@food", food), ("@now", now));
+                food_balance = player_wallets.food_balance + @food, shards_balance = player_wallets.shards_balance + @shards,
+                updated_at = @now
+        """, ("@profile", profileId), ("@gold", gold), ("@food", food), ("@shards", shards), ("@now", now));
         tx.Commit();
-        return Results.Ok(new { status = "granted", adjustmentId, profileId, gold, food });
+        return Results.Ok(new { status = "granted", adjustmentId, profileId, gold, food, shards });
     }
 
-    private const long MaxGrantGold = 100_000, MaxGrantFood = 1_000;
+    private const long MaxGrantGold = 100_000, MaxGrantFood = 1_000, MaxGrantShards = 1_000;
 
     private static long Number(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.TryGetInt64(out var parsed) ? parsed : 0;

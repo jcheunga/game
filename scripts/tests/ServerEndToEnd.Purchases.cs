@@ -75,6 +75,13 @@ public partial class ServerEndToEnd
         Check(replay.Result.Status == "already_recorded" && !replay.Granted && replay.Finished && state.Gold == gold + credited,
             "Re-delivering the shop's purchase finishes it without a second grant");
 
+        // A relic shard pack goes the same way: the server credits shards, and the shop says so.
+        var shardPouch = ShopProductCatalog.GetById("shard_pouch");
+        var shardsBefore = state.RelicShards;
+        ReturnToShop(shop, shardPouch, StorePurchase(shardPouch));
+        Check(await Until(() => status.Text.Contains("+12 Shards")) && state.RelicShards == shardsBefore + 12,
+            $"A shard pack bought in the shop credits its relic shards ({state.RelicShards - shardsBefore})");
+
         // Two deliveries of one purchase at once verify and grant once.
         var twice = StorePurchase(pouch);
         gold = state.Gold;

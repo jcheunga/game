@@ -182,12 +182,12 @@ requester controls the account first (see
 [store/SUPPORT_PLAYBOOK.md](store/SUPPORT_PLAYBOOK.md)).
 
 To make good a paid pack that never arrived, `POST /admin/support/grant`
-with `{"profileId": "CVY-…", "gold": 500, "food": 0, "note": "ticket 123"}`
+with `{"profileId": "CVY-…", "gold": 500, "food": 0, "shards": 0, "note": "ticket 123"}`
 records a `grant` wallet adjustment, ledger entries and the server wallet in
 one transaction. The player's device applies it once, by ID, the next time
 the storehouse opens, says "Support added 500 gold to your caravan." and
-reports back. The note is required; grants are capped at 100,000 gold and
-1,000 food.
+reports back. The note is required; grants are capped at 100,000 gold,
+1,000 food and 1,000 relic shards.
 
 ### Pausing purchases
 
@@ -248,13 +248,15 @@ a cloud save restored from before a refund gets it applied again.
 
 Decisions:
 
-- **Currency already spent is not taken below zero.** The device takes what
-  the balance holds and records the rest as unrecovered, in the save and on
-  the server (`goldUnrecovered` and `foodUnrecovered` in `/admin/refunds`).
-  Gold and food are also earned in play, and every price and the HUD assume a
-  balance of zero or more. A negative balance would lock a player out of
-  spending what they earn later, without saying why. The ledger still reverses
-  the full grant, so the unrecovered amount stays visible for abuse review.
+- **Currency already spent is not taken below zero.** This holds for gold,
+  food and relic shards alike. The device takes what the balance holds and
+  records the rest as unrecovered, in the save and on the server
+  (`goldUnrecovered`, `foodUnrecovered` and `shardsUnrecovered` in
+  `/admin/refunds`). Gold and food are also earned in play, and every price
+  and the HUD assume a balance of zero or more. A negative balance would lock
+  a player out of spending what they earn later, without saying why. The
+  ledger still reverses the full grant, so the unrecovered amount stays
+  visible for abuse review.
 - **The Adventurer's Kit's unit stays unlocked.** The kit's gold and food are
   taken back, but its unit may be leveled, equipped and in the loadout by
   then. A refunded kit still counts as bought, so it cannot be bought again

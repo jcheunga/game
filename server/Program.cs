@@ -313,14 +313,14 @@ app.MapGet("/admin", (HttpRequest request) =>
         var recentPurchases = new System.Text.StringBuilder();
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = "SELECT purchase_id, profile_id, product_id, gold_credited, food_credited, purchased_at FROM purchases ORDER BY purchased_at DESC LIMIT 10";
+            cmd.CommandText = "SELECT purchase_id, profile_id, product_id, gold_credited, food_credited, purchased_at, shards_credited FROM purchases ORDER BY purchased_at DESC LIMIT 10";
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
                 var when = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64(5)).ToString("MM-dd HH:mm");
                 var purchaseId = reader.GetString(0);
                 var profileId = reader.GetString(1);
-                recentPurchases.Append($"<tr><td>{Html(purchaseId[..Math.Min(10, purchaseId.Length)])}</td><td>{Html(profileId[..Math.Min(12, profileId.Length)])}</td><td>{Html(reader.GetString(2))}</td><td>{reader.GetInt32(3)}g+{reader.GetInt32(4)}f</td><td>{Html(when)}</td></tr>");
+                recentPurchases.Append($"<tr><td>{Html(purchaseId[..Math.Min(10, purchaseId.Length)])}</td><td>{Html(profileId[..Math.Min(12, profileId.Length)])}</td><td>{Html(reader.GetString(2))}</td><td>{reader.GetInt32(3)}g+{reader.GetInt32(4)}f+{Database.ToInt32(reader.GetValue(6))}s</td><td>{Html(when)}</td></tr>");
             }
         }
 

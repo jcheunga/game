@@ -402,7 +402,7 @@ public static class DataIntegrityValidator
             var appleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var googleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var stripeIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var validCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "gold", "food", "mixed" };
+            var validCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "gold", "food", "shards", "mixed" };
             foreach (var product in shopProducts)
             {
                 var id = GetStr(product, "id");
@@ -449,7 +449,8 @@ public static class DataIntegrityValidator
                 Check(bonusAmount >= 0, $"Shop product {id} has negative bonusAmount");
 
                 if (category.Equals("gold", StringComparison.OrdinalIgnoreCase) ||
-                    category.Equals("food", StringComparison.OrdinalIgnoreCase))
+                    category.Equals("food", StringComparison.OrdinalIgnoreCase) ||
+                    category.Equals("shards", StringComparison.OrdinalIgnoreCase))
                 {
                     Check(currencyType.Equals(category, StringComparison.OrdinalIgnoreCase),
                         $"Shop product {id} currencyType '{currencyType}' does not match category '{category}'");

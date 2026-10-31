@@ -103,7 +103,7 @@ visible without scrolling. On the Rations page the gold-funded refill and its
 recharge information share the footer, and step aside while a pack waits for
 confirmation. The footer identifies the pack and price before confirmation,
 offers Cancel and shows refill results. Changing categories cancels a pending confirmation.
-Purchase info retains the full payment status, and owned one-time bundles stay
+Purchases retains the full payment status, and owned one-time bundles stay
 disabled. The modal uses the existing shell's navigation.
 
 `ModalUi`, `ModalSurface` and `ModalArt` own this presentation. Legacy activity

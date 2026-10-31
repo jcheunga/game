@@ -26,7 +26,7 @@ public partial class UiReviewSmoke
         var pages = store.GetNode<Control>("StorehouseLayout/CatalogPages");
         var notice = Walk(store).OfType<Label>().Single(label => label.Name == "PurchaseNotice");
         var purchaseCount = state.TotalPurchaseCount;
-        foreach (var category in new[] { (Tab: "Gold", Id: "gold"), (Tab: "Rations", Id: "food"), (Tab: "Bundles", Id: "mixed") })
+        foreach (var category in new[] { (Tab: "Gold", Id: "gold"), (Tab: "Rations", Id: "food"), (Tab: "Shards", Id: "shards"), (Tab: "Bundles", Id: "mixed") })
         {
             await TapModal(Walk(store).OfType<Button>().Single(button => button.Text == category.Tab));
             var actions = Walk(store).OfType<Button>().Where(button => button.IsVisibleInTree() && button.HasMeta("store_product_id")).ToArray();
@@ -42,12 +42,14 @@ public partial class UiReviewSmoke
                 Check(pages.GetGlobalRect().Encloses(action.GetGlobalRect()) && modal.Content.GetGlobalRect().Encloses(action.GetGlobalRect())
                     && action.Text == $"Buy — {product.FormattedPrice}", product.DisplayName + ": Buy and its price are fully visible without scrolling");
             }
+            var balances = store.GetNode<Control>("StorehouseLayout/StorehouseBar/StorehouseBalances");
+            Check(balances.AccessibilityName.Contains("Relic shards") == (category.Id == "shards"), category.Tab + ": the balances show relic shards only on the Shards page");
             AuditText("Storehouse / " + category.Id);
             await Capture("storehouse-" + category.Id);
             // One tap starts the purchase; the store's own payment sheet is the confirmation. The review build has no
             // commerce server, so the purchase stops before billing and no payment is ever sent.
             await TapModal(actions[^1]);
-            Check(notice.Text == "Your purchase status is shown above." && (int)typeof(CashShopMenu).GetField("_selectedCategory", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(store)! == 3
+            Check(notice.Text == "Your purchase status is shown above." && (int)typeof(CashShopMenu).GetField("_selectedCategory", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(store)! == 4
                 && Walk(store).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.StartsWith("The store is unavailable")),
                 category.Tab + ": one tap on Buy starts the purchase and shows its status");
         }
@@ -111,7 +113,7 @@ public partial class UiReviewSmoke
         Check(owned.Disabled && owned.Text == "Purchased" && pages.GetGlobalRect().Encloses(owned.GetGlobalRect()), "An owned one-time bundle stays visibly purchased and disabled");
         AuditText("Storehouse / owned bundle"); await Capture("storehouse-owned-bundle");
 
-        await TapModal(Walk(store).OfType<Button>().Single(button => button.Text == "Purchase info"));
+        await TapModal(Walk(store).OfType<Button>().Single(button => button.Text == "Purchases"));
         AuditText("Storehouse / purchase info"); await Capture("storehouse-info");
         menu.CloseHomeModal();
         Check(GetTree().CurrentScene == menu && canvas.MapOffset == camera && state.AdventureKnowledgeRevision == knowledge, "Closing the store preserves the map, camera and exploration");

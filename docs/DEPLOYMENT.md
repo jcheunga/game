@@ -182,10 +182,10 @@ requester controls the account first (see
 [store/SUPPORT_PLAYBOOK.md](store/SUPPORT_PLAYBOOK.md)).
 
 To make good a paid pack that never arrived, `POST /admin/support/grant`
-with `{"profileId": "CVY-…", "gold": 500, "food": 0, "shards": 0, "note": "ticket 123"}`
+with `{"profileId": "CVY-…", "gold": 400, "food": 0, "shards": 0, "note": "ticket 123"}`
 records a `grant` wallet adjustment, ledger entries and the server wallet in
 one transaction. The player's device applies it once, by ID, the next time
-the storehouse opens, says "Support added 500 gold to your caravan." and
+the storehouse opens, says "Support added 400 gold to your caravan." and
 reports back. The note is required; grants are capped at 100,000 gold,
 1,000 food and 1,000 relic shards.
 

@@ -66,7 +66,7 @@ Escort a war wagon through 100 lane-battle sieges against an undead host.
 ```
 
 <!-- field: play.full | limit: 4000 -->
-**Full description** · 2164 / 4000 characters
+**Full description** · 2178 / 4000 characters
 ```text
 The kingdom fell to the Rotbound Host. Its roads still stand.
 
@@ -102,7 +102,7 @@ PLAY YOUR WAY
 • Reduced motion, high contrast and larger text options
 • An original score, with music for each zone
 
-Optional in-app purchases sell gold, food and bundles. The game has no ads.
+Optional in-app purchases sell gold, food, relic shards and bundles. The game has no ads.
 
 Available in English.
 ```
@@ -149,7 +149,7 @@ Escort the Lantern Caravan's war wagon through 100 stages in ten zones. Send out
 ```
 
 <!-- field: apple.description | limit: 4000 -->
-**Description** · 2171 / 4000 characters
+**Description** · 2185 / 4000 characters
 ```text
 The kingdom fell to the Rotbound Host. Its roads still stand.
 
@@ -185,7 +185,7 @@ PLAY YOUR WAY
 • Reduced motion, high contrast and larger text options
 • An original score, with music for each zone
 
-Optional in-app purchases sell gold, food and bundles. The game has no ads.
+Optional in-app purchases sell gold, food, relic shards and bundles. The game has no ads.
 
 Terms of use: https://crownroad.game/terms
 ```
@@ -278,7 +278,7 @@ every 5 minutes up to 24 (`data/stages.json`, `GameState.Food.cs`). Relic shards
 ### Pouch of Gold
 
 - IDs: Apple `com.crownroad.gold_pouch` · Play `gold_pouch`
-- Grants: 500 gold
+- Grants: 400 gold
 - Reference price: US$0.99
 - Type: consumable on both stores
 
@@ -291,25 +291,25 @@ Pouch of Gold
 <!-- field: iap.gold_pouch.apple-description | limit: 45 -->
 **Apple description** · 40 / 45 characters
 ```text
-500 gold for troops, spells and upgrades
+400 gold for troops, spells and upgrades
 ```
 
 <!-- field: iap.gold_pouch.play-name | limit: 55 -->
 **Play name** · 24 / 55 characters
 ```text
-Pouch of Gold (500 gold)
+Pouch of Gold (400 gold)
 ```
 
 <!-- field: iap.gold_pouch.play-description | limit: 200 -->
 **Play description** · 122 / 200 characters
 ```text
-A small purse of 500 gold. Gold recruits and levels troops, scribes spells, upgrades the war wagon and pays for the forge.
+A small purse of 400 gold. Gold recruits and levels troops, scribes spells, upgrades the war wagon and pays for the forge.
 ```
 
 ### Chest of Gold
 
 - IDs: Apple `com.crownroad.gold_chest` · Play `gold_chest`
-- Grants: 2,200 gold (2,000 plus a 200 bonus)
+- Grants: 1,800 gold (1,600 plus a 200 bonus)
 - Reference price: US$3.99
 - Type: consumable on both stores
 
@@ -322,25 +322,25 @@ Chest of Gold
 <!-- field: iap.gold_chest.apple-description | limit: 45 -->
 **Apple description** · 34 / 45 characters
 ```text
-2,200 gold: 2,000 plus a 200 bonus
+1,800 gold: 1,600 plus a 200 bonus
 ```
 
 <!-- field: iap.gold_chest.play-name | limit: 55 -->
 **Play name** · 26 / 55 characters
 ```text
-Chest of Gold (2,200 gold)
+Chest of Gold (1,800 gold)
 ```
 
 <!-- field: iap.gold_chest.play-description | limit: 200 -->
 **Play description** · 142 / 200 characters
 ```text
-A chest of 2,200 gold: 2,000 plus a 200 bonus. Gold recruits and levels troops, scribes spells, upgrades the war wagon and pays for the forge.
+A chest of 1,800 gold: 1,600 plus a 200 bonus. Gold recruits and levels troops, scribes spells, upgrades the war wagon and pays for the forge.
 ```
 
 ### War Chest
 
 - IDs: Apple `com.crownroad.gold_warchest` · Play `gold_warchest`
-- Grants: 6,900 gold (6,000 plus a 900 bonus)
+- Grants: 5,000 gold (4,200 plus an 800 bonus)
 - Reference price: US$9.99
 - Type: consumable on both stores
 
@@ -351,27 +351,27 @@ War Chest
 ```
 
 <!-- field: iap.gold_warchest.apple-description | limit: 45 -->
-**Apple description** · 34 / 45 characters
+**Apple description** · 35 / 45 characters
 ```text
-6,900 gold: 6,000 plus a 900 bonus
+5,000 gold: 4,200 plus an 800 bonus
 ```
 
 <!-- field: iap.gold_warchest.play-name | limit: 55 -->
 **Play name** · 22 / 55 characters
 ```text
-War Chest (6,900 gold)
+War Chest (5,000 gold)
 ```
 
 <!-- field: iap.gold_warchest.play-description | limit: 200 -->
-**Play description** · 152 / 200 characters
+**Play description** · 153 / 200 characters
 ```text
-A heavy war chest of 6,900 gold: 6,000 plus a 900 bonus. Gold recruits and levels troops, scribes spells, upgrades the war wagon and pays for the forge.
+A heavy war chest of 5,000 gold: 4,200 plus an 800 bonus. Gold recruits and levels troops, scribes spells, upgrades the war wagon and pays for the forge.
 ```
 
 ### King's Treasury
 
 - IDs: Apple `com.crownroad.gold_treasury` · Play `gold_treasury`
-- Grants: 18,000 gold (15,000 plus a 3,000 bonus)
+- Grants: 11,000 gold (9,000 plus a 2,000 bonus)
 - Reference price: US$19.99
 - Type: consumable on both stores
 
@@ -382,21 +382,21 @@ King's Treasury
 ```
 
 <!-- field: iap.gold_treasury.apple-description | limit: 45 -->
-**Apple description** · 38 / 45 characters
+**Apple description** · 37 / 45 characters
 ```text
-18,000 gold: 15,000 plus a 3,000 bonus
+11,000 gold: 9,000 plus a 2,000 bonus
 ```
 
 <!-- field: iap.gold_treasury.play-name | limit: 55 -->
 **Play name** · 29 / 55 characters
 ```text
-King's Treasury (18,000 gold)
+King's Treasury (11,000 gold)
 ```
 
 <!-- field: iap.gold_treasury.play-description | limit: 200 -->
 **Play description** · 155 / 200 characters
 ```text
-The royal treasury: 18,000 gold, of which 3,000 is a bonus. Gold recruits and levels troops, scribes spells, upgrades the war wagon and pays for the forge.
+The royal treasury: 11,000 gold, of which 2,000 is a bonus. Gold recruits and levels troops, scribes spells, upgrades the war wagon and pays for the forge.
 ```
 
 ### Field Rations
@@ -526,7 +526,7 @@ The kingdom's granary: 460 food, of which 60 is a bonus. Food starts battles and
 ### Pouch of Shards
 
 - IDs: Apple `com.crownroad.shard_pouch` · Play `shard_pouch`
-- Grants: 12 relic shards
+- Grants: 10 relic shards
 - Reference price: US$0.99
 - Type: consumable on both stores
 
@@ -539,25 +539,25 @@ Pouch of Shards
 <!-- field: iap.shard_pouch.apple-description | limit: 45 -->
 **Apple description** · 35 / 45 characters
 ```text
-12 relic shards for crafting relics
+10 relic shards for crafting relics
 ```
 
 <!-- field: iap.shard_pouch.play-name | limit: 55 -->
 **Play name** · 27 / 55 characters
 ```text
-Pouch of Shards (12 shards)
+Pouch of Shards (10 shards)
 ```
 
 <!-- field: iap.shard_pouch.play-description | limit: 200 -->
 **Play description** · 110 / 200 characters
 ```text
-A handful of 12 relic shards. Relic shards and gold craft new relics at the forge, enough here for a rare one.
+A handful of 10 relic shards. Relic shards and gold craft new relics at the forge, enough here for a rare one.
 ```
 
 ### Casket of Shards
 
 - IDs: Apple `com.crownroad.shard_casket` · Play `shard_casket`
-- Grants: 55 relic shards (50 plus a 5 bonus)
+- Grants: 45 relic shards (40 plus a 5 bonus)
 - Reference price: US$3.99
 - Type: consumable on both stores
 
@@ -570,25 +570,25 @@ Casket of Shards
 <!-- field: iap.shard_casket.apple-description | limit: 45 -->
 **Apple description** · 34 / 45 characters
 ```text
-55 relic shards: 50 plus a 5 bonus
+45 relic shards: 40 plus a 5 bonus
 ```
 
 <!-- field: iap.shard_casket.play-name | limit: 55 -->
 **Play name** · 28 / 55 characters
 ```text
-Casket of Shards (55 shards)
+Casket of Shards (45 shards)
 ```
 
 <!-- field: iap.shard_casket.play-description | limit: 200 -->
-**Play description** · 136 / 200 characters
+**Play description** · 152 / 200 characters
 ```text
-A casket of 55 relic shards, of which 5 are a bonus. Relic shards and gold craft new relics at the forge, enough here for two epic ones.
+A casket of 45 relic shards, of which 5 are a bonus. Relic shards and gold craft new relics at the forge, enough here for an epic one and two rare ones.
 ```
 
 ### Crystal Coffer
 
 - IDs: Apple `com.crownroad.shard_coffer` · Play `shard_coffer`
-- Grants: 150 relic shards (130 plus a 20 bonus)
+- Grants: 120 relic shards (100 plus a 20 bonus)
 - Reference price: US$9.99
 - Type: consumable on both stores
 
@@ -601,25 +601,25 @@ Crystal Coffer
 <!-- field: iap.shard_coffer.apple-description | limit: 45 -->
 **Apple description** · 37 / 45 characters
 ```text
-150 relic shards: 130 plus a 20 bonus
+120 relic shards: 100 plus a 20 bonus
 ```
 
 <!-- field: iap.shard_coffer.play-name | limit: 55 -->
 **Play name** · 27 / 55 characters
 ```text
-Crystal Coffer (150 shards)
+Crystal Coffer (120 shards)
 ```
 
 <!-- field: iap.shard_coffer.play-description | limit: 200 -->
-**Play description** · 138 / 200 characters
+**Play description** · 144 / 200 characters
 ```text
-A coffer of 150 relic shards, of which 20 are a bonus. Relic shards and gold craft new relics at the forge, enough here for six epic ones.
+A coffer of 120 relic shards, of which 20 are a bonus. Relic shards and gold craft new relics at the forge, enough here for three hardened ones.
 ```
 
 ### Royal Reliquary
 
 - IDs: Apple `com.crownroad.shard_reliquary` · Play `shard_reliquary`
-- Grants: 340 relic shards (280 plus a 60 bonus)
+- Grants: 260 relic shards (210 plus a 50 bonus)
 - Reference price: US$19.99
 - Type: consumable on both stores
 
@@ -632,19 +632,19 @@ Royal Reliquary
 <!-- field: iap.shard_reliquary.apple-description | limit: 45 -->
 **Apple description** · 37 / 45 characters
 ```text
-340 relic shards: 280 plus a 60 bonus
+260 relic shards: 210 plus a 50 bonus
 ```
 
 <!-- field: iap.shard_reliquary.play-name | limit: 55 -->
 **Play name** · 28 / 55 characters
 ```text
-Royal Reliquary (340 shards)
+Royal Reliquary (260 shards)
 ```
 
 <!-- field: iap.shard_reliquary.play-description | limit: 200 -->
-**Play description** · 152 / 200 characters
+**Play description** · 150 / 200 characters
 ```text
-The kingdom's reliquary: 340 relic shards, of which 60 are a bonus. Relic shards and gold craft new relics at the forge, enough for eight hardened ones.
+The kingdom's reliquary: 260 relic shards, of which 50 are a bonus. Relic shards and gold craft new relics at the forge, enough for six hardened ones.
 ```
 
 ### Adventurer's Kit
@@ -709,7 +709,7 @@ A starter bundle, once per account: 800 gold, 30 food and your next troop, recru
 ### Campaign Resupply
 
 - IDs: Apple `com.crownroad.campaign_resupply` · Play `campaign_resupply`
-- Grants: 3,000 gold and 80 food
+- Grants: 2,500 gold and 80 food
 - Reference price: US$7.99
 - Type: consumable on both stores
 
@@ -722,19 +722,19 @@ Campaign Resupply
 <!-- field: iap.campaign_resupply.apple-description | limit: 45 -->
 **Apple description** · 36 / 45 characters
 ```text
-3,000 gold and 80 food in one bundle
+2,500 gold and 80 food in one bundle
 ```
 
 <!-- field: iap.campaign_resupply.play-name | limit: 55 -->
 **Play name** · 39 / 55 characters
 ```text
-Campaign Resupply (3,000 gold, 80 food)
+Campaign Resupply (2,500 gold, 80 food)
 ```
 
 <!-- field: iap.campaign_resupply.play-description | limit: 200 -->
 **Play description** · 155 / 200 characters
 ```text
-A mid-campaign bundle of 3,000 gold and 80 food. Gold pays for troops, spells and wagon upgrades. Food starts battles and opens new tiles on the zone maps.
+A mid-campaign bundle of 2,500 gold and 80 food. Gold pays for troops, spells and wagon upgrades. Food starts battles and opens new tiles on the zone maps.
 ```
 
 ## Findings that affect the listing

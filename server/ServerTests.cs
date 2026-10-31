@@ -671,7 +671,7 @@ public static partial class ServerTests
         };
         var resp = await Post(client, "/purchase/validate", body, "TEST-PUR-01");
         Assert(resp.RootElement.GetProperty("status").GetString() == "ok", "expected status ok");
-        Assert(resp.RootElement.GetProperty("goldCredited").GetInt32() == 500, "expected 500 gold");
+        Assert(resp.RootElement.GetProperty("goldCredited").GetInt32() == 400, "expected 400 gold");
         Assert(resp.RootElement.GetProperty("foodCredited").GetInt32() == 0, "expected 0 food");
         Assert(resp.RootElement.GetProperty("shardsCredited").GetInt32() == 0, "expected 0 shards");
         Assert(!string.IsNullOrEmpty(resp.RootElement.GetProperty("purchaseId").GetString()), "expected purchaseId");
@@ -703,7 +703,7 @@ public static partial class ServerTests
         var products = resp.RootElement.GetProperty("products");
         Assert(products.GetArrayLength() == 14, $"expected 14 products, got {products.GetArrayLength()}");
         var shards = products.EnumerateArray().ToDictionary(p => p.GetProperty("productId").GetString()!, p => p.GetProperty("shardsAmount").GetInt32());
-        Assert(shards["shard_pouch"] == 12 && shards["shard_casket"] == 55 && shards["shard_coffer"] == 150 && shards["shard_reliquary"] == 340,
+        Assert(shards["shard_pouch"] == 10 && shards["shard_casket"] == 45 && shards["shard_coffer"] == 120 && shards["shard_reliquary"] == 260,
             "expected the four shard packs with their shard amounts");
         Assert(shards.Where(p => !p.Key.StartsWith("shard_", StringComparison.Ordinal)).All(p => p.Value == 0), "expected no other pack to grant shards");
     }
@@ -711,7 +711,7 @@ public static partial class ServerTests
     private static async Task TestWallet(HttpClient client)
     {
         var resp = await Get(client, "/wallet?profileId=TEST-PUR-01");
-        Assert(resp.RootElement.GetProperty("goldBalance").GetInt32() == 500, "expected server wallet to hold 500 gold");
+        Assert(resp.RootElement.GetProperty("goldBalance").GetInt32() == 400, "expected server wallet to hold 400 gold");
         Assert(resp.RootElement.GetProperty("foodBalance").GetInt32() == 0, "expected server wallet to hold zero food");
         Assert(resp.RootElement.GetProperty("shardsBalance").GetInt32() == 0, "expected server wallet to hold zero shards");
         var empty = await Get(client, "/wallet?profileId=TEST-WALLET-EMPTY");
@@ -741,10 +741,10 @@ public static partial class ServerTests
         Assert(root.GetProperty("status").GetString() == "already_recorded", "expected already_recorded retry status");
         Assert(!string.IsNullOrEmpty(purchaseId) && root.GetProperty("purchaseId").GetString() == purchaseId, "expected the retry to return the original purchaseId");
         Assert(root.GetProperty("productId").GetString() == "gold_chest", "expected the retry to return the recorded product");
-        Assert(root.GetProperty("goldCredited").GetInt32() == 2200 && root.GetProperty("foodCredited").GetInt32() == 0
+        Assert(root.GetProperty("goldCredited").GetInt32() == 1800 && root.GetProperty("foodCredited").GetInt32() == 0
             && !root.GetProperty("grantedUnitUnlock").GetBoolean(), "expected the retry to return the recorded grant");
         var wallet = await Get(client, "/wallet?profileId=TEST-PUR-DUP");
-        Assert(wallet.RootElement.GetProperty("goldBalance").GetInt32() == 2200, "expected the retry not to credit the wallet again");
+        Assert(wallet.RootElement.GetProperty("goldBalance").GetInt32() == 1800, "expected the retry not to credit the wallet again");
     }
 
     private static async Task TestPurchaseConcurrentDuplicate(HttpClient client)
@@ -767,11 +767,11 @@ public static partial class ServerTests
                 $"expected one ok and the rest already_recorded, got {string.Join(",", statuses)}");
             var purchaseIds = responses.Select(r => r.Body.RootElement.GetProperty("purchaseId").GetString()).Distinct().ToList();
             Assert(purchaseIds.Count == 1 && !string.IsNullOrEmpty(purchaseIds[0]), $"expected one purchaseId in every answer, got {string.Join(",", purchaseIds)}");
-            Assert(responses.All(r => r.Body.RootElement.GetProperty("goldCredited").GetInt32() == 500), "expected every answer to carry the recorded grant");
+            Assert(responses.All(r => r.Body.RootElement.GetProperty("goldCredited").GetInt32() == 400), "expected every answer to carry the recorded grant");
 
             Assert(CountPurchaseRows(transactionId) == 1, $"expected one purchase row for {transactionId}");
             var wallet = await Get(client, $"/wallet?profileId={profileId}");
-            Assert(wallet.RootElement.GetProperty("goldBalance").GetInt32() == 500, "expected the wallet to be credited once");
+            Assert(wallet.RootElement.GetProperty("goldBalance").GetInt32() == 400, "expected the wallet to be credited once");
         }
     }
 
@@ -802,7 +802,7 @@ public static partial class ServerTests
 
             Assert(CountPurchaseRows(transactionId) == 1, $"expected one purchase row for {transactionId}");
             var ownerWallet = await Get(client, $"/wallet?profileId={winners[0]}");
-            Assert(ownerWallet.RootElement.GetProperty("goldBalance").GetInt32() == 500, "expected the owner to be credited once");
+            Assert(ownerWallet.RootElement.GetProperty("goldBalance").GetInt32() == 400, "expected the owner to be credited once");
             var loserWallet = await Get(client, $"/wallet?profileId={loser}");
             Assert(loserWallet.RootElement.GetProperty("goldBalance").GetInt32() == 0, "expected the other player not to be credited");
         }
@@ -813,16 +813,16 @@ public static partial class ServerTests
         const string profile = "TEST-PUR-SHARDS";
         var body = new { profileId = profile, productId = "shard_pouch", platform = "google", receiptToken = "receipt-shard-001", transactionId = "GPA.SHARD-0000-0001" };
         var resp = (await Post(client, "/purchase/validate", body, profile)).RootElement;
-        Assert(resp.GetProperty("status").GetString() == "ok" && resp.GetProperty("shardsCredited").GetInt32() == 12 &&
+        Assert(resp.GetProperty("status").GetString() == "ok" && resp.GetProperty("shardsCredited").GetInt32() == 10 &&
             resp.GetProperty("goldCredited").GetInt32() == 0 && resp.GetProperty("foodCredited").GetInt32() == 0 &&
-            !resp.GetProperty("grantedUnitUnlock").GetBoolean(), $"expected a pouch of shards to credit 12 shards and nothing else, got {resp}");
+            !resp.GetProperty("grantedUnitUnlock").GetBoolean(), $"expected a pouch of shards to credit 10 shards and nothing else, got {resp}");
         var purchaseId = resp.GetProperty("purchaseId").GetString()!;
 
         var history = (await Get(client, $"/purchase/history?profileId={profile}")).RootElement.GetProperty("purchases");
         var item = history.EnumerateArray().Single(p => p.GetProperty("purchaseId").GetString() == purchaseId);
-        Assert(item.GetProperty("productId").GetString() == "shard_pouch" && item.GetProperty("shardsCredited").GetInt32() == 12 &&
+        Assert(item.GetProperty("productId").GetString() == "shard_pouch" && item.GetProperty("shardsCredited").GetInt32() == 10 &&
             item.GetProperty("goldCredited").GetInt32() == 0 && item.GetProperty("foodCredited").GetInt32() == 0,
-            $"expected the history to show 12 shards credited, got {item}");
+            $"expected the history to show 10 shards credited, got {item}");
 
         using (var conn = Database.Open())
         using (var cmd = conn.CreateCommand())
@@ -832,19 +832,19 @@ public static partial class ServerTests
             using var reader = cmd.ExecuteReader();
             var rows = new List<(string Currency, long Amount, string Reason)>();
             while (reader.Read()) rows.Add((reader.GetString(0), Database.ToInt64(reader.GetValue(1)), reader.GetString(2)));
-            Assert(rows.Count == 1 && rows[0] == ("shards", 12, "purchase"), $"expected one 'shards' ledger entry of 12, got {string.Join(",", rows)}");
+            Assert(rows.Count == 1 && rows[0] == ("shards", 10, "purchase"), $"expected one 'shards' ledger entry of 10, got {string.Join(",", rows)}");
         }
         var wallet = (await Get(client, $"/wallet?profileId={profile}")).RootElement;
-        Assert(wallet.GetProperty("shardsBalance").GetInt32() == 12 && wallet.GetProperty("goldBalance").GetInt32() == 0 &&
-            wallet.GetProperty("foodBalance").GetInt32() == 0, $"expected the server wallet to hold 12 shards, got {wallet}");
+        Assert(wallet.GetProperty("shardsBalance").GetInt32() == 10 && wallet.GetProperty("goldBalance").GetInt32() == 0 &&
+            wallet.GetProperty("foodBalance").GetInt32() == 0, $"expected the server wallet to hold 10 shards, got {wallet}");
 
         // A retry hands back the recorded grant and credits nothing more.
         var retry = (await Post(client, "/purchase/validate", body, profile)).RootElement;
         Assert(retry.GetProperty("status").GetString() == "already_recorded" && retry.GetProperty("purchaseId").GetString() == purchaseId &&
-            retry.GetProperty("shardsCredited").GetInt32() == 12, $"expected the retry to return the recorded 12 shards, got {retry}");
+            retry.GetProperty("shardsCredited").GetInt32() == 10, $"expected the retry to return the recorded 10 shards, got {retry}");
 
         // The other packs.
-        var expected = new[] { ("shard_casket", 55), ("shard_coffer", 150), ("shard_reliquary", 340) };
+        var expected = new[] { ("shard_casket", 45), ("shard_coffer", 120), ("shard_reliquary", 260) };
         foreach (var (productId, amount) in expected)
         {
             var bought = (await Post(client, "/purchase/validate", new { profileId = profile, productId, platform = "apple", receiptToken = $"receipt-{productId}", transactionId = $"txn-{productId}" }, profile)).RootElement;
@@ -852,7 +852,7 @@ public static partial class ServerTests
                 $"expected {productId} to credit {amount} shards, got {bought}");
         }
         wallet = (await Get(client, $"/wallet?profileId={profile}")).RootElement;
-        Assert(wallet.GetProperty("shardsBalance").GetInt32() == 12 + 55 + 150 + 340, $"expected the wallet to hold every pack's shards once, got {wallet}");
+        Assert(wallet.GetProperty("shardsBalance").GetInt32() == 10 + 45 + 120 + 260, $"expected the wallet to hold every pack's shards once, got {wallet}");
 
         // A product the server does not sell is still refused.
         foreach (var unknown in new[] { "shard_chest", "shards_pouch", "relic_shards" })
@@ -865,7 +865,7 @@ public static partial class ServerTests
             var text = await refused.Content.ReadAsStringAsync();
             Assert(refused.StatusCode == HttpStatusCode.BadRequest && text.Contains("unknown productId"), $"expected {unknown} to be refused, got {(int)refused.StatusCode} {text}");
         }
-        Assert((await Get(client, $"/wallet?profileId={profile}")).RootElement.GetProperty("shardsBalance").GetInt32() == 557, "expected refused products to credit nothing");
+        Assert((await Get(client, $"/wallet?profileId={profile}")).RootElement.GetProperty("shardsBalance").GetInt32() == 10 + 45 + 120 + 260, "expected refused products to credit nothing");
     }
 
     // Every pack the server credits can be bought on each store and through Stripe, at one Stripe price.

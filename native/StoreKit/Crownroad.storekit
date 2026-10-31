@@ -173,7 +173,7 @@
       "internalID": "6049642424",
       "localizations": [
         {
-          "description": "A casket of relic shards, enough for two epic relics at the forge.",
+          "description": "A casket of relic shards, enough for an epic relic and two rare ones at the forge.",
           "displayName": "Casket of Shards",
           "locale": "en_US"
         }
@@ -188,7 +188,7 @@
       "internalID": "6130831890",
       "localizations": [
         {
-          "description": "A heavy coffer of relic shards, enough for six epic relics at the forge.",
+          "description": "A heavy coffer of relic shards, enough for three hardened relics at the forge.",
           "displayName": "Crystal Coffer",
           "locale": "en_US"
         }
@@ -203,7 +203,7 @@
       "internalID": "6896077687",
       "localizations": [
         {
-          "description": "The kingdom's own reliquary, enough shards for eight hardened relics.",
+          "description": "The kingdom's own reliquary, enough shards for six hardened relics.",
           "displayName": "Royal Reliquary",
           "locale": "en_US"
         }

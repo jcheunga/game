@@ -18,7 +18,7 @@ using Godot;
 public partial class StoreKitPurchaseReview : Node
 {
     private const string ProductId = "gold_pouch";
-    private const int ProductGold = 500;
+    private const int ProductGold = 400;
     private static readonly System.Net.Http.HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
     private FakeStoreKit _store = null!;
     private int _failures;

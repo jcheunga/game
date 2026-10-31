@@ -77,7 +77,7 @@ public partial class SaveRoundTripReview : Node
         state.ContributeRaidDamage(120); state.ContributeRaidDamage(80);
         // A server-recorded purchase grant, so the applied purchase IDs (exactly-once grants) are covered,
         // and a store refund of an earlier one, so the applied wallet adjustments are too.
-        state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = $"PUR-roundtrip-{Guid.NewGuid():N}", ProductId = "gold_pouch", GoldCredited = 500 });
+        state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = $"PUR-roundtrip-{Guid.NewGuid():N}", ProductId = "gold_pouch", GoldCredited = 400 });
         var refunded = $"PUR-roundtrip-refunded-{Guid.NewGuid():N}";
         state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = refunded, ProductId = "food_rations", FoodCredited = 20 });
         state.TryApplyWalletAdjustment(new WalletAdjustment { AdjustmentId = $"ADJ-roundtrip-{Guid.NewGuid():N}", PurchaseId = refunded, ProductId = "food_rations", Kind = "refund", FoodDelta = -20 });
@@ -147,55 +147,55 @@ public partial class SaveRoundTripReview : Node
             state.ReloadFromDisk();
         }
 
-        var chest = Buy("gold_chest", 2200, 0);
-        var refund = Refund(chest, "gold_chest", 2200, 0);
+        var chest = Buy("gold_chest", 1800, 0);
+        var refund = Refund(chest, "gold_chest", 1800, 0);
         var gold = state.Gold;
         var applied = state.TryApplyWalletAdjustment(refund);
-        Check(applied is { GoldApplied: -2200, GoldUnrecovered: 0 } && state.Gold == gold - 2200 && SaveSystem.Instance.LastSaveSucceeded,
+        Check(applied is { GoldApplied: -1800, GoldUnrecovered: 0 } && state.Gold == gold - 1800 && SaveSystem.Instance.LastSaveSucceeded,
             $"A refund takes back its purchase's gold and saves ({gold} → {state.Gold})");
         Check(state.ConsumeWalletAdjustmentNotice().Contains("refunded"), "The player is told why the gold went");
-        Check(state.TryApplyWalletAdjustment(refund) == null && state.Gold == gold - 2200, "Hearing about the same refund again changes nothing");
+        Check(state.TryApplyWalletAdjustment(refund) == null && state.Gold == gold - 1800, "Hearing about the same refund again changes nothing");
         state.ReloadFromDisk();
-        Check(state.HasAppliedWalletAdjustment(refund.AdjustmentId) && state.TryApplyWalletAdjustment(refund) == null && state.Gold == gold - 2200,
+        Check(state.HasAppliedWalletAdjustment(refund.AdjustmentId) && state.TryApplyWalletAdjustment(refund) == null && state.Gold == gold - 1800,
             "After a reload the same refund still changes nothing");
 
         // The player spent most of a resupply before it was refunded.
-        var resupply = Buy("campaign_resupply", 3000, 80);
+        var resupply = Buy("campaign_resupply", 2500, 80);
         SetBalances(300, 5);
-        var spent = state.TryApplyWalletAdjustment(Refund(resupply, "campaign_resupply", 3000, 80));
-        Check(spent is { GoldApplied: -300, FoodApplied: -5, GoldUnrecovered: 2700, FoodUnrecovered: 75 } && state.Gold == 0 && state.Food == 0,
+        var spent = state.TryApplyWalletAdjustment(Refund(resupply, "campaign_resupply", 2500, 80));
+        Check(spent is { GoldApplied: -300, FoodApplied: -5, GoldUnrecovered: 2200, FoodUnrecovered: 75 } && state.Gold == 0 && state.Food == 0,
             $"A refund larger than the balance stops at zero and records the rest (gold {state.Gold}, food {state.Food})");
         var spentId = spent?.AdjustmentId ?? "";
         state.ReloadFromDisk();
-        Check(state.Gold == 0 && state.GetAppliedWalletAdjustment(spentId) is { GoldUnrecovered: 2700, FoodUnrecovered: 75 },
+        Check(state.Gold == 0 && state.GetAppliedWalletAdjustment(spentId) is { GoldUnrecovered: 2200, FoodUnrecovered: 75 },
             "The balance and the unrecovered rest survive a reload");
 
         // The store reverses that refund: only what was taken comes back.
         var reversal = state.TryApplyWalletAdjustment(new WalletAdjustment
-            { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = resupply, ProductId = "campaign_resupply", Kind = "refund_reversed", GoldDelta = 3000, FoodDelta = 80, ReversesAdjustmentId = spentId });
+            { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = resupply, ProductId = "campaign_resupply", Kind = "refund_reversed", GoldDelta = 2500, FoodDelta = 80, ReversesAdjustmentId = spentId });
         Check(reversal is { GoldApplied: 300, FoodApplied: 5 } && state.Gold == 300 && state.Food == 5, "A reversed refund gives back exactly what it took");
 
         // Relic shard packs are credited, refunded and stopped at zero like gold and food.
         var shardsBefore = state.RelicShards;
         var casket = $"PUR-review-{Guid.NewGuid():N}";
-        Check(state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = casket, ProductId = "shard_casket", ShardsCredited = 55 })
-            && state.RelicShards == shardsBefore + 55, "A shard pack adds its relic shards");
+        Check(state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = casket, ProductId = "shard_casket", ShardsCredited = 45 })
+            && state.RelicShards == shardsBefore + 45, "A shard pack adds its relic shards");
         var shardData = state.BuildSaveData();
         shardData.RelicShards = 20;
         SaveSystem.Instance.Save(shardData);
         state.ReloadFromDisk();
         var shardRefund = state.TryApplyWalletAdjustment(new WalletAdjustment
-            { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = casket, ProductId = "shard_casket", Kind = "refund", ShardsDelta = -55 });
-        Check(shardRefund is { ShardsApplied: -20, ShardsUnrecovered: 35 } && state.RelicShards == 0,
+            { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = casket, ProductId = "shard_casket", Kind = "refund", ShardsDelta = -45 });
+        Check(shardRefund is { ShardsApplied: -20, ShardsUnrecovered: 25 } && state.RelicShards == 0,
             $"A shard refund larger than the balance stops at zero and records the rest (shards {state.RelicShards})");
         Check(state.ConsumeWalletAdjustmentNotice().Contains("20 relic shards were taken back"), "The player is told how many shards went");
         state.ReloadFromDisk();
-        Check(state.GetAppliedWalletAdjustment(shardRefund?.AdjustmentId ?? "") is { ShardsApplied: -20, ShardsUnrecovered: 35 },
+        Check(state.GetAppliedWalletAdjustment(shardRefund?.AdjustmentId ?? "") is { ShardsApplied: -20, ShardsUnrecovered: 25 },
             "The shard refund survives a reload");
 
         // A refund of a purchase this save never received, and a kind this build does not know.
         gold = state.Gold;
-        var stranger = Refund($"PUR-review-elsewhere-{Guid.NewGuid():N}", "gold_pouch", 500, 0);
+        var stranger = Refund($"PUR-review-elsewhere-{Guid.NewGuid():N}", "gold_pouch", 400, 0);
         Check(state.TryApplyWalletAdjustment(stranger) is { GoldApplied: 0, GoldUnrecovered: 0 } && state.Gold == gold,
             "A refund of a purchase this save never received takes nothing");
         var future = new WalletAdjustment { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = chest, Kind = "goodwill_grant", GoldDelta = 100 };

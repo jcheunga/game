@@ -1424,20 +1424,20 @@ public static class Endpoints
     // (StorePurchaseVerification.ProductStoreIds) and a Stripe price (StripePriceMap, ProductToStripePriceId).
     internal static readonly Dictionary<string, (int Gold, int Food, int Shards, bool UnitUnlock)> ProductRewards = new()
     {
-        ["gold_pouch"] = (500, 0, 0, false),
-        ["gold_chest"] = (2200, 0, 0, false),
-        ["gold_warchest"] = (6900, 0, 0, false),
-        ["gold_treasury"] = (18000, 0, 0, false),
+        ["gold_pouch"] = (400, 0, 0, false),
+        ["gold_chest"] = (1800, 0, 0, false),
+        ["gold_warchest"] = (5000, 0, 0, false),
+        ["gold_treasury"] = (11000, 0, 0, false),
         ["food_rations"] = (0, 20, 0, false),
         ["food_provisions"] = (0, 65, 0, false),
         ["food_stockpile"] = (0, 170, 0, false),
         ["food_granary"] = (0, 460, 0, false),
-        ["shard_pouch"] = (0, 0, 12, false),
-        ["shard_casket"] = (0, 0, 55, false),
-        ["shard_coffer"] = (0, 0, 150, false),
-        ["shard_reliquary"] = (0, 0, 340, false),
+        ["shard_pouch"] = (0, 0, 10, false),
+        ["shard_casket"] = (0, 0, 45, false),
+        ["shard_coffer"] = (0, 0, 120, false),
+        ["shard_reliquary"] = (0, 0, 260, false),
         ["starter_kit"] = (800, 30, 0, true),
-        ["campaign_resupply"] = (3000, 80, 0, false),
+        ["campaign_resupply"] = (2500, 80, 0, false),
     };
 
     private static bool AllowsDevelopmentPurchaseClaims() =>

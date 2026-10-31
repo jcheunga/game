@@ -22,7 +22,7 @@ using Godot;
 public partial class StoreKitPluginReview : Node
 {
     private const string Pouch = "com.crownroad.gold_pouch";
-    private const int PouchGold = 500;
+    private const int PouchGold = 400;
     private const string HandoffPath = "user://storekit-plugin-review.txt";
     private static readonly System.Net.Http.HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
     private readonly List<Godot.Collections.Dictionary> _completed = new();

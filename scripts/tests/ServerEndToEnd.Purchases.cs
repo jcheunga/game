@@ -79,7 +79,7 @@ public partial class ServerEndToEnd
         var shardPouch = ShopProductCatalog.GetById("shard_pouch");
         var shardsBefore = state.RelicShards;
         ReturnToShop(shop, shardPouch, StorePurchase(shardPouch));
-        Check(await Until(() => status.Text.Contains("+12 Shards")) && state.RelicShards == shardsBefore + 12,
+        Check(await Until(() => status.Text.Contains("+10 Shards")) && state.RelicShards == shardsBefore + 10,
             $"A shard pack bought in the shop credits its relic shards ({state.RelicShards - shardsBefore})");
 
         // Two deliveries of one purchase at once verify and grant once.

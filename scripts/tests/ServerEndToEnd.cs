@@ -371,7 +371,7 @@ public partial class ServerEndToEnd : Node
         await LiveUiReview.Open(this, "MainMenu");
         AccountDialog.Show((Control)GetTree().CurrentScene);
         var dialog = await OpenedDialog();
-        var send = Find(dialog, "Send sign-in code");
+        var send = Find(dialog, "Send code");
         if (!await Until(() => !send.Disabled)) { Check(false, $"The server offers email sign-in: {Status(dialog)}"); return false; }
         Check(!Find(dialog, "Continue with Google").Visible && !Find(dialog, "Continue with Apple").Visible,
             "Providers the server has no credentials for are left out");

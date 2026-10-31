@@ -60,7 +60,7 @@ public partial class UiReviewSmoke
         else Check(false, "A map landmark is on screen to press");
 
         // Theme buttons in a dialog (RealmButton with the engraved surfaces).
-        NicknameDialog.Show(menu, false); await Wait(.4);
+        NicknameDialog.Show(menu); await Wait(.4);
         var dialogButtons = Walk(menu).OfType<Button>().Where(x => x.IsVisibleInTree() && x.Name == "ConfirmNickname").Cast<BaseButton>()
             .Concat(Walk(menu).OfType<Button>().Where(x => x.IsVisibleInTree() && x.Text == "Cancel")).ToArray();
         Check(dialogButtons.Length == 2, "The nickname dialog shows its confirm and cancel buttons");

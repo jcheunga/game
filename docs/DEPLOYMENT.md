@@ -518,7 +518,7 @@ them in. Until then those two buttons show their title with an empty logo box.
 game against it headless, in two installs:
 
 1. **First install.** A guest gets a session and backs up after a win. It then
-   signs in with email through the real Account dialog, after a wrong code is
+   signs in with email through the real Account page, after a wrong code is
    refused, and the account keeps the guest's progress. Then:
    - Every account feature runs: manual cloud upload, achievements, daily
      score and leaderboard, challenge results with their leaderboard and feed,

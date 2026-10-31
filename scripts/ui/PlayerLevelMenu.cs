@@ -84,7 +84,7 @@ public partial class PlayerLevelMenu : RoyalScreen
         name.ShadowOffset = Vector2.Zero;
         _layer.AddChild(name);
         var nameWidth = Mathf.Min(name.TextWidth(name.FittedSize()), 170);
-        var rename = RoyalButton.Over(new Rect2(name.Position.X - 8, 156, nameWidth + 46, 58), "Change nickname", () => NicknameDialog.Show(this, false, Refresh), 6);
+        var rename = RoyalButton.Over(new Rect2(name.Position.X - 8, 156, nameWidth + 46, 58), "Change nickname", () => NicknameDialog.Show(this, Refresh), 6);
         rename.Name = "ChangeNickname";
         rename.SetGlyph(RoyalKit.Texture("icon-quill"), new Rect2(nameWidth + 16, 18, 20, 22), new Color("3a2c1c"));
         _layer.AddChild(rename);

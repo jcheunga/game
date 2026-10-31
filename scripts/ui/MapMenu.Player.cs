@@ -51,13 +51,14 @@ public partial class MapMenu
     public void OpenLevelTrack() => OpenHomeDestination("levels");
 
     /// <summary>
-    /// Once the home map is up: explains an account deleted elsewhere, then asks a new caravan for its nickname.
+    /// Once the home map is up: explains an account deleted elsewhere, then welcomes a new caravan on the Account
+    /// page, where it chooses its nickname and signs in or plays as a guest.
     /// </summary>
     private void ShowArrivalPrompts()
     {
         var state = GameState.Instance;
         if (!state.AccountDeletedNoticePending && !state.ShouldPromptForNickname) return;
-        void AskNickname() { if (IsInsideTree() && GameState.Instance.ShouldPromptForNickname) NicknameDialog.Show(this, true, RefreshUi); }
+        void AskNickname() { if (IsInsideTree() && GameState.Instance.ShouldPromptForNickname) AccountDialog.ShowWelcome(this, RefreshUi); }
         Callable.From(() =>
         {
             if (!IsInsideTree()) return;

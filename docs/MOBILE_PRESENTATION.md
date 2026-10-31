@@ -113,7 +113,7 @@ godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui
 
 `--scroll-reach` visits every home page and tab (`realm_tabs` rows and `royal_tab` tabs), the level track, achievements and
 the hub, plus (`extras`) the stage briefing, relic equipping on the relics page, the
-enchantments inspector, the account dialog, the battle menu, guide, settings and a
+enchantments inspector, the Account page, the battle menu, guide, settings and a
 victory. For each vertical scroll area it scrolls to the end (outer scrolls
 following) and fails `SCROLL_CUT_OFF` if the last row is still below what the
 screen shows, or `SCROLL_SQUASHED` if the area is under 96 px tall. Then, at nine

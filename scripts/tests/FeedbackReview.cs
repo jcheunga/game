@@ -69,14 +69,14 @@ public partial class FeedbackReview : Node
                 .EmitSignal(BaseButton.SignalName.Pressed);
             await Wait(.5);
             var account = Walk(settings).OfType<AccountDialog>().Single();
-            Check(Walk(account).OfType<ScrollContainer>().Any() && Walk(account).OfType<Button>().Any(b => b.Text == "Continue with Google"), "Account offers email and Google in a scrollable dialog");
+            Check(Walk(account).OfType<LineEdit>().Any(e => e.PlaceholderText == "Email address") && Walk(account).OfType<Button>().Any(b => b.Text == "Continue with Google"), "Account offers email and Google");
             var buttons = Walk(account).OfType<Button>().ToList();
             Check(buttons.Any(b => b.Text == "Continue with Apple") && buttons.FindIndex(b => b.Text == "Continue with Apple") < buttons.FindIndex(b => b.Text == "Continue with Google"),
                 "Sign in with Apple is offered wherever Google is, and just as prominently");
-            Check(account.GetOkButton().Text == "Play as guest", "A guest can keep playing without an account");
+            Check(Walk(account).OfType<Button>().Any(b => b.Text == "Play as guest" && b.IsVisibleInTree()), "A guest can keep playing without an account");
             Check(Walk(account).OfType<Button>().Single(b => b.Name == "PlatformSignIn").Visible == (PlatformSignIn.Provider.Length > 0),
                 "Play Games and Game Center appear only where the phone has them");
-            await Capture("01b-account"); account.EmitSignal(AcceptDialog.SignalName.Confirmed); await Wait();
+            await Capture("01b-account"); account.Close(); await Wait();
             menu.QueueFree(); await Wait();
             var map = await Open<MapMenu>("MapMenu"); await Capture("02-map");
             Check(!Walk(map).OfType<MapPathCanvas>().Single().IsTravelling, "Map opens with a stable selection");

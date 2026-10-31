@@ -4,10 +4,10 @@ Implemented · 15 October 2026
 
 ## Nickname
 
-A new caravan chooses a nickname on the home map before playing. The field starts with a suggested name such as "Ashen Warden", and **Suggest** rolls another. Names are 3–18 letters, numbers, spaces, hyphens or underscores. Other players see the nickname on rankings and in rooms.
+A new caravan chooses a nickname on the Account page, which welcomes it on the home map before playing (`AccountDialog.ShowWelcome`). The field starts with a suggested name such as "Ashen Warden", and the round arrow beside it rolls another; **Play as guest** or any sign-in keeps the name. Names are 3–18 letters, numbers, spaces, hyphens or underscores. Other players see the nickname on rankings and in rooms.
 
 - **Rename:** tap the name on the level track, use **Change nickname** in the profile, or edit **Settings → Gameplay → Nickname**.
-- **Account creation:** the account dialog has a nickname field, and a new account is created with that name. Signing in to an existing account restores that account's own name.
+- **Account creation:** the Account page has a nickname field, and a new account is created with that name. Signing in to an existing account restores that account's own name.
 - **Saves from before nicknames:** a save that still uses the default "Lantern" is asked once; a save with any other name keeps it.
 - **Test runs:** runs with `--save-suffix` or `--save-file` skip the prompt.
 

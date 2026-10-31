@@ -16,10 +16,13 @@ public static class PlatformSignIn
     private static readonly TimeSpan Patience = TimeSpan.FromMinutes(3);
     private static bool _autoTried;
 
+    /// <summary>Lets a review show another platform's game account (the Account page as Android lays it out).</summary>
+    internal static string ReviewProvider;
+
     /// <summary>The game account this build can use, or "" when it has neither plugin.</summary>
-    public static string Provider =>
-        OS.GetName() == "Android" && Engine.HasSingleton(PlayGamesSingleton) && Engine.GetSingleton(PlayGamesSingleton).Call("isConfigured").AsBool() ? PlayGames
-        : OS.GetName() == "iOS" && Engine.HasSingleton(GameCenterSingleton) ? GameCenter : "";
+    public static string Provider => ReviewProvider ??
+        (OS.GetName() == "Android" && Engine.HasSingleton(PlayGamesSingleton) && Engine.GetSingleton(PlayGamesSingleton).Call("isConfigured").AsBool() ? PlayGames
+        : OS.GetName() == "iOS" && Engine.HasSingleton(GameCenterSingleton) ? GameCenter : "");
 
     public static string ProviderName(string provider) => provider switch
     {

@@ -7,7 +7,7 @@ Google's art and the font (needs Pillow and fontTools):
 
 Apple's art, once its licences are accepted (standard library only; reimports the project with Godot):
 
-    python3 art/signin/build.py --apple-logo "<Sign in with Apple logo-and-text file, black>.svg" \
+    python3 art/signin/build.py --apple-logo "<Sign in with Apple logo-only file, black>.svg" \
         --game-center "<Game Center icon>.png"
 
 Nothing here redraws a logo. The Google "G" is cut from Google's own 44 pt iOS button at 4x around its 20 pt logo box,
@@ -71,10 +71,10 @@ def google_sans(source: Path):
 def apple_logo(source: Path):
     if source.suffix.lower() != ".svg":
         raise SystemExit("Use the SVG logo file: Apple allows its PNGs only in buttons exactly 44 pt tall.")
-    # Logo-only art is always square; the button needs the logo-and-text file, which is not.
+    # The logo sits on the button's white tile, which is Apple's square logo-only button; the logo-and-text file is wider.
     box = re.search(r'viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)', source.read_text(encoding="utf-8"))
-    if box and abs(float(box[1]) - float(box[2])) < 0.5:
-        raise SystemExit("That looks like the logo-only file (square). Use the logo-and-text file for 'Continue with Apple'.")
+    if box and abs(float(box[1]) - float(box[2])) >= 0.5:
+        raise SystemExit("That looks like the logo-and-text file (not square). Use the black logo-only file for the white tile.")
     shutil.copy(source, OUT / "apple-logo.svg")
     target = OUT / "apple-logo.svg.import"
     if not target.exists():
@@ -92,7 +92,7 @@ def main():
     parser.add_argument("--google-zip", type=Path)
     parser.add_argument("--play-games-zip", type=Path)
     parser.add_argument("--google-sans", type=Path, help="the variable TTF, with OFL.txt beside it")
-    parser.add_argument("--apple-logo", type=Path, help="Apple's black logo-and-text SVG for a 44 pt button")
+    parser.add_argument("--apple-logo", type=Path, help="Apple's black logo-only SVG (square), drawn on the white tile")
     parser.add_argument("--game-center", type=Path, help="Apple's Game Center icon PNG, the largest size")
     args = parser.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)

@@ -230,6 +230,15 @@ public abstract partial class RoyalBoard : RoyalScreen
     protected RoyalButton Action(Rect2 rect, string caption, string glyph, Action run, Kind kind = Kind.Navy, bool enabled = true,
         string hint = null, string price = null, Texture2D priceIcon = null, int size = 18, string name = null)
     {
+        var button = ActionButton(rect, caption, glyph, run, kind, enabled, hint, price, priceIcon, size, name);
+        Live.AddChild(button);
+        return button;
+    }
+
+    /// <summary>The same action button for screens that are not boards; the caller adds it.</summary>
+    public static RoyalButton ActionButton(Rect2 rect, string caption, string glyph, Action run, Kind kind = Kind.Navy, bool enabled = true,
+        string hint = null, string price = null, Texture2D priceIcon = null, int size = 18, string name = null)
+    {
         var button = RoyalButton.Over(rect, name ?? caption, run, 6);
         var (slice, margin) = kind switch
         {
@@ -246,7 +255,6 @@ public abstract partial class RoyalBoard : RoyalScreen
         button.Arrange(label, icon, iconSize, amount, priceIcon, new Vector2(26, 26), gap: 10);
         button.Disabled = !enabled;
         button.TooltipText = hint ?? caption;
-        Live.AddChild(button);
         return button;
     }
 

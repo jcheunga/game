@@ -6,7 +6,7 @@ using Godot;
 
 public partial class UiReviewSmoke
 {
-    /// <summary>The nickname prompt, the home player card, the level track, the caps in the armory and the result board's level card.</summary>
+    /// <summary>The first-run welcome's nickname, the home player card, the level track, the caps in the armory and the result board's level card.</summary>
     private async Task ReviewPlayerLevel()
     {
         _output = ProjectSettings.GlobalizePath(GetWindow().Size.Y < 500 ? "res://artifacts/player-level/mobile" : "res://artifacts/player-level/desktop");
@@ -16,20 +16,22 @@ public partial class UiReviewSmoke
         var menu = (MapMenu)GetTree().CurrentScene;
         Check(!state.HasChosenCallsign && !state.ShouldPromptForNickname, "Isolated review saves skip the first-run nickname prompt");
 
-        // The home map shows this dialog to a new caravan; the driver opens it the same way.
-        NicknameDialog.Show(menu, true); await Wait(.4);
-        var field = Walk(menu).OfType<LineEdit>().Single(x => x.Name == "NicknameField" && x.IsVisibleInTree());
-        Check(GameState.IsValidCallsign(field.Text, out _), $"The first-run prompt suggests a valid name ({field.Text})");
-        Check(!Walk(menu).OfType<Button>().Any(x => x.IsVisibleInTree() && x.Text == "Cancel"), "A new caravan cannot skip naming itself");
+        // The home map welcomes a new caravan on the Account page; the driver opens it the same way.
+        var chosen = false;
+        AccountDialog.ShowWelcome(menu, () => chosen = true); await Wait(.6);
+        var welcome = Walk(menu).OfType<AccountDialog>().Single();
+        var field = Walk(welcome).OfType<LineEdit>().Single(x => x.Name == "AccountNickname" && x.IsVisibleInTree());
+        Check(GameState.IsValidCallsign(field.Text, out _), $"The welcome suggests a valid name ({field.Text})");
+        Check(!Walk(welcome).OfType<Button>().Any(x => x.IsVisibleInTree() && x.Text == "Back"), "A new caravan cannot skip naming itself");
         AuditText("Nickname / first run"); await Capture("01-nickname-first-run");
-        Button Confirm() => Walk(menu).OfType<Button>().Single(x => x.Name == "ConfirmNickname" && x.IsVisibleInTree());
-        field.Text = "ab"; Confirm().EmitSignal(BaseButton.SignalName.Pressed); await Wait(.2);
-        var error = Walk(menu).OfType<Label>().Single(x => x.Name == "NicknameError");
-        Check(error.IsVisibleInTree() && !state.HasChosenCallsign, "A too-short nickname is explained and not saved");
+        Button Guest() => Walk(welcome).OfType<Button>().Single(x => x.Text == "Play as guest" && x.IsVisibleInTree());
+        field.Text = "ab"; Guest().EmitSignal(BaseButton.SignalName.Pressed); await Wait(.2);
+        var error = Walk(welcome).OfType<Label>().Single(x => x.Name == "Status");
+        Check(error.IsVisibleInTree() && error.Text.StartsWith("Nickname") && !state.HasChosenCallsign, "A too-short nickname is explained and not saved");
         await Capture("02-nickname-error");
-        field.Text = "Ser Rowan"; Confirm().EmitSignal(BaseButton.SignalName.Pressed); await Wait(.3);
-        Check(state.PlayerCallsign == "Ser Rowan" && state.HasChosenCallsign && !Walk(menu).OfType<LineEdit>().Any(x => x.Name == "NicknameField" && x.IsVisibleInTree()),
-            "Confirming saves the nickname and closes the prompt");
+        field.Text = "Ser Rowan"; Guest().EmitSignal(BaseButton.SignalName.Pressed); await Wait(.3);
+        Check(chosen && state.PlayerCallsign == "Ser Rowan" && state.HasChosenCallsign && !IsInstanceValid(welcome),
+            "Playing as a guest saves the nickname and closes the welcome");
 
         state.AddPlayerXP(PlayerLevelCatalog.TotalXPForLevel(4) + 70);
         await Open("MainMenu");
@@ -163,7 +165,7 @@ public partial class UiReviewSmoke
         var account = Walk(GetTree().Root).OfType<LineEdit>().SingleOrDefault(x => x.Name == "AccountNickname" && x.IsVisibleInTree());
         Check(account != null && account.Text == state.PlayerCallsign, "Creating an account starts from the current nickname");
         await Capture("12-account-nickname");
-        Walk(GetTree().Root).OfType<AccountDialog>().Single().QueueFree();
+        Walk(GetTree().Root).OfType<AccountDialog>().Single().Close();
         GD.Print($"PLAYER_LEVEL_REVIEW_RESULT: {_failures} failures");
         QuitAfterAudio(_failures == 0 ? 0 : 1);
     }

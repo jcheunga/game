@@ -2,8 +2,8 @@ using System;
 using Godot;
 
 /// <summary>
-/// Asks for the nickname other players see. A new caravan meets it once on the home map (with no way to
-/// skip, but a suggested name already filled in); the profile and level track reopen it to rename.
+/// Renames the nickname other players see, from the profile and the level track. A new caravan chooses its first
+/// nickname on the Account page's welcome (<see cref="AccountDialog.ShowWelcome"/>), which borrows <see cref="Suggest"/>.
 /// </summary>
 public static class NicknameDialog
 {
@@ -17,19 +17,19 @@ public static class NicknameDialog
     }
 
     /// <summary>Opens the dialog over <paramref name="host"/>; <paramref name="chosen"/> runs once a name is saved.</summary>
-    public static void Show(Control host, bool firstRun, Action chosen = null)
+    public static void Show(Control host, Action chosen = null)
     {
         var state = GameState.Instance;
         var stack = MedievalUi.CreateModal(host, new Vector2(480f, 0f), 14, out var veil, out var center, out var panel);
         center.Name = "NicknameDialog";
         void Close() { veil.QueueFree(); center.QueueFree(); }
 
-        var heading = RealmUi.Heading(firstRun ? "Choose a nickname" : "Change nickname", 26);
+        var heading = RealmUi.Heading("Change nickname", 26);
         heading.HorizontalAlignment = HorizontalAlignment.Center;
         stack.AddChild(heading);
         // Leaderboards show anonymous tags, so only players racing you can see the nickname.
         var seen = LaunchFeatures.InternetRooms ? "Players racing you in rooms and LAN races see it." : "Players racing you over your local network see it.";
-        var body = RealmUi.Label(firstRun ? seen + " You can change it later." : seen, 18, true);
+        var body = RealmUi.Label(seen, 18, true);
         body.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         body.HorizontalAlignment = HorizontalAlignment.Center;
         stack.AddChild(body);
@@ -37,7 +37,7 @@ public static class NicknameDialog
         var field = new LineEdit
         {
             Name = "NicknameField", PlaceholderText = "Nickname", MaxLength = GameState.MaxCallsignLength,
-            Text = firstRun && !state.HasChosenCallsign ? Suggest() : state.PlayerCallsign,
+            Text = state.PlayerCallsign,
             CustomMinimumSize = new Vector2(0, 50), Alignment = HorizontalAlignment.Center, SelectAllOnFocus = true
         };
         stack.AddChild(field);
@@ -66,7 +66,7 @@ public static class NicknameDialog
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 10);
         stack.AddChild(row);
-        if (!firstRun) row.AddChild(RealmUi.Button("close", "Cancel", Close));
+        row.AddChild(RealmUi.Button("close", "Cancel", Close));
         row.AddChild(RealmUi.Button("star", "Suggest", () => { field.Text = Suggest(); error.Visible = false; }));
         row.AddChild(RealmUi.Button("check", "Confirm", Confirm, true).With(b => b.Name = "ConfirmNickname"));
 

@@ -83,7 +83,7 @@ public partial class UiReviewSmoke
             .EmitSignal(BaseButton.SignalName.Pressed);
         await Wait(.3);
         var account = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<AccountDialog>().Single();
-        await AuditScrollReach("account", account, account); account.QueueFree();
+        await AuditScrollReach("account", account); account.Close();
         state.PrepareCampaignBattle();
         await Open("Battle");
         var battle = GetTree().CurrentScene;

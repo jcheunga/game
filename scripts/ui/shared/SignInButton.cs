@@ -9,8 +9,8 @@ using Godot;
 /// title at one size, starting at one column after the tile, so a stack of them lines up and none outranks
 /// another. The face is drawn here; the title stays the button's <see cref="Button.Text"/> for tests and screen
 /// readers. Presses come from <see cref="ButtonFeel"/> like any button: the whole face sinks and darkens. Apple's
-/// logo and the Game Center icon come only from Apple's own files; until those are added the button has no tile
-/// (never a stand-in logo) and keeps its size, title column and action.
+/// logo and the Game Center icon come only from Apple's own files; until those are added their white tile stays
+/// empty (never a stand-in logo) and the button keeps its size, title column and action.
 /// </summary>
 public partial class SignInButton : Button
 {
@@ -132,14 +132,11 @@ public partial class SignInButton : Button
         face.SetBorderWidthAll((int)rim);
         face.SetCornerRadiusAll((int)Mathf.Round(Corner));
         DrawStyleBox(face, new Rect2(Vector2.Zero, Size));
-        // The tile waits for the logo: a brand whose official art is not in yet shows no empty tile.
-        if (LogoArt(Kind) is { } art)
-        {
-            var tile = new StyleBoxFlat { BgColor = Tile, AntiAliasing = true };
-            tile.SetCornerRadiusAll((int)Mathf.Round(Corner * .75f));
-            DrawStyleBox(tile, TileRect);
-            DrawTextureRect(art, LogoRect, false);
-        }
+        // Every button has its white tile, so the column matches; a brand whose official art is not in yet keeps it empty.
+        var tile = new StyleBoxFlat { BgColor = Tile, AntiAliasing = true };
+        tile.SetCornerRadiusAll((int)Mathf.Round(Corner * .75f));
+        DrawStyleBox(tile, TileRect);
+        if (LogoArt(Kind) is { } art) DrawTextureRect(art, LogoRect, false);
         var title = TitleRect; var font = TitleFont; var size = (int)TitleFontSize;
         DrawString(font, new Vector2(title.Position.X, title.Position.Y + font.GetAscent(size)), Text, HorizontalAlignment.Left, -1, size, Ink);
         if (!Disabled) return;

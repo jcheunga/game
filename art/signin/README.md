@@ -23,8 +23,8 @@ file). Keep the downloads out of the repository.
 
 ## Adding Apple's art
 
-Until Apple's two files are added, the Apple and Game Center buttons keep their size, title column and action, with
-no logo tile. Apple forbids any home-made Apple logo, so there is no stand-in. `UiReviewSmoke --account` prints
+Until Apple's two files are added, the Apple and Game Center buttons keep their size, white logo tile (empty), title
+column and action. Apple forbids any home-made Apple logo, so there is no stand-in. `UiReviewSmoke --account` prints
 a `PENDING` line for each missing file, and both must be in before an App Store submission.
 
 1. Join the Apple Developer Program (the licences cover members only).
@@ -54,8 +54,9 @@ match: dark buttons, each logo on its correct (white) background, logos and titl
 sign-in button is drawn the same way (`SignInButton`):
 
 - Google's **dark theme** face for all of them: #131314 fill, a 1 pt #8E918F rim, #E3E3E3 Google Sans Medium title.
-- The logo on a **white tile** (60 px square, 4 pt corners × 0.75) at the leading edge, centred on the button's height.
-  The G keeps the white background Google asks for; the other logos share the tile so the column matches.
+- The logo on a **white tile** (60 px square, 4 pt corners × 0.75) at the leading edge, centred on the button's height,
+  on every button. The G keeps the white background Google asks for; the other logos share the tile so the column
+  matches, and Apple's and Game Center's tiles stay empty until their files are added.
 - One title size, Google's 14 pt at the button's scale (28 px on Android and desktop, 25 on iOS), every title starting
   at the same column, Google's gap after the tile.
 
@@ -96,7 +97,7 @@ Android, where Apple's licence allows versions of the app with the same title.
 | Rule | How the button meets it |
 | --- | --- |
 | People must recognise it instantly as Sign in with Apple. | Departs (see The shared design): near-black face, Apple's black logo on the white tile, a light title. |
-| Use only Apple's downloadable logo files, never a custom Apple logo; don't crop the file, don't add vertical padding, and match its height to the button's. | Only Apple's logo-only file is drawn, whole and uncropped, filling the white tile (checked once the file is added). Until then there is no tile. |
+| Use only Apple's downloadable logo files, never a custom Apple logo; don't crop the file, don't add vertical padding, and match its height to the button's. | Only Apple's logo-only file is drawn, whole and uncropped, filling the white tile (checked once the file is added). Until then the tile stays empty. |
 | Titles only "Sign in with Apple", "Sign up with Apple" or "Continue with Apple"; keep the capitalisation unless the UI is all capitals. | "Continue with Apple", in the default capitalisation. |
 | Logo-and-text buttons are rectangular. | A rectangle with 4 pt corners (Apple allows any corner radius that matches the app's other buttons). |
 | Logo and title both black or both white; the background stays black or white. | Departs: a black logo on the white tile beside a light title. |
@@ -128,7 +129,7 @@ From the [Human Interface Guidelines](https://developer.apple.com/design/human-i
 
 | Rule | How the button meets it |
 | --- | --- |
-| Use Game Center's official artwork from Apple Design Resources in custom UI; keep its appearance, dimensions and effects. | Only Apple's icon file, drawn whole and square at 20 pt on the white tile. Until it is added there is no tile. |
+| Use Game Center's official artwork from Apple Design Resources in custom UI; keep its appearance, dimensions and effects. | Only Apple's icon file, drawn whole and square at 20 pt on the white tile. Until it is added the tile stays empty. |
 | Spell it "Game Center" (not GameCenter, GameKit or game center). | "Continue with Game Center". |
 
 ## Apple's artwork licences

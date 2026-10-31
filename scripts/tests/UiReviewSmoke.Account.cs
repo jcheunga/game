@@ -94,6 +94,11 @@ public partial class UiReviewSmoke
             $"Every title is the spec's 14 points at that scale ({string.Join(", ", buttons.Select(b => b.TitleFontSize))} px)");
         Check(buttons.Select(b => b.GlobalPosition.X + b.TitleRect.Position.X).Distinct().Count() == 1, "Every title starts at the same column");
         Check(buttons.Select(b => b.GlobalPosition.X + SignInButton.TileRect.GetCenter().X).Distinct().Count() == 1, "Every logo tile sits in the same column");
+        // Every button draws its white tile, logo or not: the tile's centre is white on Apple's button too.
+        var image = GetViewport().GetTexture().GetImage();
+        var scale = image.GetSize() / GetViewport().GetVisibleRect().Size;
+        Color TileCentre(SignInButton b) { var p = (b.GetGlobalTransformWithCanvas() * SignInButton.TileRect.GetCenter()) * scale; return image.GetPixel((int)p.X, (int)p.Y); }
+        Check(TileCentre(apple).V > .95f && TileCentre(apple).S < .05f, $"Sign in with Apple has its white tile like the others ({TileCentre(apple).ToHtml(false)})");
         var g = google.LogoRect;
         Check(Mathf.IsEqualApprox(g.Size.X, g.Size.Y) && Mathf.IsEqualApprox(g.Size.Y * 20 / 22, SignInButton.LogoSize) && SignInButton.TileRect.Encloses(g),
             $"The Google G keeps its shape at 20 of the spec's {(OS.GetName() == "iOS" ? 44 : 40)} points ({SignInButton.LogoSize:0.#} px), on its white tile");

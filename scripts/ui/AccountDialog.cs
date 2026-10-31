@@ -409,16 +409,15 @@ public partial class AccountDialog : RoyalScreen
         var provider = PlatformSignIn.ProviderName(state.AccountProvider);
         _accountName.Text = state.AccountLabel.Length > 0 ? state.AccountLabel : state.PlayerCallsign;
         _accountDetail.Text = $"{provider} · {state.PlayerCallsign}";
-        var logo = state.AccountProvider switch
+        SignInButton.Brand? brand = state.AccountProvider switch
         {
-            "google" => SignInButton.LogoArt(SignInButton.Brand.Google),
-            "apple" => SignInButton.LogoArt(SignInButton.Brand.Apple),
-            PlatformSignIn.PlayGames => SignInButton.LogoArt(SignInButton.Brand.PlayGames),
-            PlatformSignIn.GameCenter => SignInButton.LogoArt(SignInButton.Brand.GameCenter),
+            "google" => SignInButton.Brand.Google, "apple" => SignInButton.Brand.Apple,
+            PlatformSignIn.PlayGames => SignInButton.Brand.PlayGames, PlatformSignIn.GameCenter => SignInButton.Brand.GameCenter,
             _ => null
         };
-        _accountTile.Visible = logo != null;
-        _accountMark.Texture = logo ?? RoyalKit.Texture("icon-account");
+        // A company's account shows its white tile as on its button (empty while Apple's art is missing); email shows the account icon.
+        _accountTile.Visible = brand != null;
+        _accountMark.Texture = brand is { } kind ? SignInButton.LogoArt(kind) : RoyalKit.Texture("icon-account");
     }
 
     private void Say(string text, bool error = false)

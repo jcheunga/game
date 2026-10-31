@@ -417,7 +417,7 @@ handling of every outcome passes on desktop
   [Apple Design Resources](https://developer.apple.com/design/resources/).
   Which file to pick and the one command that wires it in are under "Adding
   Apple's art" in [art/signin/README.md](../art/signin/README.md). Until then
-  the Game Center button shows an empty logo box, which App Review would
+  the Game Center button shows an empty white tile, which App Review would
   reject. The Sign in with Apple logo is needed only if section 8 is set up
   for Android.
 - [x] Build account deletion. Apple requires it, and it must revoke the

@@ -8,25 +8,37 @@ the same picture at different sizes: nobody sees more or less of the field or
 the menus. Screens of another shape get black bars (a 19.5:9 phone at the sides,
 a 4:3 tablet above and below).
 
-Sizes are chosen for the smallest case, a phone showing the canvas about 390 pt
-tall (0.54 pt per canvas pixel):
+Phones are the target, so sizes are chosen for the smallest case, a phone
+showing the canvas about 390 pt tall (0.54 pt per canvas pixel), and meet
+Apple's minimums there (since 2026-10-31; before, the floors were 18/16 px):
 
-- Text: at least 18 px for mixed case and 16 px for engraved capitals and
-  figures, as drawn on the canvas (`ReadingText.PhoneBody`/`PhoneCaps`; the
-  concept-screen helpers `RoyalText`, `RoyalSpec.Label`, `RoyalLabel` and
-  `RoyalText.FitLines` never go below them). `UiReviewSmoke --typography`
-  reports anything smaller as `SMALL_ON_PHONE`.
+- Text: at least 22 px (about 12 pt) for mixed case and 20 px (about 11 pt) for
+  engraved capitals and figures, as drawn on the canvas
+  (`ReadingText.PhoneBody`/`PhoneCaps`; the concept-screen helpers `RoyalText`,
+  `RoyalSpec.Label`, `RoyalLabel`, `RoyalText.FitLines`, `StatSheet`, the
+  shared theme and `RealmUi` never go below them). Text drawn on a scaled layer
+  is sized against the floors as drawn (`MobilePresentation.ModalBody`/
+  `ModalCaps` on the 1.55× canvas; the war wagon's stage lifts its own).
 - Menus and modals draw on a 1/1.55 logical canvas scaled up 1.55×
   (`MobilePresentation.HudScale`), with 56-unit touch targets.
-- Concept-screen buttons grow their touch area to 56 units without changing
-  their art (`RoyalButton.TouchRect`).
-- The battle HUD keeps the battle concept's sizes (`BattleHudScale` 1): its
-  cards are about 64×71 pt on a phone and its numbers 18–20 px, and a larger HUD
-  would cover the road.
+- Concept-screen buttons grow their touch area to 72 px of the screen (about
+  39 pt) without changing their art (`RoyalButton.TouchRect`); the extra reach
+  never takes a tap that lands on a neighbouring button. `RoyalButton.Arrange`
+  keeps icon, caption and price inside the plate (stepping down to the floor,
+  then dropping the icon).
+- Collection grids (units, spells, relics) show five larger cells a row where
+  the concepts had six; achievements show two cards a row.
+- The battle HUD draws the battle concept 1.2× (`BattleHudScale`): cards about
+  78×86 pt, meters, gold and pause scaled alike. The result board stands on the
+  unscaled canvas.
 
-`UiReviewSmoke --typography --window=WxH` captures every screen at any window
-size; captures at 844×390, 1024×768, 1280×720 and 1440×900 match once scaled to
-the same size.
+`UiReviewSmoke --typography --window=844x390` audits every screen at phone size:
+`SMALL_ON_PHONE` (text under the floors), `ROYAL_TEXT_OVERFLOW` (a label at its
+floor still wider than its box, or a button caption past its button) and
+`SMALL_TOUCH` (a tap target under 72 px). Any other review audits its captures
+the same way with `--audit-captures` (e.g. `--concepts`, `--boards`, `--guides`,
+`--player-level`). Captures at 844×390, 1024×768, 1280×720 and 1440×900 match
+once scaled to the same size.
 
 The battle shares the soldier scale and two-screen field everywhere (see
 [Deployment cards](DEPLOYMENT_CARDS.md#battlefield-proportions)).

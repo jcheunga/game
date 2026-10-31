@@ -6,7 +6,7 @@ using Godot;
 /// <summary>Small, shared presentation primitives. Game rules remain in GameState.</summary>
 public static class RealmUi
 {
-    public const int ButtonFontSize = 18;
+    public const int ButtonFontSize = ReadingText.PhoneBody;
     public static readonly Color Gold = new("edc47d");
     public static readonly Color Muted = new("c6bba6");
     private static readonly Dictionary<string, Texture2D> Icons = new();
@@ -25,7 +25,7 @@ public static class RealmUi
     /// <summary>Sets a readable serif heading with the same size across the shared interface.</summary>
     public static Label Display(Label label, int size)
     {
-        size = Mathf.Max(size, 20);
+        size = Mathf.Max(size, ReadingText.PhoneCaps);
         label.AddThemeFontOverride("font", DisplayFont(size, CapitalRun.IsMatch(label.Text)));
         label.AddThemeFontSizeOverride("font_size", size);
         label.SetMeta(DisplaySizeMeta, size);
@@ -97,7 +97,8 @@ public static class RealmUi
     public static Button Button(string icon, string label, Action action, bool primary = false)
     {
         var button = new RealmButton { Text = label, Icon = Icon(icon), ExpandIcon = true, CenterIconAndText = true, TooltipText = label,
-            CustomMinimumSize = new Vector2(string.IsNullOrEmpty(label) ? 48 : TitleFont.GetStringSize(label, HorizontalAlignment.Left, -1, ButtonFontSize).X + 72, 48),
+            // 60 px tall: a fingertip on a phone (icon-only buttons stay square).
+            CustomMinimumSize = new Vector2(string.IsNullOrEmpty(label) ? 48 : TitleFont.GetStringSize(label, HorizontalAlignment.Left, -1, ButtonFontSize).X + 72, string.IsNullOrEmpty(label) ? 48 : 60),
             Alignment = HorizontalAlignment.Center, MouseDefaultCursorShape = Control.CursorShape.PointingHand };
         button.AddThemeConstantOverride("icon_max_width", 22);
         button.AddThemeConstantOverride("h_separation", 10);

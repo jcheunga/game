@@ -11,10 +11,10 @@ using Godot;
 /// </summary>
 public partial class CashShopMenu : Control
 {
-    private static readonly string[] Categories = { "Gold", "Rations", "Bundles", "Purchase info" };
+    private static readonly string[] Categories = { "Gold", "Rations", "Bundles", "Ledger" };
     private static readonly string[] TabGlyphs = { "storetab-gold", "storetab-rations", "storetab-bundles", "storetab-ledger" };
     private static readonly string[] PackCategories = { "gold", "food", "mixed" };
-    private static readonly Vector2 TabSize = new(128, 40);
+    private static readonly Vector2 TabSize = new(120, 40);
     private static readonly Color Muted = new("b9ad96"), Body = new("e9dfcb"), Heading = new("f3deaa");
     private const int RationsPage = 1, LedgerPage = 3;
     private readonly List<RoyalButton> _tabs = new();
@@ -155,8 +155,8 @@ public partial class CashShopMenu : Control
             var stack = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
             stack.AddThemeConstantOverride("separation", 6);
             panel.AddChild(stack);
-            var heading = StorePackCard.Caps(title, 14, Heading, 700);
-            heading.CustomMinimumSize = new Vector2(0, 24);
+            var heading = StorePackCard.Caps(title, 16, Heading, 700);
+            heading.CustomMinimumSize = new Vector2(0, 26);
             heading.ShrinkToFit = true;
             stack.AddChild(heading);
             stack.AddChild(new TextureRect { Texture = RoyalKit.Texture("codex-rule"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
@@ -180,7 +180,7 @@ public partial class CashShopMenu : Control
         rim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         ledger.AddChild(picture);
         var latest = Panel("Latest purchase", 1f);
-        _statusLabel = StorePackCard.Serif("", 14, Body, 600);
+        _statusLabel = StorePackCard.Serif("", 16, Body, 600);
         _statusLabel.Name = "PurchaseStatus";
         latest.AddChild(_statusLabel);
         // Until something is bought, the panel shows an empty state (icon, title, one line) in the space the result takes.
@@ -189,10 +189,10 @@ public partial class CashShopMenu : Control
         empty.AddChild(new TextureRect { Texture = RoyalKit.Texture("storetab-ledger"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(34, 26), SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
             SelfModulate = new Color(1, 1, 1, .55f), MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
-        var none = StorePackCard.Serif("Nothing bought yet", 15, Body, 600);
+        var none = StorePackCard.Serif("Nothing bought yet", 17, Body, 600);
         none.HorizontalAlignment = HorizontalAlignment.Center;
         empty.AddChild(none);
-        var hint = StorePackCard.Serif("Each purchase's result is written here.", 12, Muted);
+        var hint = StorePackCard.Serif("Each purchase's result is written here.", 15, Muted);
         hint.HorizontalAlignment = HorizontalAlignment.Center;
         empty.AddChild(hint);
         latest.AddChild(_statusPlaceholder = empty);
@@ -209,9 +209,9 @@ public partial class CashShopMenu : Control
         var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         row.AddThemeConstantOverride("separation", 10);
         row.AddChild(new TextureRect { Texture = RoyalKit.Texture(glyph), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            CustomMinimumSize = new Vector2(16, 18), SizeFlagsVertical = SizeFlags.ShrinkCenter, SelfModulate = new Color(1, 1, 1, .8f), MouseFilter = MouseFilterEnum.Ignore,
+            CustomMinimumSize = new Vector2(18, 20), SizeFlagsVertical = SizeFlags.ShrinkCenter, SelfModulate = new Color(1, 1, 1, .8f), MouseFilter = MouseFilterEnum.Ignore,
             TextureFilter = TextureFilterEnum.LinearWithMipmaps });
-        var label = StorePackCard.Serif(text, 12, Muted);
+        var label = StorePackCard.Serif(text, 15, Muted);
         label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         row.AddChild(label);
         return row;
@@ -236,23 +236,23 @@ public partial class CashShopMenu : Control
         _refillRow = new HBoxContainer { Name = "RationRefill" };
         _refillRow.AddThemeConstantOverride("separation", 12);
         notice.AddChild(_refillRow);
-        var refill = FooterButton(new Vector2(176, 32), "navy", () =>
+        var refill = FooterButton(new Vector2(196, 32), "navy", () =>
         {
             AudioDirector.Purchased(GameState.Instance.TryBuyFoodRefill(out var message));
             RefreshUi();
             _noticeLabel.Text = message;
         });
-        refill.Arrange(StorePackCard.Caps("+10 food", 12, RoyalText.Cream, 700), HomeMapArt.Icon("food"), new Vector2(22, 22),
-            StorePackCard.Caps("100", 12, RoyalText.Cream, 700), HomeMapArt.Icon("gold"), new Vector2(18, 18), gap: 6, rule: 10);
+        refill.Arrange(StorePackCard.Caps("+10 food", 14, RoyalText.Cream, 700), HomeMapArt.Icon("food"), new Vector2(22, 22),
+            StorePackCard.Caps("100", 14, RoyalText.Cream, 700), HomeMapArt.Icon("gold"), new Vector2(18, 18), gap: 6, rule: 10);
         refill.Text = "10 food · 100 gold";
         refill.AccessibilityName = refill.TooltipText = "Buy 10 food for 100 gold";
         _refillRow.AddChild(refill);
-        var recharge = StorePackCard.Serif("+2 food every 5 minutes · Up to 24", 12, Muted);
+        var recharge = StorePackCard.Serif("+2 food every 5 minutes · Up to 24", 15, Muted);
         recharge.AutowrapMode = TextServer.AutowrapMode.Off;
         recharge.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
         recharge.VerticalAlignment = VerticalAlignment.Center;
         _refillRow.AddChild(recharge);
-        _noticeLabel = StorePackCard.Serif("", 13, Muted);
+        _noticeLabel = StorePackCard.Serif("", 15, Muted);
         _noticeLabel.Name = "PurchaseNotice";
         _noticeLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         _noticeLabel.VerticalAlignment = VerticalAlignment.Center;
@@ -287,10 +287,10 @@ public partial class CashShopMenu : Control
             var selected = i == _selectedCategory;
             tab.SetStates(StorePackCard.Kit(selected ? "ach-tab-selected" : "ach-tab", 7), 4);
             tab.MarkTab(selected);
-            var caption = new RoyalLabel { Text = Categories[i], Font = RoyalFonts.Body(600), FontSize = 14, CapRatio = .58f, MinimumFontSize = 12,
+            var caption = new RoyalLabel { Text = Categories[i], Font = RoyalFonts.Body(600), FontSize = 16, CapRatio = .58f, MinimumFontSize = MobilePresentation.ModalBody,
                 Ink = selected ? new Color("f4eabf") : new Color("dcdddf"), ShadowOffset = new Vector2(0, 1), ShadowInk = new Color(0, 0, 0, .6f) };
-            tab.Arrange(caption, RoyalKit.Texture(TabGlyphs[i]), new Vector2(18, 18), gap: 7);
-            tab.Glyph.SelfModulate = selected ? Colors.White : new Color(.88f, .88f, .9f);
+            tab.Arrange(caption, RoyalKit.Texture(TabGlyphs[i]), new Vector2(20, 20), gap: 7);
+            if (tab.Glyph != null) tab.Glyph.SelfModulate = selected ? Colors.White : new Color(.88f, .88f, .9f);
         }
     }
 
@@ -332,7 +332,7 @@ public partial class CashShopMenu : Control
                 StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, Position = new Vector2(x, (Height - Icon) / 2), Size = new Vector2(Icon, Icon),
                 MouseFilter = MouseFilterEnum.Ignore });
             x += Icon + Gap;
-            var value = new RoyalLabel { Text = pairs[i].Item2, Font = RoyalFonts.Body(700), FontSize = 16, CapRatio = .62f, Ink = new Color("1b1610"), ShrinkToFit = false };
+            var value = new RoyalLabel { Text = pairs[i].Item2, Font = RoyalFonts.Body(700), FontSize = 17, CapRatio = .62f, Ink = new Color("1b1610"), ShrinkToFit = false };
             var width = Mathf.Ceil(value.TextWidth(value.FontSize));
             value.Position = new Vector2(x, 0); value.Size = new Vector2(width + 2, Height);
             _balances.AddChild(value);
@@ -535,12 +535,12 @@ public partial class CashShopMenu : Control
             // Ruled like a ledger: each entry sits on a faint line.
             if (_ledgerRows.GetChildCount() > 0)
                 _ledgerRows.AddChild(new ColorRect { Color = new Color(.85f, .72f, .5f, .14f), CustomMinimumSize = new Vector2(0, 1), MouseFilter = MouseFilterEnum.Ignore });
-            var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(0, 25) };
-            var key = StorePackCard.Serif(name, 13, Muted);
+            var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(0, 28) };
+            var key = StorePackCard.Serif(name, 15, Muted);
             key.AutowrapMode = TextServer.AutowrapMode.Off;
             key.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             key.VerticalAlignment = VerticalAlignment.Center;
-            var amount = StorePackCard.Serif(value, 13, Body, 600);
+            var amount = StorePackCard.Serif(value, 15, Body, 600);
             amount.AutowrapMode = TextServer.AutowrapMode.Off;
             amount.HorizontalAlignment = HorizontalAlignment.Right;
             amount.VerticalAlignment = VerticalAlignment.Center;

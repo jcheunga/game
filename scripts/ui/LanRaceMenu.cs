@@ -158,7 +158,7 @@ public partial class LanRaceMenu : RoyalBoard
         var width = (room.Size.X - 16) / 3;
         Action(new Rect2(room.Position.X, y, width, 42), hosting ? "Rehost" : "Host", null, HostBoard, Kind.Navy,
             !(hosting && service.RoundLocked), "Host the armed board for the room", size: 15, name: hosting ? "Rehost board" : "Host board");
-        Action(new Rect2(room.Position.X + width + 8, y, width, 42), "Broadcast", null, RefreshHostedBoard, Kind.Navy,
+        Action(new Rect2(room.Position.X + width + 8, y, width, 42), "Send", null, RefreshHostedBoard, Kind.Navy,
             hosting && !service.RoundLocked, "Send the armed board to every runner", size: 15, name: "Broadcast update");
         Action(new Rect2(room.Position.X + 2 * (width + 8), y, width, 42), "Close", null, () => { Service?.CloseRoom(); _message = ""; Refresh(); }, Kind.Slate,
             service?.HasRoom == true, "Close the room", size: 15, name: "Close room");

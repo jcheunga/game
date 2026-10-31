@@ -474,9 +474,60 @@ public partial class UiReviewSmoke : Node
                 default: continue;
             }
             var shown = size * control.GetGlobalTransformWithCanvas().Scale.Y;
-            var caps = text == text.ToUpperInvariant() || control is RoyalLabel { CapRatio: >= .7f };   // Cinzel has only capitals
+            // A label at its floor that still runs past its rect draws over the frame beside it.
+            if (control is RoyalLabel { ShrinkToFit: true } fitted && fitted.Size.X > 0 && fitted.TextWidth(size) > fitted.Size.X + 2)
+            {
+                GD.Print($"ROYAL_TEXT_OVERFLOW {screen}: \"{text.Replace("\n", " ")[..Math.Min(60, text.Length)]}\" {fitted.TextWidth(size):0} > {fitted.Size.X:0} at {size}px {control.GetPath()}");
+                _failures++;
+            }
+            // A caption laid out by RoyalButton.Arrange never shrinks, so it must end inside its button.
+            if (control is RoyalLabel { ShrinkToFit: false } caption)
+            {
+                Button owner = null;
+                for (var parent = caption.GetParent(); parent != null && owner == null; parent = parent.GetParent()) owner = parent as Button;
+                if (owner != null)
+                {
+                    var scale = caption.GetGlobalTransformWithCanvas().Scale.X;
+                    var drawn = caption.TextWidth(size) * scale;
+                    var left = caption.GetGlobalRect().Position.X + caption.Align switch
+                    {
+                        HorizontalAlignment.Center => (caption.Size.X * scale - drawn) / 2, HorizontalAlignment.Right => caption.Size.X * scale - drawn, _ => 0
+                    };
+                    var box = owner.GetGlobalRect();
+                    if (left < box.Position.X - 2 || left + drawn > box.End.X + 2)
+                    {
+                        GD.Print($"ROYAL_TEXT_OVERFLOW {screen}: caption \"{text.Replace("\n", " ")[..Math.Min(60, text.Length)]}\" runs past its button ({left:0}–{left + drawn:0} outside {box.Position.X:0}–{box.End.X:0}) {control.GetPath()}");
+                        _failures++;
+                    }
+                }
+            }
+            // Cinzel has only capitals, whatever case the text is stored in.
+            var caps = text == text.ToUpperInvariant() || control is RoyalLabel { CapRatio: >= .7f }
+                || (control is not RoyalLabel && RoyalFonts.IsDisplay(control.GetThemeFont(control is RichTextLabel ? "normal_font" : "font")));
+            // Text drawn in a transparent ink (a selector over its painted caption) is not what the player reads.
+            if (control is Button { } inkless && inkless.GetThemeColor("font_color").A < .05f) continue;
             if (shown >= (caps ? PhoneMinimumCaps : PhoneMinimumText) - .25f) continue;
             var line = $"SMALL_ON_PHONE {screen}: {shown:0.#}px ({size}) {control.GetType().Name} \"{text.Replace("\n", " ")[..Math.Min(60, text.Length)]}\" {control.GetPath()}";
+            _legibility.Add(line); GD.Print(line);
+        }
+        AuditTouchTargets(screen);
+    }
+
+    // A fingertip on a landscape phone (0.54 pt per canvas px): Apple asks for 44 pt, about 80 canvas px. Buttons
+    // painted smaller still reach that far through RoyalButton.TouchRect.
+    internal const float PhoneTouch = 72;
+
+    private void AuditTouchTargets(string screen)
+    {
+        var viewport = GetViewport().GetVisibleRect();
+        foreach (var button in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<BaseButton>().Where(x => x.IsVisibleInTree() && !x.Disabled && x.MouseFilter == Control.MouseFilterEnum.Stop))
+        {
+            var reach = button is RoyalButton royal ? royal.TouchRect : new Rect2(Vector2.Zero, button.Size);
+            var scale = button.GetGlobalTransformWithCanvas().Scale;
+            var shown = reach.Size * scale;
+            if (!viewport.Intersects(button.GetGlobalRect()) || (shown.X >= PhoneTouch - .5f && shown.Y >= PhoneTouch - .5f)) continue;
+            var name = button is Button { Text: { Length: > 0 } text } ? text : button.AccessibilityName;
+            var line = $"SMALL_TOUCH {screen}: {shown.X:0}x{shown.Y:0} {button.GetType().Name} \"{name?.Replace("\n", " ")}\" {button.GetPath()}";
             _legibility.Add(line); GD.Print(line);
         }
     }
@@ -606,6 +657,8 @@ public partial class UiReviewSmoke : Node
             if (rect.Size.X > 0 && rect.Size.Y > 0 && !viewport.Grow(2).Encloses(rect))
             { GD.Print($"UI_OVERFLOW {name}: {control.GetPath()} {rect} {(control as Button)?.Text}"); _failures++; }
         }
+        // --audit-captures measures every captured screen against the phone floors (text, overflow, touch).
+        if (OS.GetCmdlineUserArgs().Contains("--audit-captures")) AuditLegibility(name);
         GD.Print($"UI_CAPTURE {name}");
     }
     private static bool Clipped(Control control)

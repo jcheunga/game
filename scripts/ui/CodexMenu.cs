@@ -60,16 +60,23 @@ public partial class CodexMenu : RoyalScreen
         _selectedEntryId ??= slice.FirstOrDefault(entry => state.IsCodexEntryDiscovered(entry.Id))?.Id;
 
         var ink = new Color("22150e");
-        var heading = spec.Label("list.heading", $"DISCOVERED {entries.Count(entry => state.IsCodexEntryDiscovered(entry.Id))} / {entries.Length}", 150, ink);
-        heading.ShadowOffset = Vector2.Zero; _layer.AddChild(heading);
-        // The page count ends just short of the prev arrow (the phone text floor makes "PAGE 12 OF 29"
-        // wider than the concept's "PAGE 1 OF 7"), and the ornamental rule fills the gap before it.
-        var pageLabel = spec.Label("list.page", $"PAGE {_page + 1} OF {pages}", 100, new Color("1b0f07"));
+        // The page count ("12 / 29", read with the arrows beside it) ends just short of the prev arrow, the
+        // discovered count takes the room before it, and the ornamental rule fills any gap between them.
+        var pageLabel = spec.Label("list.page", $"{_page + 1} / {pages}", 100, new Color("1b0f07"));
         pageLabel.ShadowOffset = Vector2.Zero; pageLabel.ShrinkToFit = false;
         var pageWidth = pageLabel.TextWidth(pageLabel.FontSize);
         var pageLeft = Mathf.Min(pageLabel.Position.X, spec.Rect("page.prev").Position.X - 10 - pageWidth);
         pageLabel.Position = new Vector2(pageLeft, pageLabel.Position.Y); pageLabel.Size = new Vector2(pageWidth, pageLabel.Size.Y);
         _layer.AddChild(pageLabel);
+        // The plate paints the concept's rule where the longer phone-size count now runs, so clean parchment from
+        // just left of it covers it; the live rule below fills whatever gap the count leaves.
+        var painted = spec.Rect("list.heading.rule").Grow(2);
+        _layer.AddChild(new TextureRect { Texture = RoyalArt.Cut("codex", new Rect2(painted.Position - new Vector2(painted.Size.X, 0), painted.Size)),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
+            Position = painted.Position, Size = painted.Size, MouseFilter = MouseFilterEnum.Ignore });
+        var headingLeft = spec.Number("list.heading", "pen_x", spec.Number("list.heading", "x"));
+        var heading = spec.Label("list.heading", $"DISCOVERED {entries.Count(entry => state.IsCodexEntryDiscovered(entry.Id))} / {entries.Length}", pageLeft - 12 - headingLeft, ink);
+        heading.ShadowOffset = Vector2.Zero; _layer.AddChild(heading);
         var rule = spec.Rect("list.heading.rule");
         var ruleLeft = Mathf.Max(rule.Position.X, heading.Position.X + heading.TextWidth(heading.FittedSize()) + 12);
         var ruleRight = pageLeft - 12;
@@ -158,11 +165,33 @@ public partial class CodexMenu : RoyalScreen
             .With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("codex-ribbon", 50, 8, 26, 8))));
         _layer.AddChild(RoyalKit.Image(roleIcon, spec.Rect("detail.role.icon")));
         _layer.AddChild(roleLabel);
+        // The first sentence heads the page in up to two lines at the reading floor (a longer one keeps its first
+        // clause there and the rest joins the lore); whatever it takes pushes the portrait and stats down.
         var sentences = entry.LoreText.Split(". ", 2);
-        var blurb = spec.Label("detail.blurb", sentences[0].TrimEnd('.') + ".", 470, new Color("17110a"));
-        blurb.ShadowOffset = Vector2.Zero; _layer.AddChild(blurb);
+        var opening = sentences[0].TrimEnd('.') + ".";
+        var rest = sentences.Length > 1 ? sentences[1] : "";
+        var blurb = RoyalText.Paragraph("", ReadingText.PhoneBody, new Color("17110a"), 600);
+        blurb.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+        blurb.AddThemeConstantOverride("line_spacing", -3);
+        var blurbTop = spec.Number("detail.blurb", "baseline", 286) - 20;
+        var blurbWidth = spec.Rect("stat.1").End.X - spec.Number("detail.blurb", "x", 716);
+        var font = blurb.GetThemeFont("font");
+        int Lines(string text) => Mathf.RoundToInt(font.GetMultilineStringSize(text, HorizontalAlignment.Left, blurbWidth, ReadingText.PhoneBody).Y / font.GetHeight(ReadingText.PhoneBody));
+        var cut = opening.IndexOfAny(new[] { ';', ',' });
+        if (Lines(opening) > 2 && cut > 0)
+        {
+            var tail = opening[(cut + 1)..].Trim().TrimEnd('.');
+            if (tail.Length > 0) rest = (char.ToUpperInvariant(tail[0]) + tail[1..] + ". " + rest).Trim();
+            opening = opening[..cut] + ".";
+        }
+        blurb.Text = opening;
+        var blurbLines = Mathf.Clamp(Lines(opening), 1, 2);
+        RoyalText.Place(_layer, blurb, new Rect2(spec.Number("detail.blurb", "x", 716), blurbTop, blurbWidth, blurbLines * 25 + 4));
+        RoyalText.FitLines(blurb, 2);
+        var drop = (blurbLines - 1) * 24f;
 
         var portrait = spec.Rect("detail.portrait");
+        portrait = new Rect2(portrait.Position + new Vector2(0, drop), portrait.Size - new Vector2(0, drop));
         _vignette ??= ResourceLoader.Load<Shader>("res://assets/shaders/royal_vignette.gdshader");
         var room = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
             Texture = RoyalArt.Cut("warband", new Rect2(430, 300, 260, 330)), Position = portrait.Position, Size = portrait.Size, MouseFilter = MouseFilterEnum.Ignore };
@@ -178,7 +207,8 @@ public partial class CodexMenu : RoyalScreen
 
         // One column of compact rows where the concept had two tall tiles; the divider and lore follow its height.
         var top = spec.Rect("stat.1");
-        var shift = 0f;
+        top.Position += new Vector2(0, drop);
+        var shift = drop;
         if (stats.Length > 0)
         {
             var sheet = new StatSheet(stats, 1).Place(top.Position, spec.Rect("detail.lore").End.X + 3 - top.Position.X);
@@ -189,16 +219,18 @@ public partial class CodexMenu : RoyalScreen
         _layer.AddChild(RoyalKit.Image("codex-divider", new Rect2(divider.Position + new Vector2(0, shift), divider.Size)));
         var loreRect = spec.Rect("detail.lore");
         loreRect.Position += new Vector2(0, shift);
-        var rest = sentences.Length > 1 ? sentences[1] : entry.LoreText;
         var defeats = GameState.Instance.GetCodexKillCount(entry.Id);
-        if (defeats > 0) rest += $" Defeated {defeats:N0} times.";
-        var lore = RoyalText.Paragraph(rest, 14, new Color("30211a"), 500);
+        if (defeats > 0) rest = (rest + $" Defeated {defeats:N0} times.").Trim();
+        // The lore reads at the phone floor and scrolls in its column when it runs longer than the page.
+        var loreArea = new Rect2(loreRect.Position.X, loreRect.Position.Y - 2, loreRect.Size.X + 10, spec.Rect("button.back").End.Y - loreRect.Position.Y - 6);
+        var scroll = new ScrollContainer { Name = "CodexLore", Position = loreArea.Position, Size = loreArea.Size,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever };
+        _layer.AddChild(scroll);
+        var lore = RoyalText.Paragraph(rest, ReadingText.PhoneBody, new Color("30211a"), 500);
         lore.RemoveThemeColorOverride("font_shadow_color"); lore.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
-        lore.Position = new Vector2(loreRect.Position.X, loreRect.Position.Y - 2);
-        lore.Size = new Vector2(loreRect.Size.X + 6, spec.Rect("button.back").Position.Y - loreRect.Position.Y - 8);
-        lore.AddThemeConstantOverride("line_spacing", -1);
-        RoyalText.FitLines(lore, 5);
-        _layer.AddChild(lore);
+        lore.AddThemeConstantOverride("line_spacing", -3);
+        lore.CustomMinimumSize = new Vector2(loreArea.Size.X - 4, 0);
+        scroll.AddChild(lore);
     }
 
     private void BuildEmptyPage(RoyalSpec spec)

@@ -164,9 +164,9 @@ public partial class MultiplayerMenu
     {
         var rect = spec.Rect($"button.{key}");
         var button = RoyalButton.Over(rect, text, run, 6);
-        // One footer size: the concept's labels ran from 14 to 18 px across the row.
+        // One footer size: the concept's labels ran from 14 to 18 px across the row; phones read the caps floor.
         var label = spec.Label($"button.{key}.label", text, rect.Size.X);
-        label.FontSize = 16;
+        label.FontSize = ReadingText.PhoneCaps;
         button.Arrange(label, RoyalKit.Texture(icon), spec.Rect($"button.{key}.icon").Size, gap: 10);
         _royalLayer.AddChild(button);
         return button;

@@ -9,9 +9,11 @@ public static class MobilePresentation
     /// <summary>Menus and modals draw on a smaller logical canvas scaled up by this, so their type and buttons
     /// read and take a thumb on a phone.</summary>
     public const float HudScale = 1.55f;
-    /// <summary>The battle HUD keeps the battle concept's own sizes: its cards, meters and buttons were drawn
-    /// large enough for a phone, and a larger HUD would crowd the road.</summary>
-    public const float BattleHudScale = 1f;
+    /// <summary>The phone floors (<see cref="ReadingText"/>) in modal units, for text drawn on the scaled canvas.</summary>
+    public static readonly int ModalBody = Mathf.CeilToInt(ReadingText.PhoneBody / HudScale), ModalCaps = Mathf.CeilToInt(ReadingText.PhoneCaps / HudScale);
+    /// <summary>The battle HUD draws the battle concept a fifth larger so its cards, meters and pause button take a
+    /// thumb on a phone; more (1.55x) would crowd the road.</summary>
+    public const float BattleHudScale = 1.2f;
 
     public static void TouchButton(Button button)
     {

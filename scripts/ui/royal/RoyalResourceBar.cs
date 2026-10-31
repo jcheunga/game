@@ -94,7 +94,7 @@ public partial class RoyalResourceBar : Control
         var limit = (DrawsBar ? MaxWidth : BarRect.Size.X) - (start - BarRect.Position.X) - EndPadding;
         size = _baseSize ??= size;
         foreach (var pair in _pairs) pair.Value.FontSize = size;
-        while (size > 12 && Measure() > limit) { size--; foreach (var pair in _pairs) pair.Value.FontSize = size; }
+        while (size > ReadingText.PhoneCaps && Measure() > limit) { size--; foreach (var pair in _pairs) pair.Value.FontSize = size; }
         var x = start;
         for (var i = 0; i < _pairs.Count; i++)
         {

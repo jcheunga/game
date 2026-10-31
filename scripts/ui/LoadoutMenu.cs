@@ -58,7 +58,9 @@ public partial class LoadoutMenu : RoyalScreen
             Texture = MissionPicture(), Position = picture.Position, Size = picture.Size, MouseFilter = MouseFilterEnum.Ignore });
         layer.AddChild(RoyalButton.Over(picture, "Encounter briefing", () => EncounterBriefing.Show(this, _stage), 6));
         layer.AddChild(RoyalKit.Image("icon-crossed-swords", spec.Rect("mission.objective.icon")));
-        var objectiveTitle = spec.Label("mission.objective.title", boss ? $"DEFEAT {leader.Title.ToUpperInvariant()}" : "DESTROY THE ENEMY GATEHOUSE", 320, new Color("1e1710"));
+        var objectiveTitle = spec.Label("mission.objective.title", boss ? $"DEFEAT {leader.Title.ToUpperInvariant()}" : "DESTROY THE GATEHOUSE", 320, new Color("1e1710"));
+        // A long leader's name keeps to the panel at the phone floor; the kicker above already names the boss.
+        if (objectiveTitle.TextWidth(ReadingText.PhoneCaps) > objectiveTitle.Size.X) objectiveTitle.Text = "DEFEAT THE ZONE BOSS";
         objectiveTitle.ShadowOffset = Vector2.Zero; layer.AddChild(objectiveTitle);
         var line = RoyalText.Paragraph("", 15, new Color("31261b"), 410);
         line.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
@@ -103,9 +105,12 @@ public partial class LoadoutMenu : RoyalScreen
             var icon = spec.Rect(key + ".icon");
             card.AddChild(RoyalKit.Image("prep-class-sword", new Rect2(icon.Position - rect.Position, icon.Size)));
             card.AddChild(RoyalKit.Image(ShopIcon(unit), new Rect2(icon.Position - rect.Position + new Vector2(7, 7), icon.Size - new Vector2(14, 14))));
-            var label = spec.Label(key + ".name", unit.DisplayName, rect.Size.X - 8);
+            // A name like "Greatswordsman" can't fit the card at a size a phone reads, so the card shows the unit's
+            // level as Endless's warband cards do; the figure shows who it is and the name stays in the hint.
+            var label = spec.Label(key + ".name", $"Lv {state.GetUnitLevel(unit.Id)}", rect.Size.X - 8);
             label.Position -= rect.Position;
             card.AddChild(label);
+            card.AccessibilityName = card.TooltipText;
             layer.AddChild(card);
         }
 

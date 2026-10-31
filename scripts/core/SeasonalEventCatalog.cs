@@ -92,7 +92,7 @@ public static class SeasonalEventCatalog
             {
                 new(2, new SeasonalEventReward("gold", amount: 500), "Hold the outer wall"),
                 new(4, new SeasonalEventReward("sigils", amount: 3), "Breach the inner keep"),
-                new(5, new SeasonalEventReward("relic", "relic_frostbound_crown"), "Survive the Midwinter Siege"),
+                new(5, new SeasonalEventReward("relic", "relic_frostbound_crown"), "Survive the siege"),
             }),
 
         new("harvest_moon", "Harvest Moon Hunt", "Under the blood-red harvest moon, ancient beasts stir in the wilds. Track and defeat them before dawn.",
@@ -109,7 +109,7 @@ public static class SeasonalEventCatalog
             {
                 new(2, new SeasonalEventReward("gold", amount: 400), "Track the first beast"),
                 new(4, new SeasonalEventReward("sigils", amount: 2), "Corner the pack alpha"),
-                new(5, new SeasonalEventReward("relic", "relic_moonfire_talisman"), "Complete the Harvest Moon Hunt"),
+                new(5, new SeasonalEventReward("relic", "relic_moonfire_talisman"), "Finish the moon hunt"),
             }),
     };
 

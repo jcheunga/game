@@ -23,7 +23,7 @@ public static class RoyalText
     /// <summary>Book serif for names, numbers and short descriptions ("Archer", "48").</summary>
     public static RoyalLabel Serif(string text, int size, Color? ink = null, int weight = 600)
     {
-        return new RoyalLabel { Text = text, Font = RoyalFonts.Body(weight), FontSize = Mathf.Max(ReadingText.PhoneBody, size), CapRatio = .58f, Ink = ink ?? Cream,
+        return new RoyalLabel { Text = text, Font = RoyalFonts.Body(weight), FontSize = Mathf.Max(ReadingText.PhoneBody, size), MinimumFontSize = ReadingText.PhoneBody, CapRatio = .58f, Ink = ink ?? Cream,
             ShadowOffset = new Vector2(0, 1), ShadowInk = new Color(0, 0, 0, .55f) };
     }
 

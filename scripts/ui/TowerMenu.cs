@@ -67,8 +67,8 @@ public partial class TowerMenu : RoyalBoard
         var modifiers = floor.ForcedModifierIds ?? Array.Empty<string>();
         var facts = new[]
         {
-            ("stat-health", "Enemy health", $"×{floor.EnemyHealthScale:0.0}", "Enemy health compared with the battlefield's campaign stage"),
-            ("stat-damage", "Enemy damage", $"×{floor.EnemyDamageScale:0.0}", "Enemy damage compared with the battlefield's campaign stage"),
+            ("stat-health", "Foe health", $"×{floor.EnemyHealthScale:0.0}", "Enemy health compared with the battlefield's campaign stage"),
+            ("stat-damage", "Foe damage", $"×{floor.EnemyDamageScale:0.0}", "Enemy damage compared with the battlefield's campaign stage"),
             ("icon-skull-red", "Modifiers", modifiers.Length == 0 ? "None" : modifiers.Length == 1 ? Pretty(modifiers[0]) : $"{modifiers.Length} active",
                 modifiers.Length == 0 ? "No battle modifiers" : string.Join(" · ", modifiers.Select(Pretty)))
         };
@@ -76,15 +76,20 @@ public partial class TowerMenu : RoyalBoard
         for (var i = 0; i < facts.Length; i++)
         {
             var (icon, caption, value, hint) = facts[i];
-            var tile = new Rect2(x + i * (tileWidth + 12), y, tileWidth, 78);
+            var tile = new Rect2(x + i * (tileWidth + 12), y, tileWidth, 90);
             Frame("tile", tile, 12).With(p => { p.TooltipText = hint; p.MouseFilter = MouseFilterEnum.Pass; });
             Caps(caption, new Rect2(tile.Position.X + 14, tile.Position.Y + 8, tile.Size.X - 28, 26), 16, Soft);
-            Image(icon, new Rect2(tile.Position + new Vector2(12, 38), new Vector2(30, 30)));
-            Serif(value, new Rect2(tile.Position.X + 48, tile.Position.Y + 36, tile.Size.X - 56, 34), 22, new Color("f6e2ad"), weight: 700);
+            Image(icon, new Rect2(tile.Position + new Vector2(12, 44), new Vector2(30, 30)));
+            // A long modifier name ("Reinforced barricade") takes two lines rather than shrinking past the floor.
+            var probe = RoyalText.Serif(value, 22, null, 700);
+            var fits = probe.TextWidth(probe.FontSize) <= tile.Size.X - 56;
+            probe.Free();
+            if (fits) Serif(value, new Rect2(tile.Position.X + 48, tile.Position.Y + 42, tile.Size.X - 56, 34), 22, new Color("f6e2ad"), weight: 700);
+            else Paragraph(value, new Rect2(tile.Position.X + 48, tile.Position.Y + 34, tile.Size.X - 56, 50), 2, 22, new Color("f6e2ad"));
         }
 
         // Rewards.
-        y += 90;
+        y += 102;
         var room = Section(new Rect2(x, y, width, column.End.Y - y), "Floor rewards", "icon-scroll-gold",
             floor.Floor % 10 == 0 ? "Tenth-floor bonus" : null);
         var rewards = new System.Collections.Generic.List<(Texture2D, string, string)>();

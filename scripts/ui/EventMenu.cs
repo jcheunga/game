@@ -80,7 +80,7 @@ public partial class EventMenu : RoyalBoard
             Image(RewardArt(stage.CompletionReward?.Type, stage.CompletionReward?.ItemId), new Rect2(row.Position.X + 8, row.Position.Y + 4, row.Size.Y - 8, row.Size.Y - 8),
                 cleared ? new Color(1, 1, 1, .45f) : null);
             var x = row.Position.X + row.Size.Y + 6;
-            Serif($"{i + 1}. {(data != null ? $"{data.MapName} · {data.StageName}" : $"Stage {stage.BaseStageNumber}")}", new Rect2(x, row.Position.Y + 3, row.End.X - x - 150, 30), 19,
+            Serif($"{i + 1}. {(data != null ? data.StageName : $"Stage {stage.BaseStageNumber}")}", new Rect2(x, row.Position.Y + 3, row.End.X - x - 150, 30), 19,
                 cleared ? Soft : RoyalText.Cream, weight: 700);
             // The reward is the picture on the left (named in its tooltip); the line below is the foe's strength.
             Serif($"Enemy health ×{stage.EnemyHealthScale:0.##} · damage ×{stage.EnemyDamageScale:0.##}", new Rect2(x, row.Position.Y + 30, row.End.X - x - 150, 28), 18, Soft, weight: 500);

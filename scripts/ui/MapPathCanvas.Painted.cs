@@ -230,16 +230,17 @@ public partial class MapPathCanvas
     {
         BgColor = new Color("172521d9"), BorderColor = new Color("d8b46a8c"),
         BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
-        CornerRadiusTopLeft = 11, CornerRadiusTopRight = 11, CornerRadiusBottomLeft = 11, CornerRadiusBottomRight = 11
+        CornerRadiusTopLeft = 14, CornerRadiusTopRight = 14, CornerRadiusBottomLeft = 14, CornerRadiusBottomRight = 14
     };
 
-    /// <summary>The food it costs to open an unopened resource tile, red when the caravan can't afford it.</summary>
+    /// <summary>The food it costs to open an unopened resource tile, red when the caravan can't afford it (sized to
+    /// read on a phone at the map's resting zoom).</summary>
     private static void DrawOpeningPrice(CanvasItem layer, Vector2 center, bool affordable)
     {
-        const int font = 15, icon = 17;
+        const int font = ReadingText.PhoneCaps, icon = 22;
         var text = GameState.AdventureTileFoodCost.ToString();
-        var width = HomeResourceUi.AmountWidth("food", text, font, icon) + 16;
-        layer.DrawStyleBox(PricePill, new Rect2(center - new Vector2(width / 2, 11), new Vector2(width, 22)));
+        var width = HomeResourceUi.AmountWidth("food", text, font, icon) + 20;
+        layer.DrawStyleBox(PricePill, new Rect2(center - new Vector2(width / 2, 14), new Vector2(width, 28)));
         HomeResourceUi.DrawAmount(layer, center, "food", text, font, icon, new Color(affordable ? "fff1be" : "ff9f86"));
     }
 

@@ -72,7 +72,7 @@ public partial class UiReviewSmoke
         var kit = Walk(store).OfType<StorePackCard>().Single(card => card.Product.Id == "starter_kit");
         var shown = Walk(kit).OfType<Label>().Where(label => label.IsVisibleInTree()).Select(label => label.Text)
             .Concat(Walk(kit).OfType<RoyalLabel>().Where(label => label.IsVisibleInTree()).Select(label => label.Text)).ToArray();
-        Check(shown.Contains("800 gold") && shown.Contains("30 food") && shown.Contains($"Recruits {GameData.GetUnit(state.NextKitUnitId()).DisplayName}") && shown.Contains("Once per account")
+        Check(shown.Contains("800 gold") && shown.Contains("30 food") && shown.Contains($"Recruits {GameData.GetUnit(state.NextKitUnitId()).DisplayName}") && shown.Contains("Once only")
             && pages.GetGlobalRect().Encloses(kit.GetGlobalRect()), "The bundle card shows its complete contents and one-time restriction");
         Check(Walk(store).OfType<StorePackCard>().Where(card => card.IsVisibleInTree()).Count(card => Walk(card).OfType<RoyalLabel>().Any(label => label.Text == "Best value")) == 0,
             "Bundles carry no best-value ribbon");
@@ -111,7 +111,7 @@ public partial class UiReviewSmoke
         Check(owned.Disabled && owned.Text == "Purchased" && pages.GetGlobalRect().Encloses(owned.GetGlobalRect()), "An owned one-time bundle stays visibly purchased and disabled");
         AuditText("Storehouse / owned bundle"); await Capture("storehouse-owned-bundle");
 
-        await TapModal(Walk(store).OfType<Button>().Single(button => button.Text == "Purchase info"));
+        await TapModal(Walk(store).OfType<Button>().Single(button => button.Text == "Ledger"));
         AuditText("Storehouse / purchase info"); await Capture("storehouse-info");
         menu.CloseHomeModal();
         Check(GetTree().CurrentScene == menu && canvas.MapOffset == camera && state.AdventureKnowledgeRevision == knowledge, "Closing the store preserves the map, camera and exploration");

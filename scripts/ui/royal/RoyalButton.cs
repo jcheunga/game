@@ -23,19 +23,31 @@ public partial class RoyalButton : Button
         AddThemeFontSizeOverride("font_size", 1);
     }
 
-    /// <summary>Touch reach: on phones small painted buttons still take a full 56 px fingertip.</summary>
-    public const float TouchSize = 56;
+    /// <summary>Touch reach: on phones small painted buttons still take a 72 px fingertip (about 39 pt) of the screen,
+    /// whatever scale their layer is drawn at.</summary>
+    public const float TouchSize = 72;
     public Rect2 TouchRect
     {
         get
         {
             var rect = new Rect2(Vector2.Zero, Size);
-            var grow = new Vector2(Mathf.Max(0, TouchSize - Size.X), Mathf.Max(0, TouchSize - Size.Y)) / 2;
+            var scale = IsInsideTree() ? GetGlobalTransformWithCanvas().Scale.Abs() : Vector2.One;
+            var reach = new Vector2(TouchSize / Mathf.Max(.01f, scale.X), TouchSize / Mathf.Max(.01f, scale.Y));
+            var grow = new Vector2(Mathf.Max(0, reach.X - Size.X), Mathf.Max(0, reach.Y - Size.Y)) / 2;
             return new Rect2(rect.Position - grow, rect.Size + grow * 2);
         }
     }
 
-    public override bool _HasPoint(Vector2 point) => TouchRect.HasPoint(point);
+    public override bool _HasPoint(Vector2 point)
+    {
+        if (new Rect2(Vector2.Zero, Size).HasPoint(point)) return true;
+        if (!TouchRect.HasPoint(point)) return false;
+        // The extra reach never takes a tap that lands on a neighbouring button itself (stacked list rows).
+        var global = GetGlobalTransform() * point;
+        foreach (var sibling in GetParent()?.GetChildren() ?? new Godot.Collections.Array<Node>())
+            if (sibling != this && sibling is BaseButton { Visible: true } other && other.GetGlobalRect().HasPoint(global)) return false;
+        return true;
+    }
 
     public static RoyalButton Over(Rect2 rect, string name, Action action, float corner = 5)
     {
@@ -116,10 +128,26 @@ public partial class RoyalButton : Button
         if (GetNodeOrNull<Control>(PriceRow) is { } previous) { RemoveChild(previous); previous.QueueFree(); }
         if (glyph == null && Glyph != null) { Glyph.QueueFree(); Glyph = null; }
         var height = Size.Y;
-        var words = Mathf.Ceil(caption.TextWidth(caption.FontSize));
-        var lead = glyph == null ? 0 : glyphSize.X + gap;
-        var amount = price == null ? 0 : Mathf.Ceil(price.TextWidth(price.FontSize));
-        var priced = price == null ? 0 : rule * 2 + 2 + (priceIcon == null ? 0 : priceIconSize.X + 6) + amount;
+        float words = 0, lead = 0, amount = 0, priced = 0;
+        void Measure()
+        {
+            words = Mathf.Ceil(caption.TextWidth(caption.FontSize));
+            lead = glyph == null ? 0 : glyphSize.X + gap;
+            amount = price == null ? 0 : Mathf.Ceil(price.TextWidth(price.FontSize));
+            priced = price == null ? 0 : rule * 2 + 2 + (priceIcon == null ? 0 : priceIconSize.X + 6) + amount;
+        }
+        Measure();
+        // The row keeps inside the plate's rims: a long caption steps down (with its price) as far as the phone
+        // floor, then gives up its icon.
+        var room = Size.X - 2 * Mathf.Clamp(height * .22f, 8, 16);
+        while (Size.X > 0 && lead + words + priced > room && caption.FontSize > caption.MinimumFontSize)
+        {
+            caption.FontSize--;
+            if (price != null && price.FontSize > price.MinimumFontSize) price.FontSize--;
+            Measure();
+        }
+        if (Size.X > 0 && lead + words + priced > room && glyph != null) { glyph = null; Measure(); }
+        if (glyph == null && Glyph != null) { Glyph.QueueFree(); Glyph = null; }
         var x = Mathf.Round((Size.X - lead - words - priced) / 2);
         if (glyph != null) SetGlyph(glyph, new Rect2(x, Mathf.Round((height - glyphSize.Y) / 2), glyphSize));
         x += lead;

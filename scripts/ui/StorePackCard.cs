@@ -40,12 +40,12 @@ public partial class StorePackCard : Control
         _art = Picture(RoyalArt.Item("store_" + product.Id));
         _art.TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         if (owned) _art.SelfModulate = new Color(.62f, .62f, .64f);
-        _title = Caps(product.DisplayName, wide ? 15 : 13, TitleInk, 700);
+        _title = Caps(product.DisplayName, wide ? 17 : 15, TitleInk, 700);
         _title.Align = wide ? HorizontalAlignment.Left : HorizontalAlignment.Center;
         AddChild(_title);
         if (wide) BuildContents();
         else BuildAmount();
-        if (_bestValue || (product.OneTimePurchase && !owned)) BuildRibbon(_bestValue ? "Best value" : "Once per account");
+        if (_bestValue || (product.OneTimePurchase && !owned)) BuildRibbon(_bestValue ? "Best value" : "Once only");
         Buy = new RoyalButton { Name = "Buy", FocusMode = FocusModeEnum.All, MouseDefaultCursorShape = CursorShape.PointingHand };
         Buy.SetStates(Kit("button-gold", 8), 6);
         Buy.SetMeta("store_product_id", product.Id);
@@ -73,22 +73,22 @@ public partial class StorePackCard : Control
         return picture;
     }
 
-    /// <summary>Engraved capitals at a modal size; the 1.55x canvas keeps 11 units above the phone floor for caps.</summary>
+    /// <summary>Engraved capitals at a modal size, never below the caps floor once the 1.55x canvas scales them.</summary>
     internal static RoyalLabel Caps(string text, int size, Color ink, int weight = 600)
     {
         var label = RoyalText.Caps(text, size, ink, weight);
-        label.FontSize = size;
-        label.MinimumFontSize = Math.Min(size, 11);
+        label.FontSize = Math.Max(size, MobilePresentation.ModalCaps);
+        label.MinimumFontSize = MobilePresentation.ModalCaps;
         label.AllCaps = true;
         return label;
     }
 
-    /// <summary>Book serif at a modal size (12 units clears the 18 px phone floor for mixed case).</summary>
+    /// <summary>Book serif at a modal size, never below the mixed-case floor once the 1.55x canvas scales it.</summary>
     internal static Label Serif(string text, int size, Color ink, int weight = 500)
     {
         var label = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = MouseFilterEnum.Ignore };
         label.AddThemeFontOverride("font", RoyalFonts.Body(weight));
-        label.AddThemeFontSizeOverride("font_size", Math.Max(12, size + (GameState.Instance?.FontSizeOffset ?? 0)));
+        label.AddThemeFontSizeOverride("font_size", Math.Max(MobilePresentation.ModalBody, size + (GameState.Instance?.FontSizeOffset ?? 0)));
         label.AddThemeColorOverride("font_color", ink);
         label.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, .45f));
         label.AddThemeConstantOverride("shadow_offset_x", 0);
@@ -100,11 +100,11 @@ public partial class StorePackCard : Control
     private void BuildAmount()
     {
         _amountIcon = Picture(HomeMapArt.Icon(Product.CurrencyType == "food" ? "food" : "gold"));
-        _amount = RoyalText.Title(Product.TotalCurrencyAmount.ToString("N0"), 19);
-        _amount.MinimumFontSize = 12;
+        _amount = RoyalText.Title(Product.TotalCurrencyAmount.ToString("N0"), 22);
+        _amount.MinimumFontSize = MobilePresentation.ModalCaps;
         AddChild(_amount);
         if (Product.BonusAmount <= 0) return;
-        _bonus = Caps($"+{Product.BonusAmount:N0} bonus", 11, new Color("9fd08a"), 700);
+        _bonus = Caps($"+{Product.BonusAmount:N0} bonus", 13, new Color("9fd08a"), 700);
         _bonus.Align = HorizontalAlignment.Center;
         AddChild(_bonus);
     }
@@ -117,12 +117,12 @@ public partial class StorePackCard : Control
         AddChild(_contents);
         void Line(Texture2D icon, string text, Color? tint = null)
         {
-            var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(0, 22) };
+            var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(0, 25) };
             row.AddThemeConstantOverride("separation", 8);
             row.AddChild(new TextureRect { Texture = icon, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                CustomMinimumSize = new Vector2(22, 22), MouseFilter = MouseFilterEnum.Ignore, SelfModulate = tint ?? Colors.White,
+                CustomMinimumSize = new Vector2(25, 25), MouseFilter = MouseFilterEnum.Ignore, SelfModulate = tint ?? Colors.White,
                 TextureFilter = TextureFilterEnum.LinearWithMipmaps });
-            var label = Serif(text, 14, BodyInk, 600);
+            var label = Serif(text, 16, BodyInk, 600);
             label.AutowrapMode = TextServer.AutowrapMode.Off;
             label.VerticalAlignment = VerticalAlignment.Center;
             row.AddChild(label);
@@ -133,7 +133,7 @@ public partial class StorePackCard : Control
         if (Product.GrantsUnitUnlock) Line(RoyalKit.Texture("store-unit"), KitUnitLine(), new Color("f3deaa"));
         // The column's width wraps the description, so it lives in the column below the contents.
         _contents.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4), MouseFilter = MouseFilterEnum.Ignore });
-        _contents.AddChild(Serif(Product.Description, 12, MutedInk));
+        _contents.AddChild(Serif(Product.Description, 15, MutedInk));
     }
 
     private void BuildRibbon(string text)
@@ -143,7 +143,7 @@ public partial class StorePackCard : Control
         cloth.AddThemeStyleboxOverride("panel", Ribbon(RibbonHeight));
         cloth.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _ribbon.AddChild(cloth);
-        var label = _ribbonLabel = Caps(text, 11, new Color("fff1d2"), 700);
+        var label = _ribbonLabel = Caps(text, 13, new Color("fff1d2"), 700);
         label.Align = HorizontalAlignment.Center;
         label.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         // The swallowtails and the cloth's folds are not lettering room.
@@ -156,15 +156,15 @@ public partial class StorePackCard : Control
     {
         if (Buy.Size.X > 0 && _owned)
         {
-            Buy.Arrange(Caps("Purchased", 13, ButtonInk, 700), RoyalKit.Texture("icon-check"), new Vector2(16, 16), gap: 8);
+            Buy.Arrange(Caps("Purchased", 15, ButtonInk, 700), RoyalKit.Texture("icon-check"), new Vector2(18, 18), gap: 8);
             Buy.Glyph.SelfModulate = ButtonInk;
         }
         else if (Buy.Size.X > 0)
         {
             // Caption and price share one row; both step down together if a long price would crowd the rim.
-            var caption = Caps("Buy", 14, ButtonInk, 700);
-            var price = Caps(_price, 14, ButtonInk, 700);
-            while (caption.FontSize > 11 && caption.TextWidth(caption.FontSize) + price.TextWidth(price.FontSize) + 2 * 12 + 2 > Buy.Size.X - 20)
+            var caption = Caps("Buy", 16, ButtonInk, 700);
+            var price = Caps(_price, 16, ButtonInk, 700);
+            while (caption.FontSize > MobilePresentation.ModalCaps && caption.TextWidth(caption.FontSize) + price.TextWidth(price.FontSize) + 2 * 12 + 2 > Buy.Size.X - 20)
                 caption.FontSize = price.FontSize = caption.FontSize - 1;
             Buy.Arrange(caption, price: price, rule: 12);
         }
@@ -186,23 +186,23 @@ public partial class StorePackCard : Control
             well = new Rect2(Inset, 10, artWidth, height - 20);
             var left = well.End.X + 12;
             var column = width - left - Inset;
-            Place(_title, new Rect2(left, 10, column, 28));
-            var buttonTop = height - 50;
-            Place(_contents, new Rect2(left, 40, column, buttonTop - 46));
-            Place(Buy, new Rect2(left, buttonTop, column, 40));
+            Place(_title, new Rect2(left, 10, column, 30));
+            var buttonTop = height - 54;
+            Place(_contents, new Rect2(left, 42, column, buttonTop - 48));
+            Place(Buy, new Rect2(left, buttonTop, column, 44));
         }
         else
         {
-            Place(_title, new Rect2(Inset, 8, width - 2 * Inset, 26));
-            well = new Rect2(Inset, 34, width - 2 * Inset, height - 34 - 102);
+            Place(_title, new Rect2(Inset, 8, width - 2 * Inset, 28));
+            well = new Rect2(Inset, 36, width - 2 * Inset, height - 36 - 112);
             var amountTop = well.End.Y + 2;
             var number = _amount.TextWidth(_amount.FontSize);
-            const float Icon = 24, Gap = 6;
+            const float Icon = 27, Gap = 6;
             var left = Mathf.Round((width - Icon - Gap - number) / 2);
             Place(_amountIcon, new Rect2(left, amountTop + 1, Icon, Icon));
-            Place(_amount, new Rect2(left + Icon + Gap, amountTop, number + 4, 26));
-            if (_bonus != null) Place(_bonus, new Rect2(Inset, amountTop + 26, width - 2 * Inset, 18));
-            Place(Buy, new Rect2(Inset, height - 52, width - 2 * Inset, 40));
+            Place(_amount, new Rect2(left + Icon + Gap, amountTop, number + 4, 29));
+            if (_bonus != null) Place(_bonus, new Rect2(Inset, amountTop + 29, width - 2 * Inset, 20));
+            Place(Buy, new Rect2(Inset, height - 56, width - 2 * Inset, 44));
         }
         // A pool of warm light behind the picture, and a soft contact shadow under it.
         Place(_glow, well.Grow(6));
@@ -222,7 +222,7 @@ public partial class StorePackCard : Control
     /// <summary>A kit piece at its concept-screen size on the modal canvas; margins are modal units.</summary>
     internal static SliceStyle Kit(string name, float margin, bool center = true) => RoyalKit.Scaled(name, MobilePresentation.HudScale, margin, center);
 
-    private const float RibbonHeight = 23, RibbonTail = 20;
+    private const float RibbonHeight = 25, RibbonTail = 20;
 
     /// <summary>The painted ribbon at a given height: its swallowtails keep their shape and the band stretches.</summary>
     private static SliceStyle Ribbon(float height)

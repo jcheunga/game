@@ -84,7 +84,7 @@ public partial class ExpeditionMenu : RoyalBoard
         Frame("season-locked", rect, 14);
         Image("empty-plus", new Rect2(rect.Position.X + 26, rect.GetCenter().Y - 24, 48, 48), new Color(1, 1, 1, .55f));
         Caps("Free slot", new Rect2(rect.Position.X + 92, rect.Position.Y + 30, rect.Size.X - 110, 30), 18, Soft);
-        Serif("Choose a destination below", new Rect2(rect.Position.X + 92, rect.Position.Y + 62, rect.Size.X - 110, 30), 18, new Color("a99f8d"));
+        Serif("Pick a destination", new Rect2(rect.Position.X + 92, rect.Position.Y + 62, rect.Size.X - 110, 30), 18, new Color("a99f8d"));
     }
 
     private void Destination(Rect2 rect, ExpeditionDefinition definition)
@@ -133,16 +133,17 @@ public partial class ExpeditionMenu : RoyalBoard
         if (ready) Allies(new Rect2(foot.Position.X, foot.Position.Y, room - 150, foot.Size.Y), team);
         else
         {
-            var needs = definition.MinUnits == 1 ? "1 ally" : $"{definition.MinUnits} allies";
-            Paragraph(free <= 0 ? "All slots are in use." : $"Needs {needs} outside your squad.", new Rect2(foot.Position.X, foot.Position.Y - 4, room - 156, 52), 2, 18);
+            // Free allies are those outside the squad (the hint on Dispatch says so).
+            var needs = definition.MinUnits == 1 ? "1 free ally" : $"{definition.MinUnits} free allies";
+            Paragraph(free <= 0 ? "All slots are in use." : $"Needs {needs}", new Rect2(foot.Position.X, foot.Position.Y - 4, room - 156, 52), 2, 18);
         }
         var id = definition.Id;
-        Action(new Rect2(foot.End.X - 142, foot.Position.Y, 142, foot.Size.Y), "Dispatch", "icon-map-pin", () =>
+        Action(new Rect2(foot.End.X - 142, foot.Position.Y, 142, foot.Size.Y), "Dispatch", null, () =>
         {
             var started = GameState.Instance.TryStartExpedition(id, Team(definition), out var message);
             Notify(message);
             if (started) Refresh();
-        }, Kind.Gold, ready, ready ? $"Send {string.Join(", ", team.Select(Name))}" : "Not enough free allies", size: 16);
+        }, Kind.Gold, ready, ready ? $"Send {string.Join(", ", team.Select(Name))}" : "Not enough free allies (allies outside your squad)", size: 16);
     }
 
     /// <summary>Owned allies who are neither in the battle squad nor away, strongest first, as many as the trip takes.</summary>
@@ -182,7 +183,7 @@ public partial class ExpeditionMenu : RoyalBoard
     {
         var (slot, time, meter, fill) = _timers[index];
         var remaining = GameState.Instance.GetExpeditionTimeRemaining(slot);
-        time.Text = remaining.TotalHours >= 1 ? $"Returns in {(int)remaining.TotalHours} h {remaining.Minutes:00} min" : $"Returns in {remaining.Minutes} min {remaining.Seconds:00} s";
+        time.Text = remaining.TotalHours >= 1 ? $"Back in {(int)remaining.TotalHours} h {remaining.Minutes:00} m" : $"Back in {remaining.Minutes} m {remaining.Seconds:00} s";
         var fraction = total.TotalSeconds <= 0 ? 1 : Mathf.Clamp(1 - (float)(remaining.TotalSeconds / total.TotalSeconds), 0, 1);
         fill.Visible = fraction > 0;
         fill.Size = new Vector2(Mathf.Max(meter.Size.Y - 6, (meter.Size.X - 6) * fraction), meter.Size.Y - 6);

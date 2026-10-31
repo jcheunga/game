@@ -3,14 +3,14 @@ using System.Linq;
 using Godot;
 
 /// <summary>
-/// Achievements on the approved concept: six category tabs and six illustrated cards per page with
-/// progress, and the claim / claimed state of each reward.
+/// Achievements on the approved concept: six category tabs and illustrated cards with progress, and the claim /
+/// claimed state of each reward. The concept's three cards a row are drawn two a row (four a page) so their titles
+/// and descriptions have room at the phone reading floor.
 /// </summary>
 public partial class AchievementsPanel : RoyalScreen
 {
     private static readonly string[] Categories = { "All", "Campaign", "Combat", "Endless", "Collection", "Mastery" };
-    private static readonly string[] CardKeys = { "firstblood", "districtmarshal", "bossslayer", "untouchable", "survivor", "arcanescholar" };
-    private const int PageSize = 6;
+    private const int PageSize = 4, Columns = 2;
     private int _category, _page;
     private Control _layer;
 
@@ -94,15 +94,22 @@ public partial class AchievementsPanel : RoyalScreen
     private Control Card(RoyalSpec spec, int slot, AchievementDefinition entry)
     {
         var state = GameState.Instance;
-        // Every card uses the concept's card at its grid position; the first-row card supplies the layout.
-        var key = "card." + CardKeys[slot];
-        var cell = spec.Rect(key);
-        var template = slot < 3 ? "card.firstblood" : "card.untouchable";
-        var origin = spec.Rect(template).Position;
+        // Each row's first concept card supplies the layout; the cards span the concept's row two to a row, and
+        // the parts right of the picture (text, progress, button) take the extra width.
+        var row = slot / Columns;
+        var template = row == 0 ? "card.firstblood" : "card.untouchable";
+        var concept = spec.Rect(template);
+        var span = new Vector2(concept.Position.X, spec.Rect("card.bossslayer").End.X);
+        var gap = spec.Rect("card.districtmarshal").Position.X - concept.End.X;
+        var width = Mathf.Floor((span.Y - span.X - gap * (Columns - 1)) / Columns);
+        var cell = new Rect2(span.X + slot % Columns * (width + gap), concept.Position.Y, width, concept.Size.Y);
+        var stretch = width - concept.Size.X;
+        var origin = concept.Position;
         Rect2 Part(string part) => new(spec.Rect(template + part).Position - origin, spec.Rect(template + part).Size);
+        Rect2 Wide(string part) { var rect = Part(part); return new Rect2(rect.Position, rect.Size + new Vector2(stretch, 0)); }
         bool done = state.IsAchievementUnlocked(entry.Id), claimed = state.HasClaimedAchievementReward(entry.Id);
         var ready = done && !claimed;
-        var card = new Control { Position = cell.Position, Size = new Vector2(cell.Size.X, slot < 3 ? 190 : 201), MouseFilter = MouseFilterEnum.Pass };
+        var card = new Control { Position = cell.Position, Size = new Vector2(cell.Size.X, row == 0 ? 190 : 201), MouseFilter = MouseFilterEnum.Pass };
         card.AddChild(new Panel { Size = card.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice(ready ? "ach-card-ready" : "ach-card", 14))));
         var art = Part(".art");
         card.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
@@ -114,27 +121,27 @@ public partial class AchievementsPanel : RoyalScreen
         card.AddChild(title);
         var description = RoyalText.Paragraph(entry.Description, 17, new Color("dedfdf"), 450);
         var descTop = spec.Number(template + ".desc.1", "baseline", 0) - origin.Y - 15;
-        var trackRect = Part(".track");
+        var trackRect = Wide(".track");
         description.Position = new Vector2(spec.Number(template + ".desc.1", "x", 0) - origin.X, descTop);
         description.Size = new Vector2(card.Size.X - description.Position.X - 12, trackRect.Position.Y - descTop - 2);
         description.AddThemeConstantOverride("line_spacing", -2);
-        RoyalText.FitLines(description, slot < 3 ? 2 : 3);
+        RoyalText.FitLines(description, row == 0 ? 2 : 3);
         card.AddChild(description);
 
         var (value, target) = Progress(entry.Id);
         if (done) value = target;
         card.AddChild(new Panel { Position = trackRect.Position, Size = trackRect.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("ach-track", 7, 5, 7, 5))));
-        var fill = Part(".fill");
+        var fill = Wide(".fill");
         var fraction = target <= 0 ? 0 : Mathf.Clamp(value / (float)target, 0, 1);
         if (fraction > 0)
             card.AddChild(new Panel { Position = fill.Position, Size = new Vector2(Mathf.Max(10, fill.Size.X * fraction), fill.Size.Y), MouseFilter = MouseFilterEnum.Ignore }
                 .With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice(done ? "ach-fill-gold" : "ach-fill-blue", 5, 3, 5, 3))));
         var progress = spec.Label(template + ".progress", $"{value} / {target}", 120);
-        progress.Position -= origin;
+        progress.Position -= origin - new Vector2(stretch / 2, 0);
         card.AddChild(progress);
 
         var reward = AchievementRewardCatalog.GetForAchievement(entry.Id);
-        var buttonRect = Part(".button");
+        var buttonRect = Wide(".button");
         if (ready && reward != null)
         {
             var claim = RoyalButton.Over(buttonRect, $"Claim {reward.RewardLabel}", () =>
@@ -159,8 +166,8 @@ public partial class AchievementsPanel : RoyalScreen
             plate.AddThemeStyleboxOverride("panel", RoyalKit.Slice("ach-claimed", 24, 10, 24, 10));
             card.AddChild(plate);
             var label = RoyalText.Caps("CLAIMED", 16, new Color("e5c79b"), 600);
-            var width = label.TextWidth(16);
-            label.Position = new Vector2(buttonRect.GetCenter().X - width / 2 + 11, buttonRect.Position.Y); label.Size = new Vector2(width + 4, buttonRect.Size.Y);
+            var labelWidth = label.TextWidth(label.FontSize);
+            label.Position = new Vector2(buttonRect.GetCenter().X - labelWidth / 2 + 11, buttonRect.Position.Y); label.Size = new Vector2(labelWidth + 4, buttonRect.Size.Y);
             card.AddChild(label);
             card.AddChild(RoyalKit.Image("icon-check", new Rect2(label.Position.X - 25, buttonRect.GetCenter().Y - 7, 17, 14)));
         }

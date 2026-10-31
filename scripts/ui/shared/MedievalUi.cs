@@ -87,13 +87,13 @@ public static class MedievalUi
         theme.SetColor("font_shadow_color", "Label", new Color(0f, 0f, 0f, 0.55f));
         theme.SetConstant("shadow_offset_x", "Label", 0);
         theme.SetConstant("shadow_offset_y", "Label", 1);
-        theme.SetFontSize("font_size", "Label", 20);
+        theme.SetFontSize("font_size", "Label", ReadingText.PhoneBody);
         theme.SetFontSize("font_size", "Button", RealmUi.ButtonFontSize);
         theme.SetFont("font", "Button", RealmUi.TitleFont);
-        theme.SetFontSize("font_size", "LineEdit", 20);
+        theme.SetFontSize("font_size", "LineEdit", ReadingText.PhoneBody);
         foreach (var type in new[] { "OptionButton", "MenuButton", "PopupMenu" })
             theme.SetFontSize("font_size", type, RealmUi.ButtonFontSize);
-        theme.SetFontSize("font_size", "TooltipLabel", 18);
+        theme.SetFontSize("font_size", "TooltipLabel", ReadingText.PhoneBody);
         theme.SetColor("font_color", "Button", ink);
         // No hover highlight anywhere: hovering looks like resting, and a held press sinks (ButtonFeel).
         theme.SetColor("font_hover_color", "Button", ink);

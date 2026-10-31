@@ -87,14 +87,14 @@ public partial class ProgressionMenu : RoyalBoard
         var room = Section(new Rect2(info.Position, new Vector2(info.Size.X, 136)), "Tokens", "emblem-progression",
             next == null ? "Fully awakened" : $"{tokens} of {next.TokenCost} for star {next.Stars}");
         Meter(new Rect2(room.Position.X + 4, room.Position.Y + 2, room.Size.X - 8, 12), next == null ? 1 : Mathf.Min(1, tokens / (float)Math.Max(1, next.TokenCost)));
-        Action(new Rect2(room.Position.X, room.Position.Y + 22, room.Size.X, 42), "Train token", null, () =>
+        Action(new Rect2(room.Position.X, room.Position.Y + 22, room.Size.X, 42), "Train", null, () =>
         {
             GameState.Instance.TryTrainAwakeningToken(_unitId, out var message);
             Notify(message);
             Refresh();
         }, Kind.Navy, next != null && state.Gold >= GameState.AwakeningTokenGoldCost && state.Essence >= GameState.AwakeningTokenEssenceCost,
             $"One token for {GameState.AwakeningTokenGoldCost} gold and {GameState.AwakeningTokenEssenceCost} essence",
-            $"{GameState.AwakeningTokenGoldCost} gold · {GameState.AwakeningTokenEssenceCost} essence", null, 16);
+            $"{GameState.AwakeningTokenGoldCost} gold · {GameState.AwakeningTokenEssenceCost} essence", null, 16, "Train token");
 
         var stats = Section(new Rect2(info.Position.X, info.Position.Y + 148, info.Size.X, info.Size.Y - 148), next == null ? "Awakened strength" : $"With star {next.Stars}", "stat-health");
         Comparison(stats, preview);

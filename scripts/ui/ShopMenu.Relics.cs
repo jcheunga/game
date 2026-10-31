@@ -7,7 +7,7 @@ public partial class ShopMenu
 {
     private string _selectedRelic = "";
     private float _relicScroll;
-    private const float NameLeading = 18;
+    private const float NameLeading = 20, RelicCellScale = 1.18f;
 
     public static string RelicIcon(EquipmentDefinition relic)
     {
@@ -115,11 +115,12 @@ public partial class ShopMenu
         _body.AddChild(filter);
 
         // Collection: cards on the concept's pitch, scrolling under the painted track.
-        var first = spec.Rect("card.0.0"); var right = spec.Rect("card.0.1"); var below = spec.Rect("card.1.0");
+        var first = spec.Rect("card.0.0"); var below = spec.Rect("card.1.0");
         var track = spec.Rect("grid.scroll");
-        var pitch = new Vector2(right.Position.X - first.Position.X, below.Position.Y - first.Position.Y + 2);
-        var cell = new Vector2(119, 132);
-        var (columns, pitchX) = GridColumns(first.Position.X, track.Position.X, cell.X, pitch.X);
+        // Larger than the concept's 119 x 132 cards (five to a row) so names read at the phone floor.
+        var cell = (new Vector2(119, 132) * RelicCellScale).Round();
+        var pitch = new Vector2(0, cell.Y + below.Position.Y - first.Position.Y + 2 - 132);
+        var (columns, pitchX) = GridColumns(first.Position.X, track.Position.X, cell.X);
         pitch.X = pitchX;
         var view = new Rect2(first.Position - new Vector2(4, 4), new Vector2(track.Position.X - first.Position.X + 2, spec.Rect("button.back").Position.Y - first.Position.Y - 4));
         var scroll = new ScrollContainer { Position = view.Position, Size = view.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever };
@@ -139,7 +140,7 @@ public partial class ShopMenu
             var id = relic.Id;
             card.Pressed += () => { _selectedRelic = id; Refresh(); };
             card.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                Texture = RelicArt(relic), Position = new Vector2(10, 6), Size = new Vector2(cell.X - 20, 81), MouseFilter = MouseFilterEnum.Ignore,
+                Texture = RelicArt(relic), Position = new Vector2(10, 6), Size = new Vector2(cell.X - 20, cell.Y - 51), MouseFilter = MouseFilterEnum.Ignore,
                 TextureFilter = TextureFilterEnum.LinearWithMipmaps, SelfModulate = have ? Colors.White : new Color(.42f, .44f, .48f) });
             var plate = new Panel { Position = new Vector2(1, 1), Size = new Vector2(32, 35), MouseFilter = MouseFilterEnum.Ignore };
             var plateStyle = new StyleBoxFlat { BgColor = new Color(isSelected ? "2b2016" : "1b1a19"), BorderColor = new Color(isSelected ? "e9b45c" : "8e7550"), AntiAliasing = true };
@@ -149,9 +150,11 @@ public partial class ShopMenu
             card.AddChild(RoyalKit.Image(RelicIcon(relic), new Rect2(7, 6, 19, 24)));
             // Names sit under the art on the concept's baseline, two lines when long, one line centred between them.
             var lines = NameLines(spec, relic.DisplayName, cell.X - 10, have ? null : new Color("9c968c"));
+            // The concept's name sits centred on its 119 px card, its baseline 12 px above the foot.
+            var nameShift = new Vector2(cell.X / 2 - (spec.Number("card.0.0.label", "x") - labelSpec.Position.X), cell.Y - 132);
             for (var line = 0; line < lines.Count; line++)
             {
-                lines[line].Position -= labelSpec.Position + new Vector2(0, lines.Count == 1 ? NameLeading / 2 : (1 - line) * NameLeading);
+                lines[line].Position -= labelSpec.Position - nameShift + new Vector2(0, lines.Count == 1 ? NameLeading / 2 : (1 - line) * NameLeading);
                 card.AddChild(lines[line]);
             }
             grid.AddChild(card);

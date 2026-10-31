@@ -138,15 +138,19 @@ public partial class ShopMenu
         }
     }
 
+    // Collection cells are drawn larger than the concept's so art, levels and names read on a phone: five to a row
+    // instead of six, spread evenly across the panel.
+    private const float CollectionCellScale = 1.25f, CollectionGap = 8;
+
     /// <summary>
-    /// The collection's columns: as many cells at the concept's pitch as fit between the first cell and
+    /// The collection's columns: as many cells (at least a small gap apart) as fit between the first cell and
     /// the scroll track, spread so the grid meets the track.
     /// </summary>
-    private static (int Columns, float PitchX) GridColumns(float left, float trackX, float cellX, float pitchX)
+    private static (int Columns, float PitchX) GridColumns(float left, float trackX, float cellX)
     {
         var room = trackX - 10 - left;
-        var columns = Mathf.Max(1, Mathf.FloorToInt((room - cellX) / pitchX) + 1);
-        return (columns, columns > 1 ? (room - cellX) / (columns - 1) : pitchX);
+        var columns = Mathf.Max(1, Mathf.FloorToInt((room - cellX) / (cellX + CollectionGap)) + 1);
+        return (columns, columns > 1 ? (room - cellX) / (columns - 1) : cellX + CollectionGap);
     }
 
     private void BuildCollection(bool spells, RoyalSpec spec, List<Entry> entries)
@@ -164,9 +168,10 @@ public partial class ShopMenu
         var second = spec.Rect("grid.0.1");
         var below = spec.Rect("grid.1.0");
         var track = spec.Rect("grid.scroll");
-        var cell = new Vector2(Mathf.Round((first.Size.X + second.Size.X) / 2), first.Size.Y);
-        var pitch = new Vector2(second.Position.X - first.Position.X, below.Position.Y - first.Position.Y);
-        var (columns, pitchX) = GridColumns(first.Position.X, track.Position.X, cell.X, pitch.X);
+        var conceptCell = new Vector2(Mathf.Round((first.Size.X + second.Size.X) / 2), first.Size.Y);
+        var cell = (conceptCell * CollectionCellScale).Round();
+        var pitch = new Vector2(0, cell.Y + below.Position.Y - first.Position.Y - conceptCell.Y);
+        var (columns, pitchX) = GridColumns(first.Position.X, track.Position.X, cell.X);
         pitch.X = pitchX;
         var view = new Rect2(first.Position - new Vector2(4, 4), new Vector2(track.Position.X - first.Position.X + 2, track.End.Y - first.Position.Y + 6));
         var scroll = new ScrollContainer { Position = view.Position, Size = view.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
@@ -202,27 +207,30 @@ public partial class ShopMenu
         AddCornerTab(button, selected, spells ? SpellIcon(GameData.GetSpell(entry.Id)) : ClassIcon(GameData.GetUnit(entry.Id)));
         if (spells && spec.Has("grid.0.0.level"))
         {
-            var origin = spec.Rect("grid.0.0").Position;
-            var level = spec.Label("grid.0.0.level", $"Lv {entry.Level}", 40);
-            level.Position -= origin;
+            // The level and its pips keep the concept's distance from the cell's foot and sides in the larger cell.
+            var concept = spec.Rect("grid.0.0");
+            var level = spec.Label("grid.0.0.level", $"Lv {entry.Level}", 48);
+            level.Position -= concept.Position - new Vector2(0, rect.Size.Y - concept.Size.Y);
             button.AddChild(level);
             var pips = spec.Rect("grid.0.0.pips");
-            button.AddChild(RoyalKit.Pips(pips.Position - origin, Mathf.Min(entry.Level, _state.MaxSpellLevel), _state.MaxSpellLevel, pips.Size.X / 3f, pips.Size.Y));
+            var pipSize = new Vector2(pips.Size.X * CollectionCellScale, pips.Size.Y * CollectionCellScale);
+            var pipsAt = new Vector2(rect.Size.X - (concept.End.X - pips.End.X) - pipSize.X, rect.Size.Y - (concept.End.Y - pips.Position.Y) - (pipSize.Y - pips.Size.Y));
+            button.AddChild(RoyalKit.Pips(pipsAt, Mathf.Min(entry.Level, _state.MaxSpellLevel), _state.MaxSpellLevel, pipSize.X / 3f, pipSize.Y));
         }
         if (!entry.Owned && !entry.Available)
-            button.AddChild(RoyalKit.Image("lock", new Rect2(rect.Size.X - 24, rect.Size.Y - 24, 16, 16), new Color(1, 1, 1, .8f)));
+            button.AddChild(RoyalKit.Image("lock", new Rect2(rect.Size.X - 28, rect.Size.Y - 28, 20, 20), new Color(1, 1, 1, .8f)));
         return button;
     }
 
     /// <summary>The class (or spell) tab in a collection cell's top-left corner.</summary>
     private static void AddCornerTab(Control cell, bool selected, string icon)
     {
-        var tab = new Panel { Position = new Vector2(1.5f, 2), Size = new Vector2(26, 25), MouseFilter = MouseFilterEnum.Ignore };
+        var tab = new Panel { Position = new Vector2(1.5f, 2), Size = new Vector2(30, 29), MouseFilter = MouseFilterEnum.Ignore };
         var tabStyle = new StyleBoxFlat { BgColor = new Color(selected ? "2b2016" : "1c1b1a"), BorderColor = new Color(selected ? "e9b45c" : "8e7550"), AntiAliasing = true };
         tabStyle.BorderWidthRight = tabStyle.BorderWidthBottom = 1; tabStyle.CornerRadiusBottomRight = 7; tabStyle.CornerRadiusTopLeft = 2;
         tab.AddThemeStyleboxOverride("panel", tabStyle);
         cell.AddChild(tab);
-        cell.AddChild(RoyalKit.Image(icon, new Rect2(5.5f, 6, 17, 17)));
+        cell.AddChild(RoyalKit.Image(icon, new Rect2(6, 6.5f, 20, 20)));
     }
 }
 

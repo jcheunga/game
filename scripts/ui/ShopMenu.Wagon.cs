@@ -25,10 +25,25 @@ public partial class ShopMenu
     private static readonly Rect2 WagonBody = new(42, 127, 1197, 558);
     private static readonly Rect2 WagonWindow = new(0, 103, 1280, 597);
 
+    // Card names are the short ones a phone has room for at the reading floor; the detail panel gives the full title.
     private static string UpgradeName(BaseUpgradeDefinition upgrade) => upgrade.Id switch
     {
-        BaseUpgradeCatalog.HullPlatingId => "Plating", BaseUpgradeCatalog.PantryId => "Stores", _ => upgrade.Title
+        BaseUpgradeCatalog.HullPlatingId => "Plating", BaseUpgradeCatalog.PantryId => "Stores", BaseUpgradeCatalog.BallistaId => "Ballista",
+        BaseUpgradeCatalog.ArcherCrewId => "Archers", BaseUpgradeCatalog.FirepotId => "Firepot", BaseUpgradeCatalog.EmergencyRepairId => "Repairs",
+        BaseUpgradeCatalog.ReinforcedArmorId => "Axles", BaseUpgradeCatalog.RelicVaultId => "Relic Vault", _ => upgrade.Title
     };
+
+    // The workshop is drawn on a stage scaled to fit the armory body, so its text is lifted to clear the phone
+    // floors as drawn.
+    private T Lift<T>(T label) where T : RoyalLabel
+    {
+        // Capitals and figures ("100,000") read at the caps floor, mixed case at the body floor.
+        var caps = label.CapRatio >= .7f || label.Text == label.Text.ToUpperInvariant();
+        var floor = Mathf.CeilToInt((caps ? ReadingText.PhoneCaps : ReadingText.PhoneBody) / _wagonStage.Scale.Y);
+        label.FontSize = Mathf.Max(label.FontSize, floor);
+        label.MinimumFontSize = floor;
+        return label;
+    }
 
     private static Texture2D UpgradePicture(string id, bool wide = false)
     {
@@ -68,9 +83,9 @@ public partial class ShopMenu
             if (selected) _wagonStage.AddChild(RoyalKit.Frame("wagon-card-selected", rect.Grow(3), 14, false));
             var picture = spec.Rect(key + ".picture");
             _wagonStage.AddChild(Cover(UpgradePicture(upgrade.Id), picture.Grow(selected ? 2 : 0)));
-            var name = spec.Label(key + ".name", UpgradeName(upgrade), spec.Rect(key + ".button").Position.X - spec.Number(key + ".name", "pen_x", rect.Position.X + 120) - 8);
+            var name = Lift(spec.Label(key + ".name", UpgradeName(upgrade), spec.Rect(key + ".button").Position.X - spec.Number(key + ".name", "pen_x", rect.Position.X + 120) - 8));
             _wagonStage.AddChild(name);
-            _wagonStage.AddChild(spec.Label(key + ".level", $"Level {level} / {upgrade.MaxLevel}", 150));
+            _wagonStage.AddChild(Lift(spec.Label(key + ".level", $"Level {level} / {upgrade.MaxLevel}", 150)));
             for (var p = 1; p <= 5; p++)
                 _wagonStage.AddChild(RoyalKit.Image(p <= level ? "level-square-on" : "level-square-off", spec.Rect($"{key}.pip.{p}")));
             var id = upgrade.Id;
@@ -90,7 +105,7 @@ public partial class ShopMenu
         var icon = spec.Rect("gold.icon");
         _wagonStage.AddChild(RoyalKit.Image("coin-pile", new Rect2(icon.Position + shift, icon.Size)));
         var x = spec.Number("gold.value", "pen_x", spec.Number("gold.value", "x", 1142)) + shift.X;
-        var value = spec.Label("gold.value", _state.Gold.ToString("N0"), plaque.End.X - 10 - x);
+        var value = Lift(spec.Label("gold.value", _state.Gold.ToString("N0"), plaque.End.X - 10 - x));
         value.Position += shift;
         _wagonStage.AddChild(value);
     }
@@ -163,16 +178,20 @@ public partial class ShopMenu
         var max = level >= upgrade.MaxLevel;
         var picture = spec.Rect("detail.picture");
         _wagonStage.AddChild(Cover(UpgradePicture(upgrade.Id, true), picture));
-        _wagonStage.AddChild(spec.Label("detail.title", upgrade.Title, 460));
-        var description = new[] { upgrade.Summary, level == 0 ? "Not installed yet." : "Now: " + BuildBaseUpgradeEffectText(upgrade, level) };
-        var body = RoyalText.Paragraph(description[0], (int)spec.Number("detail.desc.1", "size", 17), new Color("e6dccb"), 400);
-        var top = spec.Number("detail.desc.1", "baseline", 568) - 16;
+        _wagonStage.AddChild(Lift(spec.Label("detail.title", upgrade.Title, 460)));
+        var bodySize = Mathf.CeilToInt(ReadingText.PhoneBody / _wagonStage.Scale.Y);
+        var body = RoyalText.Paragraph(upgrade.Summary, bodySize, new Color("e6dccb"), 400);
+        var top = spec.Number("detail.desc.1", "baseline", 568) - 20;
         body.Position = new Vector2(spec.Number("detail.desc.1", "x", 604), top);
-        body.Size = new Vector2(spec.Rect("button.upgrade").End.X - body.Position.X, 44);
-        body.AddThemeConstantOverride("line_spacing", 0);
-        RoyalText.FitLines(body, 2);
+        body.Size = new Vector2(spec.Rect("button.upgrade").End.X - body.Position.X, 52);
+        body.AddThemeConstantOverride("line_spacing", -2);
+        // Two lines at the reading floor: a summary that runs longer keeps its first sentence (the effect).
+        var font = body.GetThemeFont("font");
+        if (font.GetMultilineStringSize(upgrade.Summary, HorizontalAlignment.Left, body.Size.X, bodySize).Y > font.GetHeight(bodySize) * 2 + 1)
+            body.Text = upgrade.Summary.Split(". ")[0].TrimEnd('.') + ".";
+        RoyalText.FitLines(body, 2, bodySize);
         _wagonStage.AddChild(body);
-        _wagonStage.AddChild(spec.Label("detail.level", $"LEVEL {level} / {upgrade.MaxLevel}", 200));
+        _wagonStage.AddChild(Lift(spec.Label("detail.level", $"LEVEL {level} / {upgrade.MaxLevel}", 200)));
         for (var p = 1; p <= 5; p++)
             _wagonStage.AddChild(RoyalKit.Image(p <= level ? "level-bar-on-full" : "level-bar-off", spec.Rect($"detail.bar.{p}")));
         var cost = state.GetBaseUpgradeCost(upgrade.Id);
@@ -189,14 +208,14 @@ public partial class ShopMenu
         _wagonStage.AddChild(button);
         // Verb, divider and price as one centred row; a capped rank shows a padlock instead of the coin.
         var verb = spec.Label("button.upgrade.label", max ? "Trained" : capped ? $"Player lv {needed}" : "Upgrade", 190);
-        verb.Font = RoyalFonts.Display(700); verb.FontSize = 16; verb.Ink = ModalUi.Cream;
+        verb.Font = RoyalFonts.Display(700); verb.CapRatio = .70f; verb.FontSize = 0; verb.Ink = ModalUi.Cream; Lift(verb);
         if (max) button.Arrange(verb);
-        else if (capped) button.Arrange(verb, RoyalKit.Texture("icon-lock-small"), new Vector2(15, 20), gap: 10);
+        else if (capped) button.Arrange(verb, RoyalKit.Texture("icon-lock-small"), new Vector2(17, 23), gap: 10);
         else
         {
             var price = spec.Label("button.upgrade.cost", cost.ToString("N0"), 60);
-            price.Font = RoyalFonts.Display(700); price.FontSize = 16;
-            button.Arrange(verb, price: price, priceIcon: RoyalKit.Texture("coin-pile"), priceIconSize: spec.Rect("button.upgrade.icon").Size * .75f, rule: 14);
+            price.Font = RoyalFonts.Display(700); price.CapRatio = .70f; price.FontSize = 0; Lift(price);
+            button.Arrange(verb, price: price, priceIcon: RoyalKit.Texture("coin-pile"), priceIconSize: spec.Rect("button.upgrade.icon").Size * .8f, rule: 12);
         }
         button.TooltipText = $"{upgrade.Title} · {(max ? "fully trained" : capped ? $"reach player level {needed} to raise it to level {level + 1}" : $"next: {BuildBaseUpgradeEffectText(upgrade, level + 1)}")}";
     }

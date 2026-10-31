@@ -75,8 +75,8 @@ public partial class GuildMenu : RoyalBoard
         var facts = new (string Icon, string Name, string Value)[]
         {
             ("icon-people-gold", "Members", $"{guild.MemberCount}/{tier.MaxMembers}"),
-            ("result-star", "Experience", guild.Experience.ToString("N0")),
-            ("emblem-guild", "Your share", state.GuildContributionPoints.ToString("N0"))
+            ("result-star", "Guild XP", guild.Experience.ToString("N0")),
+            ("emblem-guild", "Yours", state.GuildContributionPoints.ToString("N0"))
         };
         var y = picture.End.Y + 12;
         var width = (column.Size.X - 24) / 3;

@@ -71,7 +71,7 @@ public static class RaidBossCatalog
 				new RaidBossMilestone(18_000, "essence", "", 4, "40% — Honor guard fallen"),
 				new RaidBossMilestone(27_000, "gold", "", 1500, "60% — Crown cracked"),
 				new RaidBossMilestone(36_000, "essence", "", 8, "80% — Sovereign faltering"),
-				new RaidBossMilestone(45_000, "relic", "relic_raid_sovereign_mantle", 1, "100% — Dread Sovereign vanquished"),
+				new RaidBossMilestone(45_000, "relic", "relic_raid_sovereign_mantle", 1, "100% — Sovereign vanquished"),
 			}),
 		new("raid_plague_archon", "Plague Archon Supreme", "boss_plague_archon", 33_000,
 			new[]

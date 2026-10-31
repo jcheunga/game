@@ -203,10 +203,11 @@ public partial class PlayerLevelMenu : RoyalScreen
         }
         var dim = !reached || claimed;
         cell.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            Texture = RewardArt(reward), Position = new Vector2(10, 12), Size = new Vector2(76, rect.Size.Y - 24), MouseFilter = MouseFilterEnum.Ignore,
+            Texture = RewardArt(reward), Position = new Vector2(10, 12), Size = new Vector2(66, rect.Size.Y - 24), MouseFilter = MouseFilterEnum.Ignore,
             SelfModulate = dim ? new Color(.62f, .62f, .66f) : Colors.White, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
 
-        var left = 94f; var width = rect.Size.X - left - 10;
+        // The picture keeps 66 px so "CLAIMED" fits beside its check at the phone floor.
+        var left = 84f; var width = rect.Size.X - left - 10;
         var number = RoyalText.Caps($"LV {level}", 16, reached ? new Color("f0d48e") : new Color("a59b8a"), 700);
         RoyalText.Place(cell, number, left, 9, 64, 22);
         // The caps this level lifts, as the armory's warband (helmet) and war wagon (hammer) medallions.

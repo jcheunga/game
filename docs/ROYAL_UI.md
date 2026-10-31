@@ -104,10 +104,10 @@ the caption would sit high. The UI review's `ROYAL_BUTTON_STRETCHED` audit fails
 ### Stat sheets
 
 Every stat list (warband and spell profiles, the codex) is one `StatSheet`
-(`scripts/ui/shared/StatSheet.cs`, built from `ArmoryDetailUi.Stats`): one kit `tile` frame holding 34-unit rows of
-icon, name (book serif 18) and right-aligned value (book serif bold 20), with hairlines between rows and columns.
-Columns drop until every name and value fits its cell. A single column too narrow for a long pair closes up instead
-(values at the 18 px floor, then slightly tighter letter spacing in the name), so text never shrinks or overflows.
+(`scripts/ui/shared/StatSheet.cs`, built from `ArmoryDetailUi.Stats`): one kit `tile` frame holding 40-unit rows of
+icon, name (book serif at the 22 px floor) and right-aligned value (book serif bold 24), with hairlines between rows
+and columns. A column too narrow for a long pair closes up (values at the 22 px floor, then slightly tighter letter
+spacing in the name); columns drop only when even a closed-up cell no longer fits, so text never shrinks or overflows.
 Names are kept short enough for two columns ("Durability", "Mana gain", "Repair"). Icons come from
 `StatSheet.Glyph`: the concept's painted stat glyphs, plus `assets/ui/icons/stats/*.svg` drawn to match for mana,
 duration, speed and siege. The concepts painted one plaque per stat on the warband and spells plates; those are
@@ -254,7 +254,7 @@ once-per-account starter kit. The tab glyphs and the small `store-*` glyphs are 
 
 The modal draws at `MobilePresentation.HudScale`, so its kit pieces use `RoyalKit.Scaled` (rims and corners at their
 concept-screen size, margins in modal units) and its text is sized in modal units against the phone floors as drawn
-(12 units of book serif and 11 of capitals clear 18 and 16 px). Review with `UiReviewSmoke --storehouse`
+(`MobilePresentation.ModalBody` 15 units of book serif and `ModalCaps` 13 of capitals clear 22 and 20 px). Review with `UiReviewSmoke --storehouse`
 (`artifacts/home-map/desktop/storehouse-*`).
 
 ## Spell effects

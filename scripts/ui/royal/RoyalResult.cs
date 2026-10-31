@@ -100,7 +100,7 @@ public partial class RoyalResult : Control
             amount.Position = new Vector2(4, amount.Position.Y - origin.Y - 7); amount.Size = new Vector2(rect.Size.X - 8, amount.Size.Y);
             tile.AddChild(amount);
             var caption = spec.Label("reward.1.caption", TileArt(tiles[i]).Caption, rect.Size.X - 8);
-            caption.FontSize = Mathf.Min(caption.FontSize, 12);
+            caption.FontSize = ReadingText.PhoneCaps;
             caption.Position = new Vector2(4, caption.Position.Y - origin.Y - 10); caption.Size = new Vector2(rect.Size.X - 8, caption.Size.Y);
             tile.AddChild(caption);
             canvas.AddChild(tile);
@@ -142,7 +142,7 @@ public partial class RoyalResult : Control
             value.Position += new Vector2(textShift, shift.Y - 4);
             canvas.AddChild(value);
             var masteryCaption = spec.Label("mastery.caption", "MASTERY", 200);
-            masteryCaption.FontSize = Mathf.Min(masteryCaption.FontSize, 14);
+            masteryCaption.FontSize = ReadingText.PhoneCaps;
             masteryCaption.Position += new Vector2(textShift, shift.Y - 7);
             canvas.AddChild(masteryCaption);
         }

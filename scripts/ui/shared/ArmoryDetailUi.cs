@@ -90,7 +90,7 @@ public static class ArmoryDetailUi
         return values;
     }
 
-    public static string SpellRole(string effect) => effect.StartsWith("tactic_") ? "Tactical Gear" : effect switch {
+    public static string SpellRole(string effect) => effect.StartsWith("tactic_") ? "Gear" : effect switch {
         "aegis_bolt" or "mirror_ward" or "purifying_light" or "verdant_renewal" => "Protection",
         "radiant_rebuke" or "revealing_flare" or "banish" or "withering_seal" => "Counter",
         "tidal_push" or "anchor_hex" or "gravitation_well" or "bramble_snare" => "Control",
@@ -106,6 +106,7 @@ public static class ArmoryDetailUi
         "barrier_ward" => "Protect nearby allies from damage.", "stone_barricade" => "Block the enemy with a stone wall.",
         "war_cry" => "Boost every ally's attack and speed.", "earthquake" => "Damage and slow enemies over a wide area.",
         "polymorph" => "Suppress one enemy's attack and movement.", "resurrect" => "Bring back your last eligible fallen ally.",
+        "banish" => "Remove enemy summons and illusions, or strip one enemy ward.",
         _ => GameData.GetPlayerSpells().FirstOrDefault(s=>s.EffectType==effect)?.Description.Split('.')[0] ?? ""
     };
 

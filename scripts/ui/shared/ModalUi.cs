@@ -5,7 +5,7 @@ using Godot;
 public static class ModalUi
 {
     public static readonly Font HeadingFont = RealmUi.TitleFont;
-    /// <summary>Engraved capitals for action captions (16 px: the phone floor for caps).</summary>
+    /// <summary>Engraved capitals for action captions, at the phone floor for caps.</summary>
     public static readonly Font CaptionFont = RoyalFonts.Display(700);
     public const int CaptionSize = ReadingText.PhoneCaps;
     public static readonly Color Cream = new("fff0cf"), Muted = new("cbbba5");
@@ -83,7 +83,7 @@ public static class ModalUi
         if (node is Button button) StyleButton(button);
         if (node is Label label)
         {
-            var minimum = 18;
+            var minimum = ReadingText.PhoneBody;
             for (var parent = label.GetParent(); parent != null; parent = parent.GetParent())
                 if (parent is Button) { minimum = RealmUi.ButtonFontSize; break; }
             label.AddThemeFontSizeOverride("font_size", Math.Max(minimum, label.GetThemeFontSize("font_size")));

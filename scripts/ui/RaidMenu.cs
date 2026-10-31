@@ -70,8 +70,11 @@ public partial class RaidMenu : RoyalBoard
             Frame(reached && !claimed ? "ach-card-ready" : "season-locked", row, 10);
             Image(RewardArt(milestone.RewardType, milestone.RewardItemId), new Rect2(row.Position.X + 8, row.Position.Y + 4, row.Size.Y - 8, row.Size.Y - 8), claimed ? new Color(1, 1, 1, .45f) : null);
             var x = row.Position.X + row.Size.Y + 6;
-            Serif(milestone.Label, new Rect2(x, row.Position.Y + 4, row.End.X - x - 150, 30), 20, claimed ? Soft : RoyalText.Cream, weight: 700);
-            Serif($"{milestone.DamageThreshold:N0} damage", new Rect2(x, row.Position.Y + 34, row.End.X - x - 150, 28), 18, Soft, weight: 500);
+            // "20% — Outer defenses breached": the share joins the damage line, so the name has the row to itself.
+            var parts = milestone.Label.Split(" — ", 2);
+            var (share, title) = parts.Length == 2 ? (parts[0] + " · ", parts[1]) : ("", milestone.Label);
+            Serif(title, new Rect2(x, row.Position.Y + 4, row.End.X - x - 150, 30), 20, claimed ? Soft : RoyalText.Cream, weight: 700);
+            Serif($"{share}{milestone.DamageThreshold:N0} damage", new Rect2(x, row.Position.Y + 34, row.End.X - x - 150, 28), 18, Soft, weight: 500);
             var index = i;
             var button = new Rect2(row.End.X - 140, row.Position.Y + (row.Size.Y - 40) / 2, 128, 40);
             if (claimed) Action(button, "Claimed", null, null, Kind.Claimed, false, size: 15);

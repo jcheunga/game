@@ -10,11 +10,11 @@ using Godot;
 /// </summary>
 public partial class StatSheet : Container
 {
-    public const float RowHeight = 34, Inset = 5;
-    private const float Pad = 9, IconSize = 20, IconGap = 7, ValueGap = 10;
-    // A squeezed single column: tighter spacing and the most a name's letter spacing closes up.
+    public const float RowHeight = 40, Inset = 5;
+    private const float Pad = 9, IconSize = 24, IconGap = 7, ValueGap = 10;
+    // A squeezed column: tighter spacing and the most a name's letter spacing closes up.
     private const float TightPad = 7, TightIconGap = 5, TightValueGap = 8, MostTracking = .7f;
-    private const int NameSize = 18, ValueSize = 20;
+    private const int NameSize = ReadingText.PhoneBody, ValueSize = ReadingText.PhoneBody + 2;
     private static readonly Color NameInk = new("c2b59d"), ValueInk = new("fbf0cf"), Rule = new(.86f, .71f, .45f, .2f);
 
     private readonly List<(Control Cell, TextureRect Icon, RoyalLabel Name, RoyalLabel Value)> _cells = new();
@@ -79,10 +79,17 @@ public partial class StatSheet : Container
         ? Pad + IconSize + IconGap + Width(cell.Name, NameSize) + ValueGap + Width(cell.Value, ValueSize) + Pad
         : TightPad + IconSize + TightIconGap + Width(cell.Value, ValueSize) + TightPad;
 
+    // A cell closed up as far as the squeeze below goes: tight spacing, the value at the reading floor and the
+    // name's letter spacing at its closest.
+    private float Tightest((Control Cell, TextureRect Icon, RoyalLabel Name, RoyalLabel Value) cell) =>
+        2 * TightPad + IconSize + TightIconGap + Width(cell.Value, ReadingText.PhoneBody)
+        + (_names ? TightValueGap + Width(cell.Name, NameSize) - MostTracking * Mathf.Max(0, cell.Name.Text.Length - 1) : 0);
+
+    // Columns drop only when even a squeezed cell no longer fits, so a sheet keeps its rows short.
     private int FitColumns(float width)
     {
         var columns = Mathf.Min(_columns, Mathf.Max(1, _cells.Count));
-        var widest = _cells.Count == 0 ? 0 : _cells.Max(Needed);
+        var widest = _cells.Count == 0 ? 0 : _cells.Max(Tightest);
         while (columns > 1 && (width - Inset * 2) / columns < widest) columns--;
         return columns;
     }
@@ -91,8 +98,7 @@ public partial class StatSheet : Container
     public override Vector2 _GetMinimumSize()
     {
         // As narrow as one column closed up as far as it goes (see the squeeze below).
-        var widest = _cells.Count == 0 ? 0 : _cells.Max(cell => 2 * TightPad + IconSize + TightIconGap + Width(cell.Value, ReadingText.PhoneBody)
-            + (_names ? TightValueGap + Width(cell.Name, NameSize) - MostTracking * Mathf.Max(0, cell.Name.Text.Length - 1) : 0));
+        var widest = _cells.Count == 0 ? 0 : _cells.Max(Tightest);
         return new Vector2(Mathf.Ceil(widest) + Inset * 2, Size.X > 0 ? HeightFor(Size.X) : 0);
     }
 
@@ -104,7 +110,7 @@ public partial class StatSheet : Container
         if (what != NotificationSortChildren) return;
         Columns = FitColumns(Size.X);
         var width = (Size.X - Inset * 2) / Columns;
-        // A single column too narrow for a long pair ("Faster attacks +0.88%") closes up instead of overflowing:
+        // A column too narrow for a long pair ("Faster attacks +0.88%") closes up instead of overflowing:
         // tighter gaps and values at the reading floor for every row (icons and names stay in line), then a little
         // less letter spacing in just the names still too wide.
         var squeeze = _cells.Any(cell => Needed(cell) > width);

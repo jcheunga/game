@@ -131,7 +131,8 @@ public partial class BattleController
             cards.Position = new Vector2((size.X - width) / 2, size.Y - bottom - (720 - dockRect.End.Y) - height);
             cards.Size = new Vector2(width, height);
             LayoutCaravanSpellButton(cards, cardWidth, cardHeight, size.X - right);
-            _battleSettingsModal?.FitToArea(size);
+            // Settings open on their own layer at the canvas's own scale, not the HUD's.
+            _battleSettingsModal?.FitToArea(GetViewportRect().Size);
         };
         GetViewport().SizeChanged += _hudLayout;
         _hudLayout();
@@ -147,15 +148,17 @@ public partial class BattleController
         var card = new PanelContainer { CustomMinimumSize = new Vector2(420, 0) };
         card.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 16)); _pauseOverlay.AddChild(card);
         var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", 8); card.AddChild(stack);
-        var title = RealmUi.Heading("Battle paused", 28); title.HorizontalAlignment = HorizontalAlignment.Center; stack.AddChild(title);
+        var title = RealmUi.Heading("Battle paused", 28); title.HorizontalAlignment = HorizontalAlignment.Center;
+        title.VerticalAlignment = VerticalAlignment.Center; title.CustomMinimumSize = new Vector2(0, 50); stack.AddChild(title);
         Button ActionButton(string icon, string text, Action action, bool primary = false)
         {
             var button = RealmUi.Button(icon, text, action, primary);
-            button.CustomMinimumSize = new Vector2(0, 52); ModalUi.StyleButton(button); stack.AddChild(button); return button;
+            // 60 HUD units: a full fingertip (72 px) once the HUD's scale is applied.
+            button.CustomMinimumSize = new Vector2(0, 60); ModalUi.StyleButton(button); stack.AddChild(button); return button;
         }
         _resumeButton = ActionButton("arrow", "Resume", TogglePause, true);
         _restartButton = RealmUi.Button("arrow", "Restart", TryRestartBattle);
-        _restartButton.CustomMinimumSize = new Vector2(0, 52); ModalUi.StyleButton(_restartButton);
+        _restartButton.CustomMinimumSize = new Vector2(0, 60); ModalUi.StyleButton(_restartButton);
         StyleRestartButton(_restartButton); stack.AddChild(_restartButton);
         ActionButton("gear", "Game settings", OpenBattleSettings);
         ActionButton("book", "Battle guide", OpenCombatGuide);

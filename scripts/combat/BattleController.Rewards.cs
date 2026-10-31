@@ -32,10 +32,12 @@ public partial class BattleController
             };
         _endLabel.Text = "";
         _endReportScroll.Hide();
-        // The battle HUD keeps the concept's 1:1 sizes (MobilePresentation.BattleHudScale), so the report does too.
+        // The report sits in the battle HUD, at its scale (MobilePresentation.BattleHudScale).
         var height = rewards.Count > 0 ? BattleRewardUi.PanelHeight(rewards.Count, false) : 330;
         if (detail.Length > 0) height += 30;
-        _endPanel.CustomMinimumSize = new Vector2(880, Mathf.Min(680, height));
+        // Within the HUD root's own (scaled-down) size, so the report never runs off a phone screen.
+        var room = _battleHudRoot.Size - new Vector2(40, 40);
+        _endPanel.CustomMinimumSize = new Vector2(Mathf.Min(880, room.X), Mathf.Min(Mathf.Min(680, room.Y), height));
         _endPanel.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 12));
         _endContent.AddThemeConstantOverride("separation", 14);
         var inset = 24;
@@ -99,7 +101,9 @@ public partial class BattleController
             RetryFoodCost = IsCampaignMode ? GameState.Instance.GetStageEntryFoodCost(_stage) : 0,
             Leave = HandleEndPanelSecondaryAction, Retry = HandleEndPanelPrimaryAction
         };
-        _endCenter.GetParent().AddChild(_royalResult);
+        // The board is drawn on the full canvas, so it stands outside the HUD's larger scale.
+        _royalResult.Theme = _battleHudRoot.Theme;
+        _battleHudRoot.GetParent().AddChild(_royalResult);
         // While a destroyed stronghold falls the board stays down; ShowEndPanelAnimated brings it up afterwards.
         _royalResult.Visible = !(StrongholdFallen && !ReducedMotion);
         _endPanel.Visible = false;

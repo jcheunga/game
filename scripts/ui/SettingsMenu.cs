@@ -247,14 +247,16 @@ public partial class SettingsMenu : RoyalScreen
             }
             case EditRow edit:
             {
-                var box = new Rect2(Local("row.music.slider.track").Position.X - 30, Local("row.music.value").Position.Y, Local("row.music.value").End.X - Local("row.music.slider.track").Position.X + 30, Local("row.music.value").Size.Y);
+                // The field starts after the row's name, which reads at the phone floor.
+                var left = Mathf.Max(Local("row.music.slider.track").Position.X - 30, name.Position.X + Mathf.Ceil(name.TextWidth(name.FontSize)) + 16);
+                var box = new Rect2(left, Local("row.music.value").Position.Y, Local("row.music.value").End.X - left, Local("row.music.value").Size.Y);
                 var field = new LineEdit { Text = edit.Value(), PlaceholderText = edit.Placeholder, Position = box.Position, Size = box.Size, Editable = edit.Enabled,
                     TooltipText = row.Name, AccessibilityName = row.Name };
                 field.AddThemeStyleboxOverride("normal", RoyalKit.Slice("value-box", 8));
                 field.AddThemeStyleboxOverride("focus", RoyalKit.Slice("value-box", 8));
                 field.AddThemeStyleboxOverride("read_only", RoyalKit.Slice("value-box", 8));
                 field.AddThemeFontOverride("font", RoyalFonts.Body(500));
-                field.AddThemeFontSizeOverride("font_size", 18);
+                field.AddThemeFontSizeOverride("font_size", ReadingText.PhoneBody);
                 field.AddThemeColorOverride("font_color", new Color("fff9ec"));
                 field.AddThemeConstantOverride("minimum_character_width", 4);
                 field.TextSubmitted += value => { edit.Apply(value); Rebuild(); };

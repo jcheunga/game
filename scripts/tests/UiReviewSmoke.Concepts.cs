@@ -84,7 +84,7 @@ public partial class UiReviewSmoke
         }
         if (Want("codex-last"))
         {
-            // Every entry discovered gives the widest heading and page count ("PAGE 29 OF 29").
+            // Every entry discovered gives the widest heading and page count ("29 / 29").
             await Open("CodexMenu"); CheckCodexHeader("first");
             bool CanTurn() => Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(b => b.IsVisibleInTree() && !b.Disabled && b.AccessibilityName == "Next codex page");
             while (CanTurn()) await PressHint("Next codex page");
@@ -150,7 +150,7 @@ public partial class UiReviewSmoke
     {
         var controls = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Control>().Where(c => c.IsVisibleInTree()).ToArray();
         var heading = controls.OfType<RoyalLabel>().FirstOrDefault(l => l.Text.StartsWith("DISCOVERED "));
-        var count = controls.OfType<RoyalLabel>().FirstOrDefault(l => l.Text.StartsWith("PAGE "));
+        var count = controls.OfType<RoyalLabel>().FirstOrDefault(l => System.Text.RegularExpressions.Regex.IsMatch(l.Text, @"^\d+ / \d+$"));
         var prev = controls.OfType<Button>().FirstOrDefault(b => b.AccessibilityName == "Previous codex page");
         float End(RoyalLabel label) => label.Position.X + label.TextWidth(label.FittedSize());
         Check(heading != null && count != null && prev != null && End(heading) < count.Position.X && End(count) <= prev.Position.X,

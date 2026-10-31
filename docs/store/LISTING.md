@@ -651,8 +651,8 @@ The kingdom's reliquary: 260 relic shards, of which 50 are a bonus. Relic shards
 
 - IDs: Apple `com.crownroad.starter_kit` · Play `starter_kit`
 - Grants: 800 gold, 30 food and the player's next troop. The server allows one
-  kit per player (`server/Endpoints.cs`), and the card says "Once per
-  account".
+  kit per player (`server/Endpoints.cs`), and the card says "Once
+  only".
 - The troop is fixed, not random. `GameState.NextKitUnitId()` picks the first
   troop the player doesn't own, by lowest unlock stage and then roster order,
   even before the player reaches its stage. On a fresh save that is the

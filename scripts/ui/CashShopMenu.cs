@@ -14,8 +14,9 @@ public partial class CashShopMenu : Control
     private static readonly string[] Categories = { "Gold", "Rations", "Shards", "Bundles", "Purchases" };
     private static readonly string[] TabGlyphs = { "storetab-gold", "storetab-rations", "storetab-shards", "storetab-bundles", "storetab-ledger" };
     private static readonly string[] PackCategories = { "gold", "food", "shards", "mixed" };
-    // Five tabs and the balances share the phone canvas's width.
-    private static readonly Vector2 TabSize = new(104, 40);
+    // Five tabs and the balances share the phone canvas's width; the tabs average TabSize.X.
+    private static readonly Vector2 TabSize = new(104, 40), TabGlyph = new(20, 20);
+    private const float TabGap = 7;
     private static readonly Color Muted = new("b9ad96"), Body = new("e9dfcb"), Heading = new("f3deaa");
     private const int RationsPage = 1, ShardsPage = 2, LedgerPage = 4;
     private readonly List<RoyalButton> _tabs = new();
@@ -106,11 +107,13 @@ public partial class CashShopMenu : Control
         var bar = new HBoxContainer { Name = "StorehouseBar", CustomMinimumSize = new Vector2(0, TabSize.Y) };
         bar.AddThemeConstantOverride("separation", 4);
         root.AddChild(bar);
+        var widths = TabWidths();
         for (var i = 0; i < Categories.Length; i++)
         {
             var index = i;
-            var tab = RoyalButton.Over(new Rect2(Vector2.Zero, TabSize), Categories[i], () => SelectCategory(index), 4);
-            tab.CustomMinimumSize = TabSize;
+            var size = new Vector2(widths[i], TabSize.Y);
+            var tab = RoyalButton.Over(new Rect2(Vector2.Zero, size), Categories[i], () => SelectCategory(index), 4);
+            tab.CustomMinimumSize = size;
             bar.AddChild(tab);
             _tabs.Add(tab);
         }
@@ -289,11 +292,29 @@ public partial class CashShopMenu : Control
             var selected = i == _selectedCategory;
             tab.SetStates(StorePackCard.Kit(selected ? "ach-tab-selected" : "ach-tab", 7), 4);
             tab.MarkTab(selected);
-            var caption = new RoyalLabel { Text = Categories[i], Font = RoyalFonts.Body(600), FontSize = 16, CapRatio = .58f, MinimumFontSize = MobilePresentation.ModalBody,
-                Ink = selected ? new Color("f4eabf") : new Color("dcdddf"), ShadowOffset = new Vector2(0, 1), ShadowInk = new Color(0, 0, 0, .6f) };
-            tab.Arrange(caption, RoyalKit.Texture(TabGlyphs[i]), new Vector2(20, 20), gap: 7);
+            tab.Arrange(TabCaption(Categories[i], selected), RoyalKit.Texture(TabGlyphs[i]), TabGlyph, gap: TabGap);
             if (tab.Glyph != null) tab.Glyph.SelfModulate = selected ? Colors.White : new Color(.88f, .88f, .9f);
         }
+    }
+
+    private static RoyalLabel TabCaption(string text, bool selected) => new()
+    {
+        Text = text, Font = RoyalFonts.Body(600), FontSize = 16, CapRatio = .58f, MinimumFontSize = MobilePresentation.ModalBody,
+        Ink = selected ? new Color("f4eabf") : new Color("dcdddf"), ShadowOffset = new Vector2(0, 1), ShadowInk = new Color(0, 0, 0, .6f)
+    };
+
+    /// <summary>
+    /// The tabs share the row by what they hold: each gets its glyph and caption inside the plate's rims, then an even
+    /// share of what is left, so a long caption such as Purchases keeps its glyph.
+    /// </summary>
+    private static float[] TabWidths()
+    {
+        var probe = TabCaption("", false);
+        var rims = 2 * Mathf.Clamp(TabSize.Y * .22f, 8, 16);
+        var needs = Categories.Select(name => rims + TabGlyph.X + TabGap + Mathf.Ceil(probe.TextWidth(name, probe.FontSize)) + 2).ToArray();
+        probe.Free();
+        var spare = Mathf.Max(0, TabSize.X * Categories.Length - needs.Sum()) / Categories.Length;
+        return needs.Select(need => Mathf.Floor(need + spare)).ToArray();
     }
 
     private void ShowRefill()

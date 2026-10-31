@@ -28,10 +28,10 @@ public static class MedievalUi
     public static void ShowConfirmation(Control host, string title, string body, string confirmText, Action onConfirm, string cancelText = "Keep playing")
     {
         var row = OpenMessage(host, title, body, out var close, out _);
-        var cancel = new RealmButton { Text = cancelText, CustomMinimumSize = new Vector2(160f, 44f) };
+        var cancel = new RealmButton { Text = cancelText, CustomMinimumSize = new Vector2(160f, 48f) };
         cancel.Pressed += close;
         row.AddChild(cancel);
-        var confirm = new RealmButton { Text = confirmText, CustomMinimumSize = new Vector2(160f, 44f) };
+        var confirm = new RealmButton { Text = confirmText, CustomMinimumSize = new Vector2(160f, 48f) };
         confirm.AddThemeColorOverride("font_color", new Color("ffd8c4"));
         ButtonFeel.MatchHoverInk(confirm);
         confirm.Pressed += () => { close(); onConfirm?.Invoke(); };
@@ -45,7 +45,7 @@ public static class MedievalUi
     public static Control ShowNotice(Control host, string title, string body, Action acknowledged = null, string buttonText = "OK")
     {
         var row = OpenMessage(host, title, body, out var close, out var dialog);
-        var ok = new RealmButton { Text = buttonText, CustomMinimumSize = new Vector2(160f, 44f) };
+        var ok = new RealmButton { Text = buttonText, CustomMinimumSize = new Vector2(160f, 48f) };
         ok.Pressed += () => { close(); acknowledged?.Invoke(); };
         row.AddChild(ok);
         return dialog;

@@ -245,7 +245,8 @@ with a glyph of its own uses it; the rest share one by the kind of object (`Shop
 
 The storehouse (`CashShopMenu.cs`, `StorePackCard.cs`) has no concept of its own, so it is built from the concept
 screens' pieces inside the modal frame: the achievements screen's tabs (`ach-tab`, cut from its plate, and
-`ach-tab-selected`) with cream glyphs, the home strip's parchment balances, and `ach-card` pack cards whose Buy starts
+`ach-tab-selected`) with cream glyphs (the five tabs share the row by caption length, so each keeps its glyph), the
+home strip's parchment balances, and `ach-card` pack cards whose Buy starts
 the purchase in one tap (the store's own payment sheet confirms it). Each pack has a painted picture
 (`art/royal/jobs/14-storehouse.json`, installed by `art/royal/storehouse.py` as `items/store_<product id>`), so the four
 gold and four ration packs grow from a purse to the king's treasury and from a ration bundle to the royal granary.

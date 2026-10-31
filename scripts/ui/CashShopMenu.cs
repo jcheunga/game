@@ -415,11 +415,13 @@ public partial class CashShopMenu : Control
 
         var platform = DetectPlatform();
         var nativeIap = NativeIAPService.Instance;
+#if !GODOT_MOBILE
         if (platform == "stripe")
         {
             ExecuteStripePurchase(product);
             return;
         }
+#endif
 
         // Native IAP path (Apple/Google)
         if (nativeIap != null && nativeIap.IsAvailable && nativeIap.Platform != IAPPlatform.Stripe)
@@ -432,6 +434,8 @@ public partial class CashShopMenu : Control
         RefreshUi(preserveStatus: true);
     }
 
+    // Web checkout is for desktop and web builds only; phones always buy through Apple or Google.
+#if !GODOT_MOBILE
     private void ExecuteStripePurchase(ShopProduct product)
     {
         _statusLabel.Text = $"Creating checkout for {product.DisplayName}...";
@@ -455,6 +459,7 @@ public partial class CashShopMenu : Control
         }
         RefreshStatus();
     }
+#endif
 
     private void ExecuteNativeIAPPurchase(ShopProduct product, string platform)
     {
@@ -571,7 +576,9 @@ public partial class CashShopMenu : Control
             {
                 IAPPlatform.Apple => "Apple StoreKit",
                 IAPPlatform.Google => "Google Play",
+#if !GODOT_MOBILE
                 IAPPlatform.Stripe => "Stripe (web)",
+#endif
                 _ => "None"
             };
             Row("Payment", platformLabel);

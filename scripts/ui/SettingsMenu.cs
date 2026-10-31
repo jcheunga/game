@@ -391,7 +391,11 @@ public partial class SettingsMenu : RoyalScreen
     {
         if (OS.HasFeature("ios")) return "Apple (StoreKit 2)";
         if (OS.HasFeature("android")) return "Google Play Billing";
+#if GODOT_MOBILE
+        return "Unavailable";
+#else
         return "Stripe Checkout (web/PC)";
+#endif
     }
 }
 

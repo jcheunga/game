@@ -49,7 +49,9 @@ internal sealed partial class CompactJson : JsonSerializerContext
 [JsonSerializable(typeof(AccountSignIn.GameCenterRequest))]
 [JsonSerializable(typeof(CloudSaveUploadRequest))]
 [JsonSerializable(typeof(PurchaseValidationApiRequest))]
+#if !GODOT_MOBILE
 [JsonSerializable(typeof(StripeCheckoutApiRequest))]
+#endif
 [JsonSerializable(typeof(PlayerProfileSyncApiRequest))]
 [JsonSerializable(typeof(AchievementSyncApiRequest))]
 [JsonSerializable(typeof(DailyCompleteApiRequest))]

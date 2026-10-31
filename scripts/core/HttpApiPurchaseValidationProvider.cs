@@ -48,6 +48,8 @@ public sealed class PurchaseHistoryEntry
 	public long PurchasedAtUnixSeconds { get; set; }
 }
 
+// Web checkout is for desktop and web builds only; phones always buy through Apple or Google.
+#if !GODOT_MOBILE
 public sealed class StripeCheckoutApiRequest
 {
 	public string ProfileId { get; set; } = "";
@@ -73,6 +75,7 @@ public sealed class StripeCheckoutStatusResult
 	public string ProductId { get; set; } = "";
 	public bool Completed { get; set; }
 }
+#endif
 
 public sealed class HttpApiPurchaseValidationProvider
 {
@@ -216,6 +219,7 @@ public sealed class HttpApiPurchaseValidationProvider
 		return entries;
 	}
 
+#if !GODOT_MOBILE
 	public StripeCheckoutResult CreateStripeCheckout(string profileId, string productId)
 	{
 		if (string.IsNullOrWhiteSpace(_baseUrl))
@@ -284,6 +288,7 @@ public sealed class HttpApiPurchaseValidationProvider
 			Completed = GetBool(root, "completed", false)
 		};
 	}
+#endif
 
 	private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement value)
 	{

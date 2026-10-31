@@ -322,7 +322,7 @@ The non-art production polish pass now covers save recovery and account-safe pre
 | Endless roguelite, multiplayer, daily challenges | Implemented | Full game loop |
 | Cash shop + Stripe + native IAP scaffold | Implemented | Configure endpoint in Settings → Account → Payments |
 | Campaign Hard Mode (all 100 stages, 1.3x-2.5x scaling, hardened relics) | Logic only | `HardModeCatalog`; no toggle, battle scaling or victory hook |
-| Enchantment System (10 enchantments, Gold/Essence prices, combat hooks) | Implemented | Forge → Enchantments; wearer stat comparison, shared caps, replacement and free removal |
+| Enchantment System (10 relic enchantments) | Removed (2026-10-31) | Retired from the Forge; Essence now buys awakening tokens only |
 | War Wagon Cosmetics (8 milestone skins) | Implemented | More → Caravan → Progression → Wagon looks |
 | Unit Awakening (1-5 stars via tokens, capped stat bonuses) | Implemented | Progression → Awakening; token training and battle-stat preview |
 | Collection Milestones (24 milestones across 6 categories) | Implemented | Progression → Collection; current roster totals and persistent claims |

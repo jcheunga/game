@@ -199,9 +199,8 @@ public sealed class GameSaveData
     public int[] HardModeStars { get; set; } = [];
     public int HardModeHighestCleared { get; set; }
 
-    // v34: Enchantments
+    // v34: Essence (the RelicEnchantments key it came with is retired and ignored on load)
     public int Essence { get; set; }
-    public Dictionary<string, string> RelicEnchantments { get; set; } = new();
 
     // v34: Weekly Raid
     public string LastRaidWeek { get; set; } = "";

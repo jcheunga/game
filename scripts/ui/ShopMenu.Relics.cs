@@ -174,8 +174,6 @@ public partial class ShopMenu
     private void BuildRelicBonuses(RoyalSpec spec, EquipmentDefinition relic, float drop)
     {
         var rows = RelicRows(relic);
-        var enchantment = _state.GetRelicEnchantment(relic.Id);
-        if (enchantment != null) rows.Add((enchantment.Title, "Enchantment", "crystal"));
         rows.Add((relic.Rarity.Length > 0 ? char.ToUpperInvariant(relic.Rarity[0]) + relic.Rarity[1..] : "", "Rarity", "relicstat-rarity"));
 
         // The plate paints dividers for exactly three rows: cover each with the panel just above it, then reuse it.

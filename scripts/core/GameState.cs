@@ -214,9 +214,8 @@ public partial class GameState : Node
 	private readonly List<int> _hardModeStars = new();
 	public bool IsHardModeUnlocked => GetStageStars(MaxStage) > 0 || PrestigeLevel >= 1;
 
-	// Enchantments
+	// Essence pays for awakening tokens
 	public int Essence { get; private set; }
-	private readonly Dictionary<string, string> _relicEnchantments = new(StringComparer.OrdinalIgnoreCase);
 
 	// Raid
 	public string LastRaidWeek { get; private set; } = "";
@@ -1520,7 +1519,6 @@ public partial class GameState : Node
 		var keepHardModeStars = new List<int>(_hardModeStars);
 		var keepHardModeHighest = HardModeHighestCleared;
 		var keepEssence = Essence;
-		var keepEnchantments = new Dictionary<string, string>(_relicEnchantments, StringComparer.OrdinalIgnoreCase);
 		var keepTowerHighest = TowerHighestFloor;
 		var keepTowerStars = new List<int>(_towerFloorStars);
 		var keepFriends = new HashSet<string>(_friendIds, StringComparer.OrdinalIgnoreCase);
@@ -1587,8 +1585,6 @@ public partial class GameState : Node
 		_hardModeStars.AddRange(keepHardModeStars);
 		HardModeHighestCleared = keepHardModeHighest;
 		Essence = keepEssence;
-		_relicEnchantments.Clear();
-		foreach (var (k, v) in keepEnchantments) _relicEnchantments[k] = v;
 		TowerHighestFloor = keepTowerHighest;
 		_towerFloorStars.Clear();
 		_towerFloorStars.AddRange(keepTowerStars);
@@ -2401,7 +2397,7 @@ public partial class GameState : Node
     private UnitStatBonuses CollectPlayerUnitBonuses(UnitDefinition definition,
         IEnumerable<UnitDefinition> deckUnits, EquipmentDefinition first, EquipmentDefinition second,
         float bonusHealthScale=1f,float bonusDamageScale=1f,float bonusCooldownReduction=0f,int bonusBaseDamage=0,
-        string enchantmentRelicId=null,EnchantmentDefinition enchantmentOverride=null,int? awakeningStars=null)
+        int? awakeningStars=null)
     {
         var bonuses = new UnitStatBonuses();
         bonuses.AddScales(bonusHealthScale, bonusDamageScale);
@@ -2421,10 +2417,6 @@ public partial class GameState : Node
         }
         var guild = ResolveGuildBonus();
         bonuses.AddScales(guild.HealthScale);
-        EnchantmentDefinition EnchantmentFor(EquipmentDefinition item)=>item==null?null:
-            item.Id.Equals(enchantmentRelicId,StringComparison.OrdinalIgnoreCase)?enchantmentOverride:GetRelicEnchantment(item.Id);
-        bonuses.AddEnchantment(EnchantmentFor(first));
-        if (promoted) bonuses.AddEnchantment(EnchantmentFor(second));
         var mastery = ResolveMasteryBonus(definition.Id);
         var awakening = awakeningStars.HasValue?AwakeningCatalog.ResolveBonus(awakeningStars.Value):ResolveAwakeningBonus(definition.Id);
         bonuses.AddScales(mastery.HealthScale, mastery.DamageScale);
@@ -2564,7 +2556,6 @@ public partial class GameState : Node
 		}
 
 		_ownedEquipmentIds.Remove(relicId);
-		_relicEnchantments.Remove(relicId);
 		shardsGained = RelicForgeCatalog.GetDismantleShards(equip.Rarity);
 		RelicShards += shardsGained;
 		Persist();
@@ -3272,52 +3263,11 @@ public partial class GameState : Node
 		CheckAchievements();
 	}
 
-	// ── Enchantments ─────────────────────────────────────────
+	// ── Essence ──────────────────────────────────────────────
 
 	public void AddEssence(int amount)
 	{
 		if (amount > 0) { Essence += amount; Persist(); }
-	}
-
-	public EnchantmentDefinition GetRelicEnchantment(string relicId)
-	{
-		if (string.IsNullOrWhiteSpace(relicId)) return null;
-		return _relicEnchantments.TryGetValue(relicId, out var enchId) ? EnchantmentCatalog.GetById(enchId) : null;
-	}
-
-	public string GetRelicEnchantmentId(string relicId)
-	{
-		if(string.IsNullOrWhiteSpace(relicId))return null;
-		return _relicEnchantments.TryGetValue(relicId, out var enchId) ? enchId : null;
-	}
-
-	public bool TryApplyEnchantment(string relicId, string enchantmentId, out string message)
-	{
-		if(!CanApplyEnchantment(relicId,enchantmentId,out message))return false;
-		var ench = EnchantmentCatalog.GetById(enchantmentId);
-
-		Gold -= ench.GoldCost;
-		Essence -= ench.EssenceCost;
-		_relicEnchantments[relicId] = ench.Id;
-		TryUnlockAchievement("first_enchantment");
-		Persist();
-		message = $"Applied {ench.Title} to relic!";
-		return true;
-	}
-
-	public void RemoveEnchantment(string relicId)
-	{
-		TryRemoveEnchantment(relicId,out _);
-	}
-
-	private string GetEquippedRelicId(string unitId)
-	{
-		return _unitEquipmentSlots.TryGetValue(unitId, out var id) ? id : null;
-	}
-
-	private string GetEquippedRelicId2(string unitId)
-	{
-		return _unitEquipmentSlot2.TryGetValue(unitId, out var id) ? id : null;
 	}
 
 	// ── Weekly Raid ──────────────────────────────────────────
@@ -4386,7 +4336,6 @@ public partial class GameState : Node
 		HardModeHighestCleared = 0;
 		_hardModeStars.Clear();
 		Essence = 0;
-		_relicEnchantments.Clear();
 		LastRaidWeek = "";
 		_raidDamageContributed = 0;
 		_claimedRaidRewardIds.Clear();
@@ -4949,7 +4898,7 @@ public partial class GameState : Node
 			GuildContributionPoints = Math.Max(0, saved.GuildContributionPoints);
 		}
 
-		// v34: Hard Mode, Enchantments, Raid
+		// v34: Hard Mode, Essence, Raid (relic enchantments were retired; their save key is ignored)
 		if (saved.Version >= 34)
 		{
 			_hardModeStars.Clear();
@@ -4960,15 +4909,6 @@ public partial class GameState : Node
 			HardModeHighestCleared = Math.Max(0, saved.HardModeHighestCleared);
 
 			Essence = Math.Max(0, saved.Essence);
-			_relicEnchantments.Clear();
-			if (saved.RelicEnchantments != null)
-			{
-				foreach (var pair in saved.RelicEnchantments)
-				{
-					if (!string.IsNullOrWhiteSpace(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
-						_relicEnchantments[pair.Key.Trim()] = pair.Value.Trim();
-				}
-			}
 
 			LastRaidWeek = saved.LastRaidWeek?.Trim() ?? "";
 			_raidDamageContributed = Math.Max(0, saved.RaidDamageContributed);
@@ -5291,7 +5231,6 @@ public partial class GameState : Node
 			HardModeStars = _hardModeStars.ToArray(),
 			HardModeHighestCleared = HardModeHighestCleared,
 			Essence = Essence,
-			RelicEnchantments = new Dictionary<string, string>(_relicEnchantments),
 			LastRaidWeek = LastRaidWeek ?? "",
 			RaidDamageContributed = _raidDamageContributed,
 			RaidContributionCount = _raidContributionCount,

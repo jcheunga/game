@@ -8,9 +8,6 @@ public partial class BattleController
     private IEnumerable<EquipmentDefinition> ContentEquipment(Unit unit)
         => IsInstanceValid(unit) && unit.Team==Team.Player && !unit.IsSummoned && !unit.IsTacticalObject
             ? GameState.Instance.GetBattleEquipment(unit.DefinitionId) : Array.Empty<EquipmentDefinition>();
-    private IEnumerable<EnchantmentDefinition> ContentEnchantments(Unit unit)
-        => IsInstanceValid(unit) && unit.Team==Team.Player && !unit.IsSummoned && !unit.IsTacticalObject
-            ? GameState.Instance.GetBattleEnchantments(unit.DefinitionId) : Array.Empty<EnchantmentDefinition>();
     private readonly HashSet<string> _contentObjectiveRewards = new();
     private float _gateExposedUntil;
 
@@ -116,12 +113,6 @@ public partial class BattleController
 
     private void ApplyContentHitEquipment(Unit source,Unit target,float actual,bool ranged)
     {
-        foreach(var enchant in ContentEnchantments(source))
-        {
-            if(enchant.LifestealRatio>0) source.Heal(actual*enchant.LifestealRatio);
-            if(enchant.Id=="ench_flame_touch" && source.TryEffect(enchant.Id,6)) target.ApplyBurn(1.5f,2,source.UnitName);
-            if(enchant.Id=="ench_poison" && source.TryEffect(enchant.Id,8)) target.ApplyHealingPenalty(.85f,2);
-        }
         foreach(var item in ContentEquipment(source))
         {
             switch(item.EffectId)
@@ -178,8 +169,6 @@ public partial class BattleController
         }
         if(target.IsTacticalObject && target.IsDead && ContentEquipment(source).Any(i=>i.Id=="relic_demolition_rune") && source.TryEffect("demolition",8))
             AddContentField("burn",source.Team,target.Position,22,1.5f,1,source.UnitName);
-        foreach(var enchant in ContentEnchantments(target))
-            if(!ranged && enchant.ThornsDamageRatio>0) source.TakeDamage(Math.Min(2,actual*enchant.ThornsDamageRatio),target.UnitName,CombatDamageType.Physical);
         foreach(var item in ContentEquipment(target))
             if(item.Id=="relic_mirror_shard" && !ranged) source.TakeDamage(Math.Min(2,actual*.04f),target.UnitName,CombatDamageType.Physical);
     }
@@ -228,9 +217,6 @@ public partial class BattleController
                     break;
             }
         }
-        foreach(var enchant in ContentEnchantments(unit))
-            if(enchant.Id=="ench_arcane_echo" && unit.TryEffect(enchant.Id,14))
-                NearbyContentUnits(Team.Enemy,unit.Position,60).FirstOrDefault()?.TakeDamage(2,unit.UnitName,CombatDamageType.Magical);
     }
 
     private bool TryContentEquipmentReturn(Unit dead)

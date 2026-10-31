@@ -64,10 +64,9 @@ public static class AchievementCatalog
         new("arena_gold_tier", "Gold Rank", "Reach Gold tier in the arena.", "mastery"),
         new("guild_join", "Warband Recruit", "Join a guild.", "mastery"),
 
-        // Endgame content (4)
+        // Endgame content (3)
         new("hard_mode_10", "Hardened Veteran", "Clear 10 hard mode stages.", "campaign"),
         new("hard_mode_complete", "Iron Legend", "Clear all hard mode stages.", "campaign"),
-        new("first_enchantment", "Enchanter", "Apply your first enchantment.", "collection"),
         new("raid_contributor", "Raid Striker", "Contribute to 3 weekly raids.", "mastery"),
 
         // Daily engagement and progression depth (7)

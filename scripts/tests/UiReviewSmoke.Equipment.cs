@@ -22,7 +22,6 @@ public partial class UiReviewSmoke
             fixture.OwnedEquipmentIds=new[]{"relic_sharpened_edge","relic_guardian_shield","relic_tower_charm"};
             typeof(GameState).GetMethod("ApplySavedData",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(state,new object[]{fixture});
             state.TryEquipItem("player_brawler","relic_sharpened_edge");
-            state.TryApplyEnchantment("relic_guardian_shield","ench_thorns",out _);
             await Open("MainMenu");
             var menu=(MapMenu)GetTree().CurrentScene;
             var map=Walk(menu).OfType<MapPathCanvas>().Single().MapOffset;var food=state.Food;
@@ -65,7 +64,7 @@ public partial class UiReviewSmoke
             Check(Armory().RelicPreview==null && Math.Abs(state.BuildPlayerUnitStats(GameData.GetUnit("player_brawler")).Armor-preview.After.Armor)<.001f,"Native confirmation equips exactly the previewed stats");
             await TapHint("Tower Charm");await TapAction("Equip");await TapHint("Compare Tower Charm on Swordsman");
             await TapHint("Preview relic slot 2");
-            Check(Armory().RelicPreview.Slot==2 && Armory().RelicPreview.Limits.Any(l=>l.Label=="Armor" && l.Excess>4),"Second-slot comparison shows the shared armor limit");
+            Check(Armory().RelicPreview.Slot==2 && Armory().RelicPreview.Limits.Any(l=>l.Label=="Armor" && l.Excess>1.5f),"Second-slot comparison shows the shared armor limit");
             var cap=Walk(Armory()).OfType<Label>().Single(l=>l.Text.StartsWith("Armor:") && l.Text.Contains("applied"));
             var bodyScroll=Walk(Armory()).OfType<ScrollContainer>().Single(s=>s.Name=="RelicComparison");bodyScroll.EnsureControlVisible(cap);await Wait(.2);
             AuditText("Equipment / armor limit");await Capture("04-bonus-limit");

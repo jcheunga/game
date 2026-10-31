@@ -73,9 +73,6 @@ public partial class UiReviewSmoke
         armory.BeginRelicEquip(GameData.GetAllEquipment().First().Id, state.GetOwnedPlayerUnits().First().Id); await Wait(.2);
         await AuditScrollReach("relic-equip", armory);
         home.CloseHomeModal(); await Wait(.2);
-        ForgeEnchantmentInspector.Show(home, _ => { }, GameData.GetAllEquipment().First().Id); await Wait(.2);
-        var forge = Walk(home).OfType<ForgeEnchantmentInspector>().Last();
-        await AuditScrollReach("enchantments", forge); forge.QueueFree();
         // Players open the account dialog from Settings: the Account page's Manage row.
         await Open("SettingsMenu"); await PressTab("Account");
         Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<RoyalButton>()

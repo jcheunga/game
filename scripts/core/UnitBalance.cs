@@ -63,17 +63,6 @@ public sealed class UnitStatBonuses
         if(item.Id=="relic_banner_ribbon") AuraRange += .05f;
     }
 
-    public void AddEnchantment(EnchantmentDefinition item)
-    {
-        if (item == null) return;
-        AddScales(item.HealthScale, item.DamageScale, item.SpeedScale);
-        Armor += item.ArmorBonus;
-        MagicalResistance += item.MagicalResistanceBonus;
-        AttackInterval += item.AttackIntervalReductionPct / 100f;
-        CriticalChance += item.CritChance * 100f;
-        CriticalDamage += Math.Max(0f, item.CritMultiplier - 1f) * 100f;
-    }
-
     public void ApplyCaps()
     {
         Health = Mathf.Clamp(Health, -.1f, .1f);

@@ -58,8 +58,6 @@ public partial class UiReviewSmoke : Node
             { await ReviewButtonPress(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--equipment-preview"))
             { await ReviewEquipmentPreview(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--enchantments"))
-            { await ReviewEnchantments(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--expansion"))
             { await ReviewExpansion(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--boards"))

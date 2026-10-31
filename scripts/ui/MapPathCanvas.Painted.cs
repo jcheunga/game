@@ -79,6 +79,8 @@ public partial class MapPathCanvas
     private const float FogCell = 8;
     /// <summary>How far, in fog cells, the cloud and the mist drift out from the land over the sea and rivers.</summary>
     private const float FogSpill = 12, MistSpill = 6;
+    /// <summary>How far, in fog cells, the cloud swells out from the hidden land over the frontier before it softens.</summary>
+    private const float FogEdge = 4;
     private static readonly System.Collections.Generic.Dictionary<string, (int[] Tiles, int[] Nearest, float[] Distance, int Width, int Height, Rect2 Bounds)> FogRasters = new();
 
     /// <summary>
@@ -104,12 +106,23 @@ public partial class MapPathCanvas
                 for (var x = x0; x < x1; x++)
                     if (Geometry2D.IsPointInPolygon(bounds.Position + new Vector2(x + .5f, y + .5f) * FogCell, outline)) cells[y * width + x] = i;
         }
-        // A two-pass chamfer sweep carries the nearest tile out over the water.
+        // Carry the nearest tile out over the water.
         var nearest = (int[])cells.Clone(); var distance = new float[cells.Length];
         for (var i = 0; i < cells.Length; i++) distance[i] = cells[i] >= 0 ? 0 : float.MaxValue;
+        Chamfer(distance, nearest, width, height);
+        for (var i = 0; i < cells.Length; i++) if (distance[i] > FogSpill) nearest[i] = -1;
+        return FogRasters[ActiveMapId] = (cells, nearest, distance, width, height, bounds);
+    }
+
+    /// <summary>A two-pass chamfer sweep: each cell's distance (in cells) from the nearest cell at distance 0, and,
+    /// when given, that cell's tile.</summary>
+    private static void Chamfer(float[] distance, int[] nearest, int width, int height)
+    {
         void Reach(int to, int from, float step)
         {
-            if (distance[from] + step < distance[to]) { distance[to] = distance[from] + step; nearest[to] = nearest[from]; }
+            if (distance[from] + step >= distance[to]) return;
+            distance[to] = distance[from] + step;
+            if (nearest != null) nearest[to] = nearest[from];
         }
         for (var y = 0; y < height; y++)
             for (var x = 0; x < width; x++)
@@ -125,15 +138,14 @@ public partial class MapPathCanvas
                 if (x < width - 1) Reach(i, i + 1, 1);
                 if (y < height - 1) { Reach(i, i + width, 1); if (x < width - 1) Reach(i, i + width + 1, 1.414f); if (x > 0) Reach(i, i + width - 1, 1.414f); }
             }
-        for (var i = 0; i < cells.Length; i++) if (distance[i] > FogSpill) nearest[i] = -1;
-        return FogRasters[ActiveMapId] = (cells, nearest, distance, width, height, bounds);
     }
 
     /// <summary>
     /// Builds the fog mask once per change in what the player has explored: the red channel covers hidden
-    /// tiles (the cloud bank), the green channel frontier tiles (thin mist), both reaching a little way out over
-    /// the water beside them. Both are softened so the shader can fray their outlines into billows; the blue
-    /// channel blurs the hidden tiles much wider, so the shader can light a whole bank as one rounded mass.
+    /// tiles (the cloud bank) and the outer rim of the frontier beside them, the green channel frontier tiles (thin
+    /// mist), both reaching a little way out over the water beside them. Both are softened so the shader can fray
+    /// their outlines into billows; the blue channel blurs the hidden tiles much wider, so the shader can light a
+    /// whole bank as one rounded mass.
     /// </summary>
     private void BuildFogMask()
     {
@@ -153,8 +165,15 @@ public partial class MapPathCanvas
             if (kinds[tile] == 2) storm[i] = reach; else if (kinds[tile] == 1) mist[i] = Mathf.Max(0, reach);
         }
         var bank = (float[])storm.Clone();
-        // Three box passes approximate a gaussian about 50 world units wide (about 300 for the bank).
-        foreach (var (values, radius) in new[] { (storm, 5), (mist, 5), (bank, 18) })
+        // The cloud swells out over the frontier's rim before it is softened, so its soft edge fades out there and the
+        // white stays solid right to the edge of the hidden land: nothing beyond the frontier ever shows.
+        var swell = new float[storm.Length];
+        for (var i = 0; i < storm.Length; i++) swell[i] = raster.Tiles[i] >= 0 && kinds[raster.Tiles[i]] == 2 ? 0 : float.MaxValue;
+        Chamfer(swell, null, raster.Width, raster.Height);
+        for (var i = 0; i < storm.Length; i++) if (swell[i] <= FogEdge) storm[i] = 1;
+        // Three box passes approximate a gaussian about 20 world units wide for the cloud, 50 for the mist and 300 for
+        // the bank.
+        foreach (var (values, radius) in new[] { (storm, 2), (mist, 5), (bank, 18) })
             for (var pass = 0; pass < 3; pass++) { BoxBlur(values, raster.Width, raster.Height, radius, true); BoxBlur(values, raster.Width, raster.Height, radius, false); }
         var bytes = new byte[storm.Length * 3];
         for (var i = 0; i < storm.Length; i++)
@@ -167,6 +186,38 @@ public partial class MapPathCanvas
         _fogLayer.MaskRect = new Rect2(raster.Bounds.Position, new Vector2(raster.Width, raster.Height) * FogCell);
         var zone = RouteCatalog.GetAll().Select(route => route.Id).ToList().IndexOf(ActiveMapId) + 1;
         _fogLayer.NoiseOffset = new Vector2(zone * 2371 % 9973, zone * 4513 % 8429);
+    }
+
+    /// <summary>
+    /// For the fog review: reads the mask as the shader's white base does and returns the share of the worst hidden
+    /// tile whose land still shows through, the share of the worst frontier tile the white covers, and how many
+    /// frontier tiles have more than a faint haze of it over their centre.
+    /// </summary>
+    public (float HiddenShowing, float FrontierCovered, int FrontierCentresCovered) MeasureFog()
+    {
+        BuildFogMask();
+        if (_fogLayer.Mask == null) return (0, 0, 0);
+        var raster = FogRaster();
+        var data = _fogLayer.Mask.GetImage().GetData();
+        float White(int cell) => Mathf.SmoothStep(.5f, .9f, data[cell * 3] / 255f);
+        var state = GameState.Instance;
+        var area = new int[_tiles.Count]; var showing = new int[_tiles.Count]; var covered = new int[_tiles.Count];
+        for (var i = 0; i < raster.Tiles.Length; i++)
+        {
+            var tile = raster.Tiles[i];
+            if (tile < 0) continue;
+            area[tile]++;
+            if (White(i) < .97f) showing[tile]++;
+            if (White(i) > .5f) covered[tile]++;
+        }
+        float Worst(System.Func<AdventureTile, bool> kind, int[] count) => Enumerable.Range(0, _tiles.Count)
+            .Where(i => area[i] > 0 && kind(_tiles[i])).Select(i => count[i] / (float)area[i]).DefaultIfEmpty(0).Max();
+        var centres = _tiles.Where(state.IsAdventureTileFrontier).Count(tile =>
+        {
+            var cell = ((tile.Point - raster.Bounds.Position) / FogCell).Floor();
+            return White((int)cell.Y * raster.Width + (int)cell.X) > .25f;
+        });
+        return (Worst(tile => !state.IsAdventureTileRevealed(tile), showing), Worst(state.IsAdventureTileFrontier, covered), centres);
     }
 
     private static void BoxBlur(float[] values, int width, int height, int radius, bool horizontal)

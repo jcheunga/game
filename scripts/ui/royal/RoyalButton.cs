@@ -23,31 +23,8 @@ public partial class RoyalButton : Button
         AddThemeFontSizeOverride("font_size", 1);
     }
 
-    /// <summary>Touch reach: on phones small painted buttons still take a 72 px fingertip (about 39 pt) of the screen,
-    /// whatever scale their layer is drawn at.</summary>
-    public const float TouchSize = 72;
-    public Rect2 TouchRect
-    {
-        get
-        {
-            var rect = new Rect2(Vector2.Zero, Size);
-            var scale = IsInsideTree() ? GetGlobalTransformWithCanvas().Scale.Abs() : Vector2.One;
-            var reach = new Vector2(TouchSize / Mathf.Max(.01f, scale.X), TouchSize / Mathf.Max(.01f, scale.Y));
-            var grow = new Vector2(Mathf.Max(0, reach.X - Size.X), Mathf.Max(0, reach.Y - Size.Y)) / 2;
-            return new Rect2(rect.Position - grow, rect.Size + grow * 2);
-        }
-    }
-
-    public override bool _HasPoint(Vector2 point)
-    {
-        if (new Rect2(Vector2.Zero, Size).HasPoint(point)) return true;
-        if (!TouchRect.HasPoint(point)) return false;
-        // The extra reach never takes a tap that lands on a neighbouring button itself (stacked list rows).
-        var global = GetGlobalTransform() * point;
-        foreach (var sibling in GetParent()?.GetChildren() ?? new Godot.Collections.Array<Node>())
-            if (sibling != this && sibling is BaseButton { Visible: true } other && other.GetGlobalRect().HasPoint(global)) return false;
-        return true;
-    }
+    /// <summary>Small painted buttons still take a fingertip of the screen (<see cref="TouchReach"/>).</summary>
+    public override bool _HasPoint(Vector2 point) => TouchReach.Has(this, point);
 
     public static RoyalButton Over(Rect2 rect, string name, Action action, float corner = 5)
     {

@@ -5,6 +5,8 @@ public partial class RealmButton : Button
 {
     public bool CenterIconAndText { get; set; }
     public bool VerticalContent { get; set; }
+    /// <summary>Takes taps across a fingertip (<see cref="TouchReach"/>) when it is drawn smaller, such as a compact close.</summary>
+    public bool FingertipReach { get; set; }
     public bool HasContentGroup => _groupLabel != null;
     private TextureRect _groupIcon;
     private Label _groupLabel;
@@ -22,6 +24,7 @@ public partial class RealmButton : Button
         return new Vector2((VerticalContent ? Mathf.Max(icon, text) : text + icon + (icon > 0 && Text.Length > 0 ? 10 : 0)) + horizontal,
             (VerticalContent ? font.GetHeight(fontSize) + icon + 6 + 4 : Mathf.Max(Text.Length > 0 ? font.GetHeight(fontSize) : 0, icon)) + vertical);
     }
+    public override bool _HasPoint(Vector2 point) => FingertipReach ? TouchReach.Has(this, point) : new Rect2(Vector2.Zero, Size).HasPoint(point);
     public void SetPresentation(Font font, Color ink, Color disabled)
     {
         _normalInk = ink; _disabledInk = disabled; _lastDisabled = null;

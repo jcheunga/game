@@ -192,7 +192,7 @@ public partial class MobilePresentationReview : Node
             await Settle(10); await Capture("phone-loadout");
             foreach(var button in loadout.FindChildren("*","Button",true,false).OfType<Button>().Where(b=>b.IsVisibleInTree()))
             {
-                var rect=button.GetGlobalTransformWithCanvas()*(button is RoyalButton royal?royal.TouchRect:new Rect2(Vector2.Zero,button.Size));
+                var rect=button.GetGlobalTransformWithCanvas()*TouchReach.Rect(button);
                 Check(rect.Position.X>=-1 && rect.End.X<=1281 && rect.End.Y<=721 && rect.Size.Y>=56,"Phone preparation controls fit and remain touch sized");
             }
             home.CloseHomeModal(); await Settle();

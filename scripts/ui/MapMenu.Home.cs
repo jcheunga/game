@@ -125,6 +125,7 @@ public partial class MapMenu
         var close = HomeMapUi.IconButton("close", "Close site details", CloseSiteDetails);
         close.CustomMinimumSize = new Vector2(40, 40);
         close.AddThemeConstantOverride("icon_max_width", 22); // Clears the rim of the compact button.
+        if (close is RealmButton compact) compact.FingertipReach = true;
         header.AddChild(close);
         var encounter = new HBoxContainer();
         encounter.AddThemeConstantOverride("separation", 12);

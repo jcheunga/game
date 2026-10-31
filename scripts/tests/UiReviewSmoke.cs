@@ -512,7 +512,7 @@ public partial class UiReviewSmoke : Node
     }
 
     // A fingertip on a landscape phone (0.54 pt per canvas px): Apple asks for 44 pt, about 80 canvas px. Buttons
-    // painted smaller still reach that far through RoyalButton.TouchRect.
+    // painted smaller still reach that far through TouchReach.
     internal const float PhoneTouch = 72;
 
     private void AuditTouchTargets(string screen)
@@ -520,7 +520,7 @@ public partial class UiReviewSmoke : Node
         var viewport = GetViewport().GetVisibleRect();
         foreach (var button in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<BaseButton>().Where(x => x.IsVisibleInTree() && !x.Disabled && x.MouseFilter == Control.MouseFilterEnum.Stop))
         {
-            var reach = button is RoyalButton royal ? royal.TouchRect : new Rect2(Vector2.Zero, button.Size);
+            var reach = TouchReach.Rect(button);
             var scale = button.GetGlobalTransformWithCanvas().Scale;
             var shown = reach.Size * scale;
             if (!viewport.Intersects(button.GetGlobalRect()) || (shown.X >= PhoneTouch - .5f && shown.Y >= PhoneTouch - .5f)) continue;

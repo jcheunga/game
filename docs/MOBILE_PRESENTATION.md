@@ -22,8 +22,9 @@ Apple's minimums there (since 2026-10-31; before, the floors were 18/16 px):
 - Menus and modals draw on a 1/1.55 logical canvas scaled up 1.55×
   (`MobilePresentation.HudScale`), with 56-unit touch targets.
 - Concept-screen buttons grow their touch area to 72 px of the screen (about
-  39 pt) without changing their art (`RoyalButton.TouchRect`); the extra reach
-  never takes a tap that lands on a neighbouring button. `RoyalButton.Arrange`
+  39 pt) without changing their art (`TouchReach`), as does a compact
+  `RealmButton` that sets `FingertipReach` (the map's site-details close); the
+  extra reach never takes a tap that lands on a neighbouring button. `RoyalButton.Arrange`
   keeps icon, caption and price inside the plate (stepping down to the floor,
   then dropping the icon).
 - Collection grids (units, spells, relics) show five larger cells a row where

@@ -20,9 +20,16 @@ public partial class UiReviewSmoke
         Check(panel.Visible && Walk(panel).OfType<Button>().Any(button => button.Disabled && button.Text == "Boss gate sealed"), "The locked boss still explains its gate and blocks entry");
         AuditText("Home / boss gate details"); await Capture("boss-gate-sealed");
         var close = Walk(panel).OfType<Button>().Single(button => button.AccessibilityName == "Close site details");
-        await TapModal(close);
+        // The compact close takes a fingertip: the tap lands just above its drawn rim.
+        var reach = TouchReach.Rect(close).Size * close.GetGlobalTransformWithCanvas().Scale;
+        var drawn = close.GetGlobalRect();
+        var above = new Vector2(drawn.GetCenter().X, drawn.Position.Y - 6);
+        Send(new InputEventMouseButton { Pressed = true, ButtonIndex = MouseButton.Left, Position = above, GlobalPosition = above });
+        Send(new InputEventMouseButton { Pressed = false, ButtonIndex = MouseButton.Left, Position = above, GlobalPosition = above });
+        await Wait(.3);
         refresh.Invoke(menu, null); await Wait(.1);
-        Check(!panel.Visible, "Closing boss details removes the sealed-gate warning through subsequent refreshes");
+        Check(reach.X >= TouchReach.Size - .5f && reach.Y >= TouchReach.Size - .5f && !panel.Visible,
+            "A tap just outside the compact close still closes boss details, and the sealed-gate warning stays away through refreshes");
         await Capture("boss-gate-dismissed");
         select.Invoke(menu, new object[] { boss }); await Wait(.1);
         Send(new InputEventKey { Pressed = true, Keycode = Key.Escape }); await Wait(.1);

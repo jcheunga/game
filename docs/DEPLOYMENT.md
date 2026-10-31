@@ -495,15 +495,17 @@ To enable live sign-in:
    `APPLE_SIGN_IN_CLIENT_ID` set. Never change the key: tokens stored under
    the old one can no longer be revoked.
 7. Restart the server. `/auth/providers` reports which sign-in methods are
-   configured; the game disables buttons for unavailable providers.
+   configured. The game leaves Apple and Google out until the server says it
+   offers them, so they never show greyed out, not even while it waits for
+   the answer or when it is offline. Play Games, Game Center and email show
+   greyed out until the server answers.
 
 The Play Games button appears only on Android builds with the plugin and a
 project ID, and the Game Center button only on iOS builds with the plugin.
-**Continue with Apple** sits directly above **Continue with Google** on every
-platform. App Store guideline 4.8 requires an equivalent privacy-focused login
-wherever a third-party login such as Google is offered, so configure Apple
-before any iOS release that shows Google. If Apple is not configured, hide the
-Google button on iOS.
+Apple and Google show only on Android and desktop (`AccountDialog.BrowserSignIn`),
+where **Continue with Apple** sits directly above **Continue with Google**.
+The iPhone offers no third-party sign-in, so App Store guideline 4.8's
+equivalent-login rule does not apply to it.
 
 The sign-in buttons follow Google's and Apple's published button rules rather
 than the game's own style (`SignInButton`; the rules and how each is met are in
@@ -511,7 +513,8 @@ than the game's own style (`SignInButton`; the rules and how each is met are in
 controller are in the game. Apple's logo and the Game Center icon must be
 added from Apple Design Resources before an App Store submission; the README's
 "Adding Apple's art" section says which files and the one command that wires
-them in. Until then those two buttons show their title with an empty logo box.
+them in. Until then those two buttons show their title beside an empty white
+tile.
 
 ### End-to-end test against a local server
 
@@ -669,9 +672,9 @@ Before an iOS release, check on a device:
   signature verified by the server against Apple's live certificate.
   Reinstall on the same Apple Account and check that the profile comes back.
 - **Sign in with Apple.** The Services ID, domain, return URL and key must be
-  live. Check that Safari opens Apple's page, that a cancel stops the game
-  waiting, and that a second device recovers the same profile. Check iPhone,
-  Android and desktop builds, since the button shows everywhere.
+  live. Check that the browser opens Apple's page, that a cancel stops the
+  game waiting, and that a second device recovers the same profile. Check
+  Android and desktop builds; the iPhone doesn't show the button.
 - **The export itself.** The C# iOS export is still experimental in Godot
   4.6, and the game's full export (NativeAOT, signing, App Store upload) has
   not been run. Xcode 27 builds only for iOS 15 and later, so the preset's

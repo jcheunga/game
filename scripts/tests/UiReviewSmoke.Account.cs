@@ -11,7 +11,8 @@ public partial class UiReviewSmoke
     /// <summary>
     /// Settings → Account → Manage, opened like a player against a stand-in server that offers every sign-in. Measures
     /// the sign-in buttons against Google's and Apple's published button rules (art/signin/README.md lists them),
-    /// captures the dialog, a held press and every brand on dark and light surroundings. Run with --mobile-preview
+    /// captures the dialog, a held press and every brand on dark and light surroundings. Then the stand-in offers
+    /// only email, and then nothing answers at all, to show Apple and Google are left out. Run with --mobile-preview
     /// for the phone-sized canvas.
     /// </summary>
     private async Task ReviewAccount()
@@ -34,7 +35,7 @@ public partial class UiReviewSmoke
                     var context = await listener.GetContextAsync();
                     var android = PlatformSignIn.ReviewProvider == PlatformSignIn.PlayGames;
                     object result = context.Request.Url.AbsolutePath == "/auth/providers"
-                        ? new { email = true, google = true, apple = true, playGames = android, playGamesClientId = android ? "review" : "", gameCenter = false, devSignIn = false }
+                        ? new { email = true, google = _offerBrowserSignIn, apple = _offerBrowserSignIn, playGames = android, playGamesClientId = android ? "review" : "", gameCenter = false, devSignIn = false }
                         : new { message = "Not served in the account review." };
                     if (context.Request.Url.AbsolutePath != "/auth/providers") context.Response.StatusCode = 404;
                     var bytes = JsonSerializer.SerializeToUtf8Bytes(result);
@@ -65,10 +66,12 @@ public partial class UiReviewSmoke
         await TapModal(Walk(settings).OfType<Button>().First(button => button.IsVisibleInTree() && button.AccessibilityName == "Account" && button.HasMeta("royal_tab")));
         await TapModal(Named("Account") ?? throw new InvalidOperationException("The Account tab has no Manage row"));
         var dialog = Walk(GetTree().Root).OfType<AccountDialog>().Single(d => !d.IsQueuedForDeletion());
+        // Apple and Google join the page once the stand-in server says it offers them.
+        SignInButton Shown(SignInButton.Brand kind) => Walk(dialog).OfType<SignInButton>().SingleOrDefault(b => b.IsVisibleInTree() && b.Kind == kind);
+        for (var i = 0; i < 40 && Shown(SignInButton.Brand.Apple) is not { Disabled: false }; i++) await Wait(.1);
         var buttons = Walk(dialog).OfType<SignInButton>().Where(b => b.IsVisibleInTree()).ToList();
         var apple = buttons.SingleOrDefault(b => b.Kind == SignInButton.Brand.Apple);
         var google = buttons.SingleOrDefault(b => b.Kind == SignInButton.Brand.Google);
-        for (var i = 0; i < 40 && (apple?.Disabled ?? false); i++) await Wait(.1);
         Check(apple != null && google != null && !apple.Disabled && !google.Disabled, "Account offers Apple and Google sign-in as branded buttons, enabled by the server");
         if (apple == null || google == null) return;
 
@@ -210,6 +213,45 @@ public partial class UiReviewSmoke
             android.Close(); await Wait(.2);
         }
         finally { PlatformSignIn.ReviewProvider = null; }
+        await ReviewLeftOutSignIns(home);
+    }
+
+    private bool _offerBrowserSignIn = true;
+
+    /// <summary>
+    /// Apple and Google join the page only when the server offers them: not when it has neither set up and not
+    /// offline, so the page never shows a greyed-out sign-in (or Apple's tile before its logo is in) that may not exist.
+    /// </summary>
+    private async Task ReviewLeftOutSignIns(Control home)
+    {
+        var state = GameState.Instance;
+        var endpoint = state.PurchaseValidationEndpoint;
+        try
+        {
+            _offerBrowserSignIn = false;
+            AccountDialog.Show(home); await Wait(1);
+            var plain = Walk(home).OfType<AccountDialog>().Single(d => !d.IsQueuedForDeletion());
+            Check(!Walk(plain).OfType<SignInButton>().Any(b => b.IsVisibleInTree()) && Walk(plain).OfType<LineEdit>().Any(e => e.IsVisibleInTree() && e.Name == "AccountEmail"),
+                "A server without Apple or Google set up leaves both buttons out and keeps email");
+            await Capture("account-email-only");
+            plain.Close(); await Wait(.2);
+
+            // Offline: nothing answers on this port.
+            using var closed = new TcpListener(IPAddress.Loopback, 0);
+            closed.Start(); var number = ((IPEndPoint)closed.LocalEndpoint).Port; closed.Stop();
+            state.SetPurchaseValidationEndpoint($"http://127.0.0.1:{number}");
+            _offerBrowserSignIn = true;
+            AccountDialog.ShowWelcome(home, null); await Wait(.3);
+            var offline = Walk(home).OfType<AccountDialog>().Single(d => !d.IsQueuedForDeletion());
+            var status = Walk(offline).OfType<Label>().Single(l => l.Name == "Status");
+            for (var i = 0; i < 50 && !status.IsVisibleInTree(); i++) await Wait(.1);
+            Check(!Walk(offline).OfType<SignInButton>().Any(b => b.IsVisibleInTree()) && status.IsVisibleInTree() && status.Text.Contains("offline"),
+                $"Offline, Apple and Google are left out and the page says sign-in is offline ({status.Text})");
+            AuditText("Account offline");
+            await Capture("account-offline");
+            offline.Close(); await Wait(.2);
+        }
+        finally { _offerBrowserSignIn = true; state.SetPurchaseValidationEndpoint(endpoint); }
     }
 
     private static float Gap(Rect2 a, Rect2 b) =>

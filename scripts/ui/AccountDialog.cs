@@ -110,9 +110,7 @@ public partial class AccountDialog : RoyalScreen
         _platformButton.Visible = PlatformSignIn.Provider.Length > 0;
         // Apple asks that Sign in with Apple sits beside any other third-party sign-in, at least as prominently, without scrolling.
         _appleButton = Brand(SignInButton.Brand.Apple, "AppleSignIn", () => _ = Browser("apple"));
-        _appleButton.Visible = BrowserSignIn;
         _googleButton = Brand(SignInButton.Brand.Google, "GoogleSignIn", () => _ = Browser("google"));
-        _googleButton.Visible = BrowserSignIn;
         _divider = Divider();
 
         _email = Field("Email address", 254, "AccountEmail");
@@ -184,15 +182,15 @@ public partial class AccountDialog : RoyalScreen
     private bool Shown(Control control)
     {
         if (control == _platformButton) return PlatformSignIn.Provider.Length > 0;
-        if (control == _appleButton) return BrowserSignIn && (_appleAvailable || !_providersLoaded);
-        if (control == _googleButton) return BrowserSignIn && (_googleAvailable || !_providersLoaded);
+        // Apple and Google show only once the server says it offers them: never greyed out while it is asked, offline,
+        // or when it isn't set up, so the page never shows a sign-in that may not exist.
+        if (control == _appleButton) return BrowserSignIn && _appleAvailable;
+        if (control == _googleButton) return BrowserSignIn && _googleAvailable;
         if (control == _divider) return _platformButton.Visible || _appleButton.Visible || _googleButton.Visible;
         if (control == _email || control == _emailButton) return !_codeSent;
         if (control == _code || control == _verifyButton) return _codeSent;
         return true;
     }
-
-    private bool _providersLoaded;
 
     /// <summary>Lays the visible rows from <paramref name="y"/> down (or only measures them); returns the height used.</summary>
     private float Flow(float y, bool place)
@@ -457,8 +455,8 @@ public partial class AccountDialog : RoyalScreen
             _appleAvailable = providers.TryGetProperty("apple", out var apple) && apple.ValueKind == JsonValueKind.True;
             _platformAvailable = PlatformSignIn.Offered(providers);
             _devAvailable = providers.TryGetProperty("devSignIn", out var dev) && dev.ValueKind == JsonValueKind.True;
-            // A browser sign-in the server doesn't offer is left out, not shown greyed out.
-            _providersLoaded = true; _loading = false;
+            // The browser sign-ins the server offers join the page now (see Shown).
+            _loading = false;
             Layout();
             Busy(_busy);
             if (!_signedIn && _emailButton.Disabled && _appleButton.Disabled && _googleButton.Disabled && _platformButton.Disabled)

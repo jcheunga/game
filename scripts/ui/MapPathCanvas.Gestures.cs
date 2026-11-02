@@ -235,12 +235,12 @@ public partial class MapPathCanvas
         if (_glideVelocity == Vector2.Zero || _pointers.Count > 0) return;
         // Exponential friction, solved exactly so every frame rate glides alike.
         var decay = Mathf.Exp(-GlideFriction * delta);
-        var target = MapOffset + _glideVelocity * (1 - decay) / GlideFriction;
+        var start = MapOffset; var target = start + _glideVelocity * (1 - decay) / GlideFriction;
         MapOffset = target; UpdateView();
         _glideVelocity *= decay;
-        // The painting's edge stops the glide along it.
-        if (!Mathf.IsEqualApprox(MapOffset.X, target.X)) _glideVelocity.X = 0;
-        if (!Mathf.IsEqualApprox(MapOffset.Y, target.Y)) _glideVelocity.Y = 0;
+        // The zone's edge stops the glide across it; along the edge the map slides on.
+        var moved = MapOffset - start;
+        if (!moved.IsEqualApprox(target - start)) _glideVelocity = moved.LengthSquared() > .01f ? _glideVelocity.Project(moved) : Vector2.Zero;
         if (_glideVelocity.Length() < GlideRestSpeed) _glideVelocity = Vector2.Zero;
     }
 

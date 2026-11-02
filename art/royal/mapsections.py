@@ -310,11 +310,18 @@ def stitch(zones, fill=False):
             tiles.append([rect[0] + x0 / scale, rect[1] + y0 / scale, (x1 - x0) / scale, (y1 - y0) / scale])
         for stale in (f"{zone}.jpg", f"{zone}.jpg.import", f"{zone}.png", f"{zone}.png.import"):
             (OUT / stale).unlink(missing_ok=True)
-        corners = [canvas.getpixel((4, 4)), canvas.getpixel((size[0] - 5, 4)), canvas.getpixel((4, size[1] - 5)), canvas.getpixel((size[0] - 5, size[1] - 5))]
-        sea = tuple(sum(c[i] for c in corners) // 4 for i in range(3))
+        sea = open_sea(canvas)
         (OUT / f"{zone}.json").write_text(json.dumps({"rect": rect, "sea": "%02x%02x%02x" % sea,
                                                      "tiles": [[round(v, 2) for v in t] for t in tiles]}, indent=1))
         print("map", zone, canvas.size, f"({len(missing)} sections filled from the previous painting)" if missing else "")
+
+
+def open_sea(canvas):
+    """The open sea's own colour, the median of the four corner patches (the game fades the far sea into it)."""
+    small = canvas.convert("RGB").resize((240, round(240 * canvas.size[1] / canvas.size[0])))
+    w, h = small.size
+    pixels = [small.getpixel((x, y)) for x in range(w) for y in range(h) if (x < w * .12 or x > w * .88) and (y < h * .15 or y > h * .85)]
+    return tuple(sorted(c[i] for c in pixels)[len(pixels) // 2] for i in range(3))
 
 
 def main():

@@ -72,7 +72,7 @@ public partial class MapPathCanvas : Control
     }
     public void FocusCurrentTile() => FocusPoint(GameState.Instance.GetAdventureCaravanTile(ActiveMapId).Point);
     public void FocusOverview() => FocusPoint(MapBounds.GetCenter());
-    public void FocusPoint(Vector2 point) { _glideVelocity = Vector2.Zero; MapOffset = new Vector2(Size.X * .5f, Size.Y * .44f) - point * Zoom; UpdateView(); }
+    public void FocusPoint(Vector2 point) { _glideVelocity = Vector2.Zero; MapOffset = ViewAnchor - point * Zoom; UpdateView(); }
     public void FocusSite(string id) { if (AdventureTileCatalog.Find(ActiveMapId, id) is { } tile) FocusPoint(tile.Point); }
     public void ChangeZoom(float factor, Vector2? around = null)
     {
@@ -83,11 +83,7 @@ public partial class MapPathCanvas : Control
     private void UpdateView()
     {
         if (Size.X < 1) return;
-        // A zone is framed by its painting, so the view never runs past the painted sea.
-        var bounds = MapBounds;
-        var low = Size - bounds.End * Zoom; var high = -bounds.Position * Zoom;
-        MapOffset = new Vector2(low.X <= high.X ? Mathf.Clamp(MapOffset.X, low.X, high.X) : (low.X + high.X) / 2,
-            low.Y <= high.Y ? Mathf.Clamp(MapOffset.Y, low.Y, high.Y) : (low.Y + high.Y) / 2);
+        ClampView();
         var view = new Rect2(Vector2.Zero, Size); var state = GameState.Instance;
         foreach (var token in _tokens)
         {

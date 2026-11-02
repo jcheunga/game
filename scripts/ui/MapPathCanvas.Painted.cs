@@ -47,6 +47,7 @@ public partial class MapPathCanvas
         var view = new Rect2(-MapOffset / Zoom, Size / Zoom).Grow(48);
         DrawRect(view, _paintedSea);
         foreach (var (texture, rect) in _paintedTiles) DrawTextureRect(texture, rect, false);
+        DrawSeaFade();
     }
 
     private MapFogLayer _fogLayer;

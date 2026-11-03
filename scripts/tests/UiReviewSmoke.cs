@@ -670,6 +670,21 @@ public partial class UiReviewSmoke : Node
     { GD.Print($"{(condition ? "PASS" : "FAIL")} {label}"); if (!condition) _failures++; }
     private async Task Wait(double seconds) => await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
 
+    /// <summary>
+    /// Waits at least this many frames and this long, for clock-driven animation such as ButtonFeel's (at most 0.1 s a
+    /// tick). A timer alone fires at once after a capture stalls a frame; frames alone pass too fast in an unthrottled
+    /// window. <paramref name="sample"/> runs after every frame.
+    /// </summary>
+    private async Task FramesAndTime(int frames, double seconds, Action sample = null)
+    {
+        var end = Time.GetTicksMsec() + (ulong)(seconds * 1000);
+        for (var frame = 0; frame < frames || Time.GetTicksMsec() < end; frame++)
+        {
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            sample?.Invoke();
+        }
+    }
+
     // Quitting mid-track leaves the music's playback referenced and the engine reports it as leaked.
     private async void QuitAfterAudio(int code)
     {

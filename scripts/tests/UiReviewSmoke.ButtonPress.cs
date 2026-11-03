@@ -16,15 +16,21 @@ public partial class UiReviewSmoke
         System.IO.Directory.CreateDirectory(_output);
         var state = GameState.Instance; state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
         async Task Frames(int count) { for (var i = 0; i < count; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
+        async Task<float> LowestOver(BaseButton button, double seconds)
+        {
+            var lowest = 0f;
+            await FramesAndTime(30, seconds, () => lowest = Mathf.Min(lowest, ButtonFeel.Amount(button)));
+            return lowest;
+        }
         async Task HoldAndCapture(string name, params BaseButton[] buttons)
         {
             await Capture(name + "-rest");
             foreach (var button in buttons) ButtonFeel.Hold(button, true);
-            await Frames(20);
+            await FramesAndTime(20, .3);
             Check(buttons.All(button => ButtonFeel.Amount(button) > .99f), $"{name}: every held button is fully pressed ({string.Join(", ", buttons.Select(b => b.Name))})");
             await Capture(name + "-held");
             foreach (var button in buttons) ButtonFeel.Hold(button, false);
-            await Frames(30);
+            await FramesAndTime(30, .5);
             Check(buttons.All(button => ButtonFeel.Amount(button) == 0), $"{name}: every button rises back to rest");
         }
 
@@ -47,14 +53,14 @@ public partial class UiReviewSmoke
             var at = token.GetGlobalTransformWithCanvas() * (token.MarkerCenter - new Vector2(0, 30));
             await Capture("02-landmark-rest");
             Send(new InputEventMouseButton { Pressed = true, ButtonIndex = MouseButton.Left, ButtonMask = MouseButtonMask.Left, Position = at, GlobalPosition = at });
-            await Frames(20);
+            await FramesAndTime(20, .3);
             Check(ButtonFeel.Amount(token) > .99f, $"Holding a map landmark presses it in ({token.Site.Title}, {ButtonFeel.Amount(token):0.00})");
             await Capture("02-landmark-held");
             // Sliding away turns the touch into a pan: the landmark rises and nothing opens.
             var away = at + new Vector2(60, 0);
             Send(new InputEventMouseMotion { Position = away, GlobalPosition = away, ButtonMask = MouseButtonMask.Left });
             Send(new InputEventMouseButton { Pressed = false, ButtonIndex = MouseButton.Left, Position = away, GlobalPosition = away });
-            await Frames(30);
+            await FramesAndTime(30, .5);
             Check(ButtonFeel.Amount(token) == 0, "A landmark rises again once the touch pans the map");
         }
         else Check(false, "A map landmark is on screen to press");
@@ -81,10 +87,9 @@ public partial class UiReviewSmoke
         // A real release over the button acts and springs it up past rest.
         if (tab != null)
         {
-            ButtonFeel.Hold(tab, true); await Frames(10);
+            ButtonFeel.Hold(tab, true); await FramesAndTime(10, .15);
             ButtonFeel.Hold(tab, false, acted: true);
-            var lowest = 0f;
-            for (var frame = 0; frame < 30; frame++) { await Frames(1); lowest = Mathf.Min(lowest, ButtonFeel.Amount(tab)); }
+            var lowest = await LowestOver(tab, .6);
             Check(lowest < -.2f && ButtonFeel.Amount(tab) == 0, $"A release that acts springs the button up past rest, then settles ({lowest:0.00})");
         }
 
@@ -107,13 +112,12 @@ public partial class UiReviewSmoke
         await Capture("05-battle-card-rest");
         Send(new InputEventMouseMotion { Position = point, GlobalPosition = point });
         Send(new InputEventMouseButton { Pressed = true, ButtonIndex = MouseButton.Left, ButtonMask = MouseButtonMask.Left, Position = point, GlobalPosition = point });
-        await Frames(20);
+        await FramesAndTime(20, .3);
         Check(ButtonFeel.Amount(cardButton) > .99f, $"Holding a battle card presses it in ({ButtonFeel.Amount(cardButton):0.00})");
         await Capture("05-battle-card-held");
         var deployments = Read<int>("_playerDeployments");
         Send(new InputEventMouseButton { Pressed = false, ButtonIndex = MouseButton.Left, Position = point, GlobalPosition = point });
-        var spring = 0f;
-        for (var frame = 0; frame < 30; frame++) { await Frames(1); spring = Mathf.Min(spring, ButtonFeel.Amount(cardButton)); }
+        var spring = await LowestOver(cardButton, .6);
         Check(Read<int>("_playerDeployments") == deployments + 1 && spring < -.2f, $"Lifting off a held battle card deploys and springs the card up ({spring:0.00})");
 
         GD.Print($"BUTTON_PRESS_REVIEW_RESULT: {_failures} failures");

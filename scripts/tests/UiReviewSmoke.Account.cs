@@ -116,7 +116,7 @@ public partial class UiReviewSmoke
         await Capture("account-sign-in");
 
         // A held press sinks the whole face (ButtonFeel), logo and title together.
-        ButtonFeel.Hold(apple, true); for (var i = 0; i < 12; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        ButtonFeel.Hold(apple, true); await FramesAndTime(12, .2);
         Check(ButtonFeel.Amount(apple) > .9f, "Holding Sign in with Apple presses it in");
         await Capture("account-apple-held");
         ButtonFeel.Hold(apple, false); for (var i = 0; i < 30; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

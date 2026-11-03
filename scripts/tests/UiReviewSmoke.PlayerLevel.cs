@@ -57,17 +57,12 @@ public partial class UiReviewSmoke
         var back = Walk(menu).OfType<RoyalButton>().First(x => x.IsVisibleInTree() && x.Caption != null && x.Glyph != null);
         var captionY = back.Caption.Position.Y; var backRect = back.GetRect();
         ButtonFeel.Hold(back, true);
-        // Frames, not a timer: the capture before stalls a frame long enough to fire a short timer at once.
-        for (var frame = 0; frame < 20; frame++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await FramesAndTime(20, .3);
         var held = ButtonFeel.Amount(back);
         var heldLayout = back.GetRect() == backRect && back.Caption.Position.Y == captionY;
         ButtonFeel.Hold(back, false, acted: true);
         var lowest = 0f;
-        for (var frame = 0; frame < 30; frame++)
-        {
-            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            lowest = Mathf.Min(lowest, ButtonFeel.Amount(back));
-        }
+        await FramesAndTime(30, .6, () => lowest = Mathf.Min(lowest, ButtonFeel.Amount(back)));
         Check(held > .99f && heldLayout && lowest < -.2f && ButtonFeel.Amount(back) == 0 && back.GetThemeStylebox("hover") == back.GetThemeStylebox("normal"),
             $"A held button presses in without moving its layout, springs up on release and settles, and hovering changes nothing (held {held:0.00}, spring {lowest:0.00})");
         // Held presses for the review capture: a kit button (claim all) and a button painted on the plate (back).
@@ -75,7 +70,7 @@ public partial class UiReviewSmoke
         var painted = Walk(menu).OfType<RoyalButton>().FirstOrDefault(x => x.IsVisibleInTree() && x.HasMeta(ButtonFeel.Painted) && x.Caption != null);
         ButtonFeel.Hold(holdButton, true);
         if (painted != null) ButtonFeel.Hold(painted, true);
-        for (var frame = 0; frame < 20; frame++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await FramesAndTime(20, .3);
         await Capture("04b-held-press");
         ButtonFeel.Hold(holdButton, false);
         if (painted != null) ButtonFeel.Hold(painted, false);

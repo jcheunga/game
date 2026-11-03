@@ -51,6 +51,9 @@ public partial class LoadoutMenu : RoyalScreen
             layer.AddChild(figure);
         }
         var name = spec.Label("mission.leader", leader.Title, portraitRect.Position.X + portraitRect.Size.X * .42f - spec.Number("mission.leader", "pen_x", 87), ink);
+        // A long name and title keep to the parchment at the phone floor by dropping the title ("Ashen King the Hollow Crown" → "Ashen King").
+        var epithet = leader.Title.IndexOf(" the ", System.StringComparison.Ordinal);
+        if (epithet > 0 && name.TextWidth(name.FittedSize()) > name.Size.X) name.Text = leader.Title[..epithet];
         name.ShadowOffset = Vector2.Zero; layer.AddChild(name);
         layer.AddChild(RoyalKit.Image("prep-skull-shield", spec.Rect("mission.badge")));
         var picture = spec.Rect("mission.picture");

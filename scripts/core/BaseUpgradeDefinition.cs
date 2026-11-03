@@ -63,7 +63,7 @@ public static class BaseUpgradeCatalog
         new(
             RelicVaultId,
             "Relic Repository",
-            "Improve boss relic rarity: each level adds 4.8 percentage points to epic odds and 2.4 to rare odds.",
+            "Better boss relics: each level adds 4.8 points to epic odds and 2.4 to rare.",
             5),
         new(
             ProjectileWardId,

@@ -67,12 +67,23 @@ public partial class CombatReviewSmoke
                 Check(patches.Length == 2 && patches.Sum(p => p.Size.X) <= 600, "Cursed ground is limited to two bounded pockets");
                 var unit = (Unit)Invoke(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit("player_defender")), patches[0].GetCenter());
                 var hp = unit.Health;
+                // The campaign's stage carries the pockets' layout but no cursed ground, so they are neither drawn nor
+                // harmful there; a mode that adds the modifier makes them hurt.
+                var stage = Read<StageDefinition>(battle, "_stageData");
                 Invoke(battle, "ApplyCursedGroundAttrition", 1f);
-                Check(unit.Health < hp, "Standing in a cursed pocket deals damage");
-                unit.Position = (patches[0].End + patches[1].Position) * .5f;
-                hp = unit.Health;
-                Invoke(battle, "ApplyCursedGroundAttrition", 1f);
-                Check(unit.Health == hp, "The gap between cursed pockets is safe");
+                Check(!StageModifiers.HasCursedGround(stage) && unit.Health == hp, "Without the stage's cursed ground the pockets do nothing");
+                var modifiers = stage.Modifiers;
+                stage.Modifiers = modifiers.Append(new StageModifierDefinition { Type = "cursed_ground" }).ToArray();
+                try
+                {
+                    Invoke(battle, "ApplyCursedGroundAttrition", 1f);
+                    Check(unit.Health < hp, "Standing in a cursed pocket deals damage");
+                    unit.Position = (patches[0].End + patches[1].Position) * .5f;
+                    hp = unit.Health;
+                    Invoke(battle, "ApplyCursedGroundAttrition", 1f);
+                    Check(unit.Health == hp, "The gap between cursed pockets is safe");
+                }
+                finally { stage.Modifiers = modifiers; }
             }
             await CloseBattle(battle);
         }

@@ -23,8 +23,8 @@ Each answer below rests on these facts:
 | Horror themes | Risen dead, ghouls, liches, plague creatures, ossuaries and witch circles, in a painted medieval style. No jump scares, torture or body horror | `THEME_BIBLE.md` |
 | Language | None crude. Battle shouts such as "For the caravan!" and "RAAAGH!" | `DeployQuote` in `data/units.json`, `data/locale/en.json` |
 | Sexual content, drugs, alcohol | None | Text search of `data/` and the catalogs |
-| Player-written text | The nickname only: 3 to 18 letters, numbers, spaces, hyphens or underscores. No word filter on the device or the server. Guild names aren't player-written (a local guild is always "New Warband"). The friends list stores typed player IDs on the device only | `GameState.PlayerLevel.cs`, `GuildMenu.cs`, `FriendsMenu.cs` |
-| Where other players see a nickname | **Nowhere in 1.0.** Internet rooms, the only place that showed nicknames, are hidden: the Multiplayer screen shows Records, **New code** and **Copy code** instead of the room list, **Match** and **Host**. Challenge and daily leaderboards show an anonymous tag per board, "Player" and six hex characters from a hash of the player ID and the board, and "You" for the player's own entry, never a player ID or nickname. The Rankings screen shows only the player's own row ("Rankings are offline"). The nickname is still sent to the server and kept there | `LaunchFeatures.cs`, `MultiplayerMenu.Royal.cs`, `LeaderboardTag.cs`, `LeaderboardMenu.cs` |
+| Player-written text | The nickname only: 3 to 18 letters, numbers, spaces, hyphens or underscores. A word filter shared by the device and the server refuses slurs, profanity and staff-like names, and support can take a name away (`POST /admin/support/rename`). Guild names aren't player-written (a local guild is always "New Warband"). The friends list stores typed player IDs on the device only | `GameState.PlayerLevel.cs`, `GuildMenu.cs`, `FriendsMenu.cs` |
+| Where other players see a nickname | **Only in a LAN race.** Players on the same local network who join the host by its address see each other's nicknames in the race standings (`LanRaceMenu.cs`). A nickname a LAN peer sends goes through the same filter. Internet rooms are hidden: the Multiplayer screen shows Records, **New code** and **Copy code** instead of the room list, **Match** and **Host**. Challenge and daily leaderboards show an anonymous tag per board, "Player" and six hex characters from a hash of the player ID and the board, and "You" for the player's own entry, never a player ID or nickname. The Rankings screen shows only the player's own row ("Rankings are offline"). The nickname is still sent to the server and kept there | `LaunchFeatures.cs`, `MultiplayerMenu.Royal.cs`, `LeaderboardTag.cs`, `LeaderboardMenu.cs` |
 | Chat or messaging | None | `MultiplayerMenu.cs` |
 | Reporting | None reachable in 1.0. The room report (**Submit report**, with reasons such as Offensive name) lives in the hidden rooms | `OnlineRoomReportReasonCatalog.cs`, `MultiplayerMenu.cs` |
 | Ads | None. No ad SDK and no advertising ID | `docs/STORE_PRIVACY_ANSWERS.md` |
@@ -55,7 +55,7 @@ from Apple's "Age ratings values and definitions" page (iOS 26 age ranges:
 | Question | Answer | Why |
 | --- | --- | --- |
 | Unrestricted web access | No | No in-app browser. The system browser opens only the website's privacy, terms and support pages. On iPhone there is no browser sign-in |
-| User-generated content | **No** | Apple: "broad distribution of content created by users". The nickname is the only player-written text, and no other player sees it in 1.0. Turning rooms on later makes this Yes and brings guideline 1.2 (a filter, a report tool, blocking, published contact details) |
+| User-generated content | **No** | Apple: "broad distribution of content created by users". The nickname is the only player-written text. In 1.0 only players on the same local network who join a LAN race see it, which isn't broad distribution, and the filter refuses offensive names. Turning rooms on later makes this Yes and brings guideline 1.2 (a filter, a report tool, blocking, published contact details) |
 | Messaging and chat | No | None |
 | Advertising | No | None |
 | Social media | No | None |
@@ -169,7 +169,7 @@ exact wording in the console: IARC words them by topic, not as Apple does.
 
 | Question | Answer | Why |
 | --- | --- | --- |
-| Can users interact or exchange content? | **No** | Internet rooms are hidden in 1.0. Leaderboards show anonymous tags. No chat, no shared content |
+| Can users interact or exchange content? | **No** **[Check]** | Internet rooms are hidden in 1.0. Leaderboards show anonymous tags. No chat, no shared content. Players on one local network can race each other in a LAN race and see each other's filtered nicknames and scores. IARC's Users Interact is about unfiltered communication between users, so No fits. Answering Yes only adds that notice to the listing |
 | Does the app share the user's current location? | No | |
 | Does the app share personal information with third parties? | No | `docs/STORE_PRIVACY_ANSWERS.md` |
 | Digital purchases | Yes | Ten packs |
@@ -215,7 +215,8 @@ policy**. For this game that would mean:
    with a player ID and nickname as soon as the server answers
    (`AccountSignIn.OnServerReachable`). Email sign-in collects an address,
    and analytics and crash reports are offered. Rooms, which would show the
-   nickname to others, are hidden in 1.0. For a mixed audience the game would need a neutral age screen
+   nickname to others, are hidden in 1.0; LAN races show it to players on the
+   same local network. For a mixed audience the game would need a neutral age screen
    and, for children, either verifiable parental consent or those features
    switched off.
 3. **SDKs.** Every SDK must be allowed in child-directed apps. **[Check]**
@@ -249,16 +250,16 @@ Not recommended for this release.
 
 ## Findings
 
-1. **Nicknames have no filter and no moderation tool.** In 1.0 no other
-   player sees a nickname, so this doesn't affect the ratings above. It must
-   be fixed before rooms are turned on: there is no word filter on the device
-   or the server, no block control, and no operator tool to rename or ban.
-   The `players` table's `can_join_rooms` and related flags are never
-   checked, and the device sends its nickname again at each profile sync,
-   overwriting any server-side change. Turning rooms on also makes Apple's
-   user-generated content answer Yes and adds IARC's "Users Interact". See
+1. **Nickname moderation is partly in place.** Since 2026-11-03 a word
+   filter shared by the device and the server (`scripts/core/Nickname.cs`)
+   refuses offensive and staff-like names. Support can take a name away with
+   `POST /admin/support/rename`, and a device that still has the old name
+   gets the new one back at its next sync. Before rooms are turned on, still
+   missing: a block control, a report button outside the hidden rooms, and
+   checks of the `players` table's `can_join_rooms` and related flags.
+   Turning rooms on also makes Apple's user-generated content answer Yes and
+   adds IARC's "Users Interact". See
    [SUPPORT_PLAYBOOK.md](SUPPORT_PLAYBOOK.md#abuse-report-about-a-nickname).
-2. **The first-run prompt is now wrong.** "Other players see it on rankings
-   and in rooms" (`NicknameDialog.cs`): in 1.0 rankings show only the
-   player's own row, leaderboards show anonymous tags and rooms are hidden,
-   so no other player sees the nickname.
+2. **Fixed 2026-10-28: the first-run prompt.** It said other players see the
+   nickname on rankings and in rooms. It now says only players racing you
+   over your local network see it (`NicknameDialog.cs`), which is true in 1.0.

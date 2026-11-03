@@ -106,7 +106,11 @@ isn't declared because it isn't kept.
   return an anonymous tag per board ("Player" and six hex characters from a
   hash of the player ID and the board, `LeaderboardTag`), never a player ID
   or nickname, and internet rooms are hidden in 1.0. No other player sees a
-  player ID or nickname, so Name and User IDs are **Collected**, not shared.
+  player ID. A nickname is seen only in a LAN race, by players on the same
+  local network who join it, and it goes straight from device to device at
+  the player's own request. Play's form doesn't count a transfer the user
+  starts and expects as sharing, so Name and User IDs are **Collected**, not
+  shared.
   The room routes still return IDs on the server; if rooms are turned on
   later, decide this again. The hashed player ID sent to Google Play with
   each purchase (`obfuscatedExternalAccountId`) is a transfer the player

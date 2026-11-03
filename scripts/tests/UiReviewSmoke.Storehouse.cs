@@ -65,6 +65,8 @@ public partial class UiReviewSmoke
         await TapModal(refill);
         Check(state.Gold == 500 - GameState.FoodRefillGold && state.Food == 20 && notice.Text == "+10 food",
             $"Refilling spends {GameState.FoodRefillGold} gold once, grants 10 food and keeps the result visible");
+        Check(recharge.Text.StartsWith($"{GameState.FoodRefillsPerDay - 1} refills left today") && !refill.Disabled,
+            "The line beside the refill counts the refills left today");
         Check(Walk(store).OfType<Button>().Where(button => button.IsVisibleInTree() && button.HasMeta("store_product_id"))
             .All(button => pages.GetGlobalRect().Encloses(button.GetGlobalRect())), "Ration purchase actions remain visible after their cards refresh");
         AuditText("Storehouse / refilled rations");

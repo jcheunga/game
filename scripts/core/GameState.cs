@@ -4202,6 +4202,7 @@ public partial class GameState : Node
 		Gold = DefaultGold;
 		Food = DefaultFood;
 		FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+		_foodRefillDay = ""; _foodRefillsOnDay = 0;
 		ResetAdventureProgress();
 		HighestUnlockedStage = DefaultUnlockedStage;
 		SelectedStage = DefaultUnlockedStage;
@@ -4366,6 +4367,8 @@ public partial class GameState : Node
 		Gold = saved.Version >= 8 ? saved.Gold : saved.Scrap;
 		Food = saved.Version >= 8 ? saved.Food : saved.Fuel;
 		FoodRechargedAtUnixSeconds = saved.FoodRechargedAtUnixSeconds;
+		_foodRefillDay = saved.FoodRefillDay?.Trim() ?? "";
+		_foodRefillsOnDay = Math.Max(0, saved.FoodRefillsOnDay);
 		HighestUnlockedStage = saved.HighestUnlockedStage;
 		LoadAdventureProgress(saved);
 		SelectedStage = saved.SelectedStage;
@@ -5105,6 +5108,8 @@ public partial class GameState : Node
 			Gold = Gold,
 			Food = Food,
 			FoodRechargedAtUnixSeconds = FoodRechargedAtUnixSeconds,
+			FoodRefillDay = _foodRefillDay,
+			FoodRefillsOnDay = _foodRefillsOnDay,
 			HighestUnlockedStage = HighestUnlockedStage,
 			VisitedAdventureSites = _visitedAdventureSites.OrderBy(x => x).ToArray(),
 			AdventureOpenTiles = _openedAdventureTiles.OrderBy(id => id).ToArray(),

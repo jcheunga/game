@@ -57,6 +57,14 @@ public partial class FeedbackReview : Node
                 "Gold refills credit food and refuse insufficient funds");
             Check(!state.RefreshFoodRecharge(DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 3600) && state.Food == 34,
                 "Bought and claimed food may exceed the limit, but the timed recharge never adds above it");
+            funded = state.BuildSaveData(); funded.Gold = GameState.FoodRefillGold * 5; Call(state, "ApplySavedData", funded);
+            var bought = Enumerable.Range(0, 4).Count(attempt => state.TryBuyFoodRefill(out _));
+            Check(bought == GameState.FoodRefillsPerDay - 1 && state.FoodRefillsLeftToday == 0 && !state.TryBuyFoodRefill(out var capped) && capped.StartsWith("No refills left today"),
+                $"Refills stop at {GameState.FoodRefillsPerDay} a day");
+            var reloaded = state.BuildSaveData(); Call(state, "ApplySavedData", reloaded);
+            Check(state.FoodRefillsLeftToday == 0, "The day's refills survive a reload");
+            reloaded.FoodRefillDay = "2000-01-01"; Call(state, "ApplySavedData", reloaded);
+            Check(state.FoodRefillsLeftToday == GameState.FoodRefillsPerDay && state.TryBuyFoodRefill(out _), "A new day brings the refills back");
             state.ResetProgress(); state.SetShowHints(false);
             var save = state.BuildSaveData(); state.ReloadFromDisk();
             Check(state.GetOwnedPlayerSpells().Count == 0, "Reloading does not grant free starter spells");

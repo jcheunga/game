@@ -76,6 +76,9 @@ public sealed class GameSaveData
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 24;
     public long FoodRechargedAtUnixSeconds { get; set; }
+    /// <summary>The day (UTC, yyyy-MM-dd) of the storehouse refills counted in FoodRefillsOnDay.</summary>
+    public string FoodRefillDay { get; set; } = "";
+    public int FoodRefillsOnDay { get; set; }
     public int Scrap { get => Gold; set => Gold = value; }
     public int Fuel { get => Food; set => Food = value; }
     public int HighestUnlockedStage { get; set; } = 1;

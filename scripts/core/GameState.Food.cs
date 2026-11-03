@@ -12,6 +12,16 @@ public partial class GameState
     /// gold pack spent on refills (the best gold rate, 550 a dollar, refills 18 food; the weakest food pack is 20).
     /// </summary>
     public const int FoodRefillGold = 300, FoodRefillAmount = 10;
+    /// <summary>
+    /// Refills a day, on the bounty board's day (UTC). A replay pays more gold than its two rations cost to refill, so
+    /// without a cap refills would turn gold into endless battles; the timed recharge is the everyday supply.
+    /// </summary>
+    public const int FoodRefillsPerDay = 3;
+    private string _foodRefillDay = "";
+    private int _foodRefillsOnDay;
+
+    public int FoodRefillsLeftToday =>
+        _foodRefillDay == BountyBoardCatalog.GetDateKey() ? Math.Max(0, FoodRefillsPerDay - _foodRefillsOnDay) : FoodRefillsPerDay;
     public long FoodRechargedAtUnixSeconds { get; private set; }
     private double _foodRefreshClock;
     public event Action FoodChanged;
@@ -49,7 +59,11 @@ public partial class GameState
     public bool TryBuyFoodRefill(out string message)
     {
         RefreshFoodRecharge();
+        if (FoodRefillsLeftToday == 0) { message = "No refills left today. Food still recharges on its own."; return false; }
         if (Gold < FoodRefillGold) { message = $"Need {FoodRefillGold} gold."; return false; }
+        var today = BountyBoardCatalog.GetDateKey();
+        if (_foodRefillDay != today) { _foodRefillDay = today; _foodRefillsOnDay = 0; }
+        _foodRefillsOnDay++;
         Gold -= FoodRefillGold; Food += FoodRefillAmount;
         Persist(); FoodChanged?.Invoke(); message = $"+{FoodRefillAmount} food"; return true;
     }

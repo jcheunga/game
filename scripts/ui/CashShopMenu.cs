@@ -28,6 +28,8 @@ public partial class CashShopMenu : Control
     private VBoxContainer _ledgerRows = null !;
     private Label _noticeLabel = null !;
     private HBoxContainer _refillRow = null !;
+    private RoyalButton _refillButton = null !;
+    private Label _rechargeLabel = null !;
     private int _selectedCategory;
     // A native purchase is open in the store sheet or waiting on server verification.
     private bool _nativePurchaseBusy;
@@ -251,11 +253,14 @@ public partial class CashShopMenu : Control
         refill.Text = $"{GameState.FoodRefillAmount} food · {GameState.FoodRefillGold} gold";
         refill.AccessibilityName = refill.TooltipText = $"Buy {GameState.FoodRefillAmount} food for {GameState.FoodRefillGold} gold";
         _refillRow.AddChild(refill);
-        var recharge = StorePackCard.Serif("+2 food every 5 minutes · Up to 24", 15, Muted);
+        _refillButton = refill;
+        var recharge = StorePackCard.Serif("", 15, Muted);
         recharge.AutowrapMode = TextServer.AutowrapMode.Off;
         recharge.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
         recharge.VerticalAlignment = VerticalAlignment.Center;
         _refillRow.AddChild(recharge);
+        _rechargeLabel = recharge;
+        UpdateRefill();
         _noticeLabel = StorePackCard.Serif("", 15, Muted);
         _noticeLabel.Name = "PurchaseNotice";
         _noticeLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -324,9 +329,19 @@ public partial class CashShopMenu : Control
         _noticeLabel.HorizontalAlignment = _refillRow.Visible ? HorizontalAlignment.Right : HorizontalAlignment.Left;
     }
 
+    /// <summary>Refills are capped each day: the line beside the button counts what's left, and the button rests at none.</summary>
+    private void UpdateRefill()
+    {
+        var left = GameState.Instance.FoodRefillsLeftToday;
+        _refillButton.Disabled = left == 0;
+        _rechargeLabel.Text = (left == 0 ? "No refills left today" : left == 1 ? "1 refill left today" : $"{left} refills left today")
+            + $" · +{GameState.FoodRechargeAmount} food every {GameState.FoodRechargeSeconds / 60} minutes";
+    }
+
     private void RefreshUi(bool preserveStatus = false)
     {
         if (!preserveStatus) _noticeLabel.Text = "";
+        UpdateRefill();
         RebuildResourcesRow();
         for (var i = 0; i < PackCategories.Length; i++)
             RebuildCategory(i, PackCategories[i]);

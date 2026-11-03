@@ -47,7 +47,11 @@ rehearse a restore before releasing paid currency.
 2. Point an A (and, if used, AAAA) record such as `api.your-domain.example` at
    the VM, plus records for the website domain and its `www.` alias. Make ports
    80 and 443 available from the public internet. Caddy uses that reachability
-   to provision and renew certificates.
+   to provision and renew certificates. Give the API an AAAA record if the host
+   offers IPv6. Most phone networks hand out IPv6 addresses but share a few
+   IPv4 ones among many subscribers. New players and sign-in attempts are
+   limited per address (10 to 20 a minute), so phones that reach the API over
+   IPv6 don't use up each other's allowance.
 3. Copy the release repository to the server and work from its `server/`
    directory.
 4. Copy `.env.production.example` to `.env.production`, then set the API
@@ -571,6 +575,28 @@ instead of mailing it, and the test reads the code from there. The test also
 sets `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS=1`. The server refuses to start in
 production with either variable set. It also gives the server a throwaway
 `ADMIN_API_KEY` for the refunds.
+
+#### Against the production stack
+
+`scripts/tests/server_e2e.sh --stack` runs the same test against the
+production stack on this machine, with Docker running.
+`docker-compose.production.yml`, with the `docker-compose.e2e.yml` overlay,
+builds the production image and runs two API replicas behind Caddy, with
+Redis and a PostgreSQL of its own in place of the managed one. The game
+reaches it through Caddy on `127.0.0.1:8097`, and the restart restarts every
+replica. The API runs as `Staging`, since `Production` refuses the test's
+switches; the stack is removed, with its volumes, when the run ends. Only TLS
+and DNS go untested, and `/health` checks those on the real host (see
+[LAUNCH_DAY.md](LAUNCH_DAY.md)).
+
+Two differences from the local run are deliberate:
+
+- Each replica reads the purchase pause at most every 10 seconds, so after
+  pausing and after resuming the test waits that long before it looks.
+- Rate limits live in Redis, which survives the restart. The script clears
+  them then, as a local server's restart does, because three installs signing
+  in from one address within minutes would otherwise hit the per-address
+  sign-in limit.
 
 ### Developer sign-in
 

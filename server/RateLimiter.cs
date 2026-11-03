@@ -61,6 +61,14 @@ public sealed class RateLimiter
         var path = context.Request.Path;
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var bearerToken = ReadBearerToken(context.Request);
+        var knownSession = bearerToken.Length > 0 && IsKnownSession(bearerToken);
+
+        // The sign-in methods on offer are public and read at every first launch, so players behind one carrier
+        // address share a large allowance instead of the sign-in attempts' small one.
+        if (path.StartsWithSegments("/auth/providers"))
+        {
+            return new RateLimitPolicy($"crownroad:rate:v1:providers:{Hash(ip)}", 600);
+        }
 
         // A profile registration/recovery attempt has no established bearer
         // yet, so it remains deliberately limited by source IP.
@@ -83,12 +91,14 @@ public sealed class RateLimiter
             return new RateLimitPolicy($"crownroad:rate:v1:health:{Hash(ip)}", 600);
         }
 
-        if (path.StartsWithSegments("/player-profile"))
+        // Registering a profile is limited by source IP. A player's own profile sync, which every resume sends,
+        // counts against their checked session like the rest of their traffic.
+        if (path.StartsWithSegments("/player-profile") && !knownSession)
         {
             return new RateLimitPolicy($"crownroad:rate:v1:registration:{Hash(ip)}", 20);
         }
 
-        if (!string.IsNullOrWhiteSpace(bearerToken) && IsKnownSession(bearerToken))
+        if (knownSession)
         {
             var isWebSocket = path.StartsWithSegments("/ws");
             return new RateLimitPolicy(

@@ -377,8 +377,14 @@ handling of every outcome passes on desktop
 
 - [ ] Set the Godot setting `crownroad/network/api_base_url` to
   `https://<domain>`, then export signed builds.
-- [ ] Point the end-to-end test at a staging copy of the live server, to check
+- [x] Point the end-to-end test at a staging copy of the live server, to check
   everything except the provider sign-ins in one run.
+  `scripts/tests/server_e2e.sh --stack` runs it against the production stack
+  (the production image, two replicas behind Caddy, Redis, PostgreSQL) on one
+  machine. Its first run found that a player's profile sync, which every
+  resume sends, counted against a small allowance per public address. So did
+  the list of sign-in methods. Players behind one carrier address could have
+  throttled each other. Both are fixed.
 
 ## 12. Test on real phones
 

@@ -19,6 +19,8 @@ public partial class ServerEndToEnd : Node
     private static readonly System.Net.Http.HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
     private int _failures;
     private string _server = "", _log = "", _handoff = "";
+    // How long an operator switch takes to reach every API replica (server_e2e.sh --stack passes LiveSettings' 10 s).
+    private double _settle;
 
     public override void _Ready()
     {
@@ -46,6 +48,7 @@ public partial class ServerEndToEnd : Node
         {
             if (!OS.GetCmdlineUserArgs().Any(a => a.StartsWith("--save-suffix=server-e2e-"))) throw new Exception("Use an isolated server-e2e save.");
             _server = Arg("server").TrimEnd('/'); _log = Arg("server-log"); _handoff = Arg("handoff");
+            _settle = double.TryParse(Arg("settle"), System.Globalization.CultureInfo.InvariantCulture, out var settle) ? settle : 0;
             if (_server.Length == 0 || _log.Length == 0 || _handoff.Length == 0) throw new Exception("Pass --server, --server-log and --handoff.");
             GetTree().AutoAcceptQuit = false;
             await Wait();

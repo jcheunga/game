@@ -1,0 +1,45 @@
+# End-to-end overlay for docker-compose.production.yml: the production stack (Caddy, the API replicas,
+# Redis, the production image) on this machine, with its own PostgreSQL in place of the managed one.
+# The API runs as Staging, not Production, so the test's developer sign-in and test purchase claims are
+# accepted. Only scripts/tests/server_e2e.sh --stack uses it; never deploy with it.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: crownroad
+      POSTGRES_USER: crownroad
+      POSTGRES_PASSWORD: ${E2E_POSTGRES_PASSWORD:?}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crownroad -d crownroad"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    healthcheck:
+      interval: 2s
+
+  crownroad-server:
+    env_file: !reset []
+    environment:
+      ASPNETCORE_ENVIRONMENT: Staging
+      AllowedOrigins: http://127.0.0.1
+      CROWNROAD_DEV_SIGN_IN: "1"
+      CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS: "1"
+    healthcheck:
+      interval: 2s
+      start_period: 5s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    env_file: !reset []
+    environment:
+      CADDY_EMAIL: e2e@example.com
+      CROWNROAD_API_DOMAIN: ":${E2E_PORT:?}"
+      CROWNROAD_SITE_DOMAIN: site.localhost
+    ports: !override
+      - "127.0.0.1:${E2E_PORT:?}:${E2E_PORT:?}"
+    volumes:
+      - ${E2E_SITE:?}:/srv/site:ro

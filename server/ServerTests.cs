@@ -1368,6 +1368,15 @@ public static partial class ServerTests
         Assert(RateLimiter.SelectPolicy(Request("/wallet", expired)) == anonymous, "an expired session is counted against its IP again");
         var health = RateLimiter.SelectPolicy(Request("/health"));
         Assert(health.Key.Contains(":health:") && health.Limit == 600, "/health has its own, larger per-IP allowance");
+        var providers = RateLimiter.SelectPolicy(Request("/auth/providers"));
+        Assert(providers.Key.Contains(":providers:") && providers.Limit == 600, "the sign-in methods on offer have their own, larger per-IP allowance");
+        var attempt = RateLimiter.SelectPolicy(Request("/auth/email/start", token));
+        Assert(attempt.Key.Contains(":auth:attempt:") && attempt.Limit == 10, "sign-in attempts stay limited by IP, even with a session");
+        var registration = RateLimiter.SelectPolicy(Request("/player-profile"));
+        Assert(registration.Key.Contains(":registration:") && registration.Limit == 20, "a new profile is limited by IP");
+        Assert(RateLimiter.SelectPolicy(Request("/player-profile", "made-up-" + Guid.NewGuid().ToString("N"))) == registration,
+            "a profile sync with a made-up bearer is limited by IP");
+        Assert(RateLimiter.SelectPolicy(Request("/player-profile", token)) == session, "a profile sync with a checked session counts against the session");
         return Task.CompletedTask;
     }
 

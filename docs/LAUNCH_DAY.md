@@ -7,10 +7,12 @@ phones, store review) is in [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md).
 ## 1. Freeze the release
 
 1. `python3 scripts/release/preflight.py` reports 20 of 20.
-2. Export the signed builds: `scripts/release/android_release.sh` and
+2. The end-to-end test passes against the production stack, with Docker
+   running: `scripts/tests/server_e2e.sh --stack`.
+3. Export the signed builds: `scripts/release/android_release.sh` and
    `scripts/release/ios_release.sh`. Upload these exact files; they are the
    builds that passed the phone tests.
-3. Record what they were built from, on a clean commit that is pushed:
+4. Record what they were built from, on a clean commit that is pushed:
 
    ```bash
    python3 scripts/release/freeze.py builds/android/crownroad-1.aab builds/ios/crownroad.ipa

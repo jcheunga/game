@@ -189,6 +189,7 @@ public partial class ServerEndToEnd
     {
         var pause = await Admin(HttpMethod.Post, "/admin/purchases", new { paused = true, message = "Purchases return at 10:00 UTC." });
         Check(pause.Status == 200 && pause.Body.GetProperty("paused").GetBoolean(), $"The operator pauses purchases ({pause.Status})");
+        if (_settle > 0) await Wait(_settle);
         try
         {
             var home = (MapMenu)await LiveUiReview.Open(this, "MainMenu");
@@ -207,6 +208,7 @@ public partial class ServerEndToEnd
         {
             await Admin(HttpMethod.Post, "/admin/purchases", new { paused = false });
         }
+        if (_settle > 0) await Wait(_settle);
         await state.RefreshPurchasesPauseAsync();
         Check(!state.PurchasesPaused, "Resuming purchases opens the shop again");
         var reopened = (MapMenu)await LiveUiReview.Open(this, "MainMenu");

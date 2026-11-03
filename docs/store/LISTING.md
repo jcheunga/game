@@ -31,7 +31,7 @@ Every number in the copy comes from the data files or the code:
 | Wagon | Plating, stores, march drum, rune beacon, archer crew, ballista, firepot launcher, 8 looks | `scripts/core/BaseUpgradeDefinition.cs`, `scripts/core/WagonSkinCatalog.cs` |
 | Music | 19 original loops, one per zone battle plus scene and boss themes | `ROADMAP.md`, `art/audio` |
 | Languages | English only | `data/locale/` holds only `en.json` |
-| Ads | None | No ad SDK in `Game.csproj`, `addons/`, `android/plugins/`, `ios/plugins/` |
+| Ads | Optional rewarded videos, only in a release with the AdMob IDs set | [ADS.md](ADS.md) |
 
 Left out on purpose:
 
@@ -102,7 +102,7 @@ PLAY YOUR WAY
 • Reduced motion, high contrast and larger text options
 • An original score, with music for each zone
 
-Optional in-app purchases sell gold, food, relic shards and bundles. The game has no ads.
+Optional in-app purchases sell gold, food, relic shards and bundles. The game has no ads. [With ads: "You can also watch an optional ad for extra gold after a win or for food. Ads never play unless you choose one."]
 
 Available in English.
 ```
@@ -185,7 +185,7 @@ PLAY YOUR WAY
 • Reduced motion, high contrast and larger text options
 • An original score, with music for each zone
 
-Optional in-app purchases sell gold, food, relic shards and bundles. The game has no ads.
+Optional in-app purchases sell gold, food, relic shards and bundles. The game has no ads. [With ads: "You can also watch an optional ad for extra gold after a win or for food. Ads never play unless you choose one."]
 
 Terms of use: https://crownroad.game/terms
 ```

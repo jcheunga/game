@@ -458,6 +458,19 @@ handling of every outcome passes on desktop
   linked sign-in IDs, player IDs, purchase history, account deletion and
   refunds. Have both reviewed, then set the policy's `effective_date` in
   `site/site.json`.
+- [ ] **Rewarded ads, if they ship** ([store/ADS.md](store/ADS.md)). The game
+  side and both plugins are built; a release has ads only with real IDs.
+  - Create the AdMob account, both apps and a Rewarded ad unit in each, and the
+    GDPR consent message in Privacy & messaging.
+  - Put the app and ad unit IDs in project settings (`crownroad/ads/…`) and the
+    iOS preset's CrownroadAds option, and the publisher ID in `site/site.json`
+    for `app-ads.txt`.
+  - Decide whether iPhone ads may ask for tracking (personalized ads).
+  - Answer Play's Ads and Data safety questions, Apple's App Privacy labels and
+    the IARC ads question as ADS.md lists.
+  - On phones with debug builds: watch a test ad in each placement, check the
+    reward arrives once, and from an EEA connection check the consent form and
+    Settings → Ad privacy choices.
 
 ## 14. Launch day
 

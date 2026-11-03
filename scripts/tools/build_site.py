@@ -117,6 +117,11 @@ def load_values(config_path: Path, strict: bool, expect_domain: str | None, prob
             problems.error(f"site.json: links.{key} must be an https:// URL")
         values[f"link:{key}"] = url
         any_link = any_link or bool(url)
+    # AdMob checks the developer's site for app-ads.txt naming its publisher account; only builds with ads need it.
+    publisher = str(config.get("admob_publisher_id") or "").strip()
+    if publisher and not re.fullmatch(r"pub-\d{16}", publisher):
+        problems.error(f"site.json: \"admob_publisher_id\" should look like pub-0123456789012345, not {publisher!r}")
+    values["admob_publisher_id"] = publisher
     values["availability_label"] = "Available on" if any_link else "Coming to"
     values["year"] = str(dt.date.today().year)
     # RFC 9116 requires an expiry under a year away; each deploy refreshes it.
@@ -306,6 +311,11 @@ def main() -> int:
             target.write_text(render(source.read_text(encoding="utf-8"), values, rel, problems), encoding="utf-8")
         else:
             shutil.copy2(source, target)
+        files += 1
+
+    if values["admob_publisher_id"]:
+        # Google's own seller ID (f08c47fec0942fa0) follows the publisher account, as AdMob's instructions give it.
+        (out / "app-ads.txt").write_text(f"google.com, {values['admob_publisher_id']}, DIRECT, f08c47fec0942fa0\n", encoding="utf-8")
         files += 1
 
     pages = check(out, values, problems)

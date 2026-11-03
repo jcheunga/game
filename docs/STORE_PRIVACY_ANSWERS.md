@@ -23,8 +23,9 @@ privacy policy (see "Keeping the privacy policy true" in
 
 All server traffic goes over HTTPS, and every stored record carries the
 player ID, so everything collected is linked to the player. Nothing is used
-for tracking: the game has no ads, no advertising ID, and no third-party
-analytics or ad SDKs.
+for tracking. A release without AdMob IDs has no ads, no advertising ID, and
+no third-party analytics or ad SDKs. A release with rewarded ads adds Google's
+ad SDK and the answers in [store/ADS.md](store/ADS.md).
 
 | Data | Collected | Linked to player | Tracking | Purposes | Optional or required | Encrypted in transit | Deletable |
 | --- | --- | --- | --- | --- | --- | --- | --- |

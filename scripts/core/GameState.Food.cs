@@ -7,6 +7,11 @@ public partial class GameState
     public const int FoodRechargeSeconds = 300;
     /// <summary>Rations paid for a campaign stage's first win, so exploring a zone's atlas doesn't rest on the recharge alone.</summary>
     public const int CampaignFirstClearFood = 6;
+    /// <summary>
+    /// The storehouse's gold-for-food refill: 30 gold a ration, so every food pack buys more food per dollar than a
+    /// gold pack spent on refills (the best gold rate, 550 a dollar, refills 18 food; the weakest food pack is 20).
+    /// </summary>
+    public const int FoodRefillGold = 300, FoodRefillAmount = 10;
     public long FoodRechargedAtUnixSeconds { get; private set; }
     private double _foodRefreshClock;
     public event Action FoodChanged;
@@ -44,8 +49,8 @@ public partial class GameState
     public bool TryBuyFoodRefill(out string message)
     {
         RefreshFoodRecharge();
-        if (Gold < 100) { message = "Need 100 gold."; return false; }
-        Gold -= 100; Food += 10;
-        Persist(); FoodChanged?.Invoke(); message = "+10 food"; return true;
+        if (Gold < FoodRefillGold) { message = $"Need {FoodRefillGold} gold."; return false; }
+        Gold -= FoodRefillGold; Food += FoodRefillAmount;
+        Persist(); FoodChanged?.Invoke(); message = $"+{FoodRefillAmount} food"; return true;
     }
 }

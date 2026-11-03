@@ -246,10 +246,10 @@ public partial class CashShopMenu : Control
             RefreshUi();
             _noticeLabel.Text = message;
         });
-        refill.Arrange(StorePackCard.Caps("+10 food", 14, RoyalText.Cream, 700), HomeMapArt.Icon("food"), new Vector2(22, 22),
-            StorePackCard.Caps("100", 14, RoyalText.Cream, 700), HomeMapArt.Icon("gold"), new Vector2(18, 18), gap: 6, rule: 10);
-        refill.Text = "10 food · 100 gold";
-        refill.AccessibilityName = refill.TooltipText = "Buy 10 food for 100 gold";
+        refill.Arrange(StorePackCard.Caps($"+{GameState.FoodRefillAmount} food", 14, RoyalText.Cream, 700), HomeMapArt.Icon("food"), new Vector2(22, 22),
+            StorePackCard.Caps(GameState.FoodRefillGold.ToString(), 14, RoyalText.Cream, 700), HomeMapArt.Icon("gold"), new Vector2(18, 18), gap: 6, rule: 10);
+        refill.Text = $"{GameState.FoodRefillAmount} food · {GameState.FoodRefillGold} gold";
+        refill.AccessibilityName = refill.TooltipText = $"Buy {GameState.FoodRefillAmount} food for {GameState.FoodRefillGold} gold";
         _refillRow.AddChild(refill);
         var recharge = StorePackCard.Serif("+2 food every 5 minutes · Up to 24", 15, Muted);
         recharge.AutowrapMode = TextServer.AutowrapMode.Off;

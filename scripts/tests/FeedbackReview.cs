@@ -52,7 +52,9 @@ public partial class FeedbackReview : Node
             Check(state.RefreshFoodRecharge(now + 300) && state.Food == 24, "Two food recharges after five minutes");
             Check(!state.RefreshFoodRecharge(now + 600) && state.Food == 24 && !state.RefreshFoodRecharge(now + 900), "Offline recharge stops at its cap");
             state.ResetProgress(); state.SetShowHints(false);
-            Check(state.TryBuyFoodRefill(out _) && state.Gold == 20 && state.Food == 34 && !state.TryBuyFoodRefill(out _), "Gold refills credit food and refuse insufficient funds");
+            var funded = state.BuildSaveData(); funded.Gold = GameState.FoodRefillGold + 20; Call(state, "ApplySavedData", funded);
+            Check(state.TryBuyFoodRefill(out _) && state.Gold == 20 && state.Food == 34 && !state.TryBuyFoodRefill(out var refused) && refused == $"Need {GameState.FoodRefillGold} gold.",
+                "Gold refills credit food and refuse insufficient funds");
             Check(!state.RefreshFoodRecharge(DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 3600) && state.Food == 34,
                 "Bought and claimed food may exceed the limit, but the timed recharge never adds above it");
             state.ResetProgress(); state.SetShowHints(false);

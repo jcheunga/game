@@ -27,13 +27,24 @@ public sealed class RateLimiter
         _store = store;
     }
 
+    /// <summary>
+    /// Multiplies every allowance, for load tests on staging: from a few machines they measure the per-address limits,
+    /// not capacity. Set CROWNROAD_RATE_LIMIT_SCALE (for example 100); Program refuses it in production.
+    /// </summary>
+    internal static float LimitScale { get; set; } =
+        float.TryParse(Environment.GetEnvironmentVariable("CROWNROAD_RATE_LIMIT_SCALE"), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var scale) && scale > 1f ? scale : 1f;
+
+    internal static int Scaled(int limit) => (int)Math.Min(int.MaxValue, Math.Ceiling(limit * (double)LimitScale));
+
     public async Task InvokeAsync(HttpContext context)
     {
         var policy = SelectPolicy(context);
-        var lease = await _store.TryConsumeAsync(policy.Key, policy.Limit, Window);
+        var limit = Scaled(policy.Limit);
+        var lease = await _store.TryConsumeAsync(policy.Key, limit, Window);
 
-        context.Response.Headers["RateLimit-Limit"] = policy.Limit.ToString();
-        context.Response.Headers["RateLimit-Remaining"] = Math.Max(0, policy.Limit - lease.Count).ToString();
+        context.Response.Headers["RateLimit-Limit"] = limit.ToString();
+        context.Response.Headers["RateLimit-Remaining"] = Math.Max(0, limit - lease.Count).ToString();
         context.Response.Headers["RateLimit-Reset"] = lease.RetryAfterSeconds.ToString();
         if (!lease.Allowed)
         {

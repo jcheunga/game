@@ -339,11 +339,13 @@ deployed API properly:
    an IPv6 /64 when the API has an AAAA record) and repeat `--source-ip ADDR`;
    VUs are spread across them. Spoofing `X-Forwarded-For` does not work
    through Caddy and would test something else.
-2. **A staging switch** (suggested, not built): a staging-only setting that
-   raises or disables the per-IP limits, which the server refuses to start
-   with in Production, like `CROWNROAD_DEV_SIGN_IN`. Measure capacity on
-   staging with it on, then check the limiter separately. No bypass was added
-   to the server.
+2. **The staging switch.** `CROWNROAD_RATE_LIMIT_SCALE=100` on a staging
+   server multiplies every allowance, so one machine measures capacity, not
+   the per-address limits. The server refuses to start with it in
+   Production, like `CROWNROAD_DEV_SIGN_IN`. Measure capacity with it on,
+   then check the limiter separately with it off. On this machine the
+   production stack takes it from `E2E_RATE_LIMIT_SCALE` through
+   `docker-compose.e2e.yml`.
 
 A single machine can now hold many returning players, since their reads
 count per session, but new players still queue behind the registration limit.

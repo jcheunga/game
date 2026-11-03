@@ -44,6 +44,25 @@ rehearse a restore before releasing paid currency.
    `CROWNROAD_SERVER_REPLICAS` times it stays below the plan's connection
    limit, with a few spare for `restore_drill.sh` and `watch.sh` (small
    managed plans often allow only 25 to 50).
+
+   That size carries launch with room to spare. On 2026-11-03 the production
+   stack, capped to a 2 vCPU host (API replicas 0.75 CPU each, Caddy 0.3,
+   Redis 0.2) and a 1 vCPU / 2 GB database, took 5,000 load-test players at
+   once at the game's own pace, about 4 requests a minute each:
+
+   | Players at once | Requests a second (peak) | p95 / p99 | API replica CPU | Database CPU |
+   | --- | --- | --- | --- | --- |
+   | 1,000 | 85 | 10 / 42 ms | 0.1 core | 0.05 core |
+   | 5,000 | 357 | 17 / 71 ms | 0.25 core | 0.26 core |
+
+   Those cores were a Mac's under Docker; a cloud vCPU is often slower, so plan
+   on half. At 20 to 40 minutes of play a player a day, with the busiest hour
+   2.5 times the average, 2,500 players at once is roughly 35,000 to 70,000
+   daily players. Memory grows with open
+   connections: each replica stayed near 100 MB, and Caddy reached 240 MB at
+   5,000 (about 45 KB a connection). Repeat the test on staging with
+   `CROWNROAD_RATE_LIMIT_SCALE` (server/ops/README.md) before raising the
+   player target.
 2. Point an A (and, if used, AAAA) record such as `api.your-domain.example` at
    the VM, plus records for the website domain and its `www.` alias. Make ports
    80 and 443 available from the public internet. Caddy uses that reachability

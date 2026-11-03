@@ -1405,6 +1405,14 @@ public static partial class ServerTests
         Assert(RateLimiter.SelectPolicy(Request("/player-profile", "made-up-" + Guid.NewGuid().ToString("N"))) == registration,
             "a profile sync with a made-up bearer is limited by IP");
         Assert(RateLimiter.SelectPolicy(Request("/player-profile", token)) == session, "a profile sync with a checked session counts against the session");
+        var scale = RateLimiter.LimitScale;
+        try
+        {
+            Assert(RateLimiter.Scaled(10) == 10, "allowances are as set without a load-test scale");
+            RateLimiter.LimitScale = 100f;
+            Assert(RateLimiter.Scaled(10) == 1000 && RateLimiter.Scaled(180) == 18000, "a load-test scale multiplies every allowance");
+        }
+        finally { RateLimiter.LimitScale = scale; }
         return Task.CompletedTask;
     }
 

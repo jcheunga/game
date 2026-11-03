@@ -1,7 +1,8 @@
 # End-to-end overlay for docker-compose.production.yml: the production stack (Caddy, the API replicas,
 # Redis, the production image) on this machine, with its own PostgreSQL in place of the managed one.
 # The API runs as Staging, not Production, so the test's developer sign-in and test purchase claims are
-# accepted. Only scripts/tests/server_e2e.sh --stack uses it; never deploy with it.
+# accepted. scripts/tests/server_e2e.sh --stack uses it, and a local load test can (E2E_RATE_LIMIT_SCALE);
+# never deploy with it.
 services:
   postgres:
     image: postgres:17-alpine
@@ -26,6 +27,8 @@ services:
       AllowedOrigins: http://127.0.0.1
       CROWNROAD_DEV_SIGN_IN: "1"
       CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS: "1"
+      # A load test on this stack raises it (server/ops/README.md); the end-to-end test keeps the real limits.
+      CROWNROAD_RATE_LIMIT_SCALE: ${E2E_RATE_LIMIT_SCALE:-1}
     healthcheck:
       interval: 2s
       start_period: 5s

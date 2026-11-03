@@ -342,7 +342,8 @@ public partial class BattleController : Node2D
 			var towerFloor = ChallengeTowerCatalog.GetFloor(GameState.Instance.SelectedTowerFloor);
 			var baseStage = towerFloor?.BaseStageNumber ?? 1;
 			_stage = Mathf.Clamp(baseStage, 1, GameState.Instance.MaxStage);
-			_stageData = GameData.GetStage(_stage);
+			// The floor's modifiers join its campaign stage's own, on a copy so the campaign is untouched.
+			_stageData = towerFloor == null ? GameData.GetStage(_stage) : GameData.GetStage(_stage).WithModifiers(towerFloor.Modifiers);
 			_activeRouteId = NormalizeRouteId(_stageData.MapId);
 			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData);
 			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);

@@ -44,4 +44,12 @@ public sealed class StageDefinition
 
     public Vector2 MapPoint => new(MapX, MapY);
     public bool HasScriptedWaves => Waves.Length > 0;
+
+    /// <summary>A copy of this stage with more modifiers, for a mode that adds its own, such as a tower floor.</summary>
+    public StageDefinition WithModifiers(StageModifierDefinition[] extra)
+    {
+        var copy = (StageDefinition)MemberwiseClone();
+        copy.Modifiers = [.. Modifiers, .. extra];
+        return copy;
+    }
 }

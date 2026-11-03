@@ -70,7 +70,7 @@ public partial class TowerMenu : RoyalBoard
             ("stat-health", "Foe health", $"×{floor.EnemyHealthScale:0.0}", "Enemy health compared with the battlefield's campaign stage"),
             ("stat-damage", "Foe damage", $"×{floor.EnemyDamageScale:0.0}", "Enemy damage compared with the battlefield's campaign stage"),
             ("icon-skull-red", "Modifiers", modifiers.Length == 0 ? "None" : modifiers.Length == 1 ? Pretty(modifiers[0]) : $"{modifiers.Length} active",
-                modifiers.Length == 0 ? "No battle modifiers" : string.Join(" · ", modifiers.Select(Pretty)))
+                modifiers.Length == 0 ? "No battle modifiers" : string.Join(" · ", floor.Modifiers.Select(StageModifiers.BuildModifierLabel)))
         };
         var tileWidth = (width - 24) / 3;
         for (var i = 0; i < facts.Length; i++)

@@ -226,7 +226,7 @@ public static class StageModifiers
         return false;
     }
 
-    private static string BuildModifierLabel(StageModifierDefinition modifier)
+    public static string BuildModifierLabel(StageModifierDefinition modifier)
     {
         if (!string.IsNullOrWhiteSpace(modifier.Label))
         {

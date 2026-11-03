@@ -75,6 +75,9 @@ public partial class CombatReviewSmoke : Node
             else if (args.Contains("--base-life")) await CheckBaseLife();
             else if (args.Contains("--base-weapons")) await CheckBaseWeapons();
             else if (args.Contains("--economy-export")) ExportProgressionEconomy();
+            else if (args.Contains("--tower-balance")) await ExportTowerBalance();
+            else if (args.Contains("--tower-fit")) await FitTowerFloors();
+            else if (args.Contains("--tower")) await CheckTower();
             else if (args.Contains("--regressions")) await Regressions();
             else if (args.Contains("--projectile-gallery") || args.Contains("--melee-gallery")) await ProjectileGallery();
             else

@@ -26,16 +26,18 @@ public partial class BattleController
     private Rect2 CursedGroundArea => new(BattlefieldLeft + (BattlefieldRight - BattlefieldLeft) * .084f, BaseCenterY - _combat.LaneHalfHeight * .27f,
         (BattlefieldRight - BattlefieldLeft) * .858f, _combat.LaneHalfHeight * .54f);
 
+    // A violet haze over the strip, densest along its middle and fading to nothing at its edges, so the ground reads as
+    // tainted without a label over the battle; the floor card and the battle intel name it and give its damage.
     private void DrawCursedGround()
     {
         if (!StageModifiers.HasCursedGround(_stageData)) return;
+        var color = new Color("9b6fd6");
         foreach (var area in CursedGroundAreas())
-        {
-        var color = new Color("c49be8");
-        DrawRect(area, new Color(color, 0.13f));
-        DrawRect(area, new Color(color, 0.55f), false, 2f);
-        DrawPreviewLabel(area.Position + new Vector2(8, 8), "CURSED GROUND · safe lanes above / below", color);
-        }
+            for (var layer = 0; layer < 4; layer++)
+            {
+                var inset = new Vector2(area.Size.Y * .5f * layer, area.Size.Y * .12f * layer);
+                DrawRect(new Rect2(area.Position + inset, area.Size - inset * 2f), new Color(color, .07f));
+            }
     }
 
     private bool PrepareBossPhase(Unit boss)

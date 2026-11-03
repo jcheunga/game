@@ -31,3 +31,55 @@ godot --headless --path . scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=c
 ## Retreat polish — 12 October 2026
 
 Quitting a boss rush now records its completed commanders, pays their earned gold once, and returns to the boss-rush menu. It does not change campaign stars. A completed or failed run still uses the same idempotent reward path.
+
+## Challenge tower — 3 November 2026
+
+Each floor card listed battle modifiers that tower battles never applied: a tower battle used its campaign stage and the
+floor's health and damage multipliers only. Floors now play with their modifiers, added to a copy of the campaign
+stage, at the strengths the campaign authored them with:
+
+| Floors | Modifiers |
+| --- | --- |
+| 1–20 | None |
+| 21–40 | Elite vanguard (enemy health and damage +18 %) |
+| 41–60 | Elite vanguard, rapid assault (18 % less time between enemy spawns) |
+| 61–80 | Rapid assault, cursed ground (2.5 damage a second in a strip along the middle of the lane) |
+| 81–100 | Elite vanguard, cursed ground, fortified deploy (a troop just placed takes 40 % less damage for 4 s) |
+
+Cursed ground had never been shown to players. It drew a debug label over the lane for the whole battle; it is now a
+faint violet haze over the strip.
+
+Measured before the change, the tower's curve (enemy health ×1 to ×5, damage ×1 to ×3.5 on top of each campaign
+stage) was beyond any squad: troops all at level 20 with every unit and full wagon upgrades, but no relics, won floor 25
+and lost floor 30 and every floor sampled above it. A tower battle is also harder than its campaign stage at ×1,
+because it lacks the campaign's battlefield help: stage 100 is won with the wagon untouched, floor 100 at ×1 with 6 %
+of it left.
+
+Every floor now has its own fitted strength (`ChallengeTowerCatalog.Strength`). `CombatReviewSmoke --tower-fit` plays
+each floor at fixed 60 Hz steps with a scripted player and finds the strongest enemies (health 1 + 4s, damage
+1 + 2.5s, with the floor's modifiers) that the floor's reference player beats on two seeds, between s = −0.1 (health
+×0.6, damage ×0.75) and the original curve. The reference player has the campaign stage's troops, at that stage's
+level cap rising evenly to level 20 by floor 100, hull, stores and march drum at their level's wagon rank cap,
+fireball, and no relics.
+`scripts/analysis/tower_fit.py` writes the table, 0.02 inside each measured edge; floors whose player beat the original
+curve keep it.
+
+- Floors 1–39 keep the original curve except the zone bosses (10, 20, 30) and floor 35.
+- Seven floors sit a little below their campaign stage (s from −0.004 to −0.1): the zone bosses 40, 70, 80 and 100,
+  and floors 35, 55 and 95.
+- The hardest floor is 94 (enemy health ×3.0, damage ×2.3); the original curve reached ×5 and ×3.5.
+
+So a floor asks for troops trained past the campaign, and floor 100 for every troop at level 20; relics, a better deck
+and better play give headroom. `CombatReviewSmoke --tower` checks the modifiers reach the battle and that the
+reference player still beats floors 21, 61 and 100 as fitted. When campaign stages, modifiers or troops change and
+that fails, refit (about 15 minutes across six processes):
+
+```sh
+godot --headless --path . res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-towerfit-1 --tower-fit --floors=1,7,13 > fit-1.log
+python3 scripts/analysis/tower_fit.py fit-*.log --write
+```
+
+`--tower-balance [--floors=] [--squad=] [--unit-level=] [--strength=] [--modes=campaign,plain,modifiers]` prints
+single runs for comparison. The scripted player is weaker than a person: it deploys whatever is ready and throws
+fireball at the nearest enemy, so these numbers are a floor, not proof that every squad wins. Playtest the late floors
+on a phone.

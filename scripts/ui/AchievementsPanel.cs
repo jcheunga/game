@@ -190,11 +190,11 @@ public partial class AchievementsPanel : RoyalScreen
             "all_stars" => (Enumerable.Range(1, s.MaxStage).Count(stage => s.GetStageStars(stage) >= 3), 40),
             "endless_30" => (s.BestEndlessWave, 30), "endless_60" => (s.BestEndlessWave, 60), "endless_90" => (s.BestEndlessWave, 90),
             "relic_collector" => (s.GetOwnedEquipment().Count, 6), "full_armory" => (s.GetOwnedEquipment().Count, 12),
-            "full_roster" => (GameData.GetPlayerUnits().Count(unit => s.IsUnitOwned(unit.Id)), GameData.PlayerRosterIds.Length),
+            "full_roster" => (GameState.RecruitableTroops().Count(unit => s.IsUnitOwned(unit.Id)), GameState.RecruitableTroops().Count()),
             "all_spells" => (GameData.GetPlayerSpells().Count(spell => s.IsSpellOwned(spell.Id)), GameData.PlayerSpellIds.Length),
             "codex_10" => (s.DiscoveredCodexCount, 10), "codex_complete" => (s.DiscoveredCodexCount, CodexCatalog.TotalEntries),
             "tower_25" => (s.TowerHighestFloor, 25), "tower_50" => (s.TowerHighestFloor, 50), "tower_100" => (s.TowerHighestFloor, 100),
-            "expedition_10" => (s.TotalExpeditionsCompleted, 10), "hard_mode_10" => (s.HardModeClearedCount, 10),
+            "expedition_10" => (s.TotalExpeditionsCompleted, 10), "bounty_streak_7" => (s.BountyDaysCompleted, 7),
             _ => (s.IsAchievementUnlocked(id) ? 1 : 0, 1) };
         return (Math.Min(result.Item1, result.Item2), result.Item2);
     }

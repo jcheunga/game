@@ -66,8 +66,6 @@ public static class AchievementRewardCatalog
 		new("guild_contributor", "gold", 400, "+400 gold"),
 
 		// Endgame
-		new("hard_mode_10", "essence", 5, "+5 essence"),
-		new("hard_mode_complete", "sigils", 8, "+8 sigils"),
 		new("raid_contributor", "gold", 300, "+300 gold"),
 
 		// Engagement

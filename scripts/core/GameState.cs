@@ -6780,7 +6780,8 @@ public partial class GameState : Node
 		{
 			TryUnlockAchievement("full_armory");
 		}
-		if (_ownedPlayerUnitIds.Count >= GameData.PlayerRosterIds.Length)
+		// Legacy recruits stay with older saves but can't be recruited, so every other troop is the full roster.
+		if (RecruitableTroops().All(unit => _ownedPlayerUnitIds.Contains(unit.Id)))
 		{
 			TryUnlockAchievement("full_roster");
 		}
@@ -6859,16 +6860,17 @@ public partial class GameState : Node
 			TryUnlockAchievement("collector_complete");
 		}
 
-		// Hard mode
-		if (HardModeClearedCount >= 10)
+		if (BountyDaysCompleted >= 7)
 		{
-			TryUnlockAchievement("hard_mode_10");
-		}
-		if (HardModeClearedCount >= MaxStage)
-		{
-			TryUnlockAchievement("hard_mode_complete");
+			TryUnlockAchievement("bounty_streak_7");
 		}
 	}
+
+	/// <summary>The troops a player can recruit: every player unit but the legacy recruits older saves keep.</summary>
+	public static IEnumerable<UnitDefinition> RecruitableTroops() => GameData.GetPlayerUnits().Where(unit => !unit.LegacyRecruit);
+
+	/// <summary>Days on which the player claimed at least one bounty (claims are kept as "date:bounty").</summary>
+	public int BountyDaysCompleted => _completedBountyIds.Select(key => key.Split(':')[0]).Distinct(StringComparer.Ordinal).Count();
 
 	public void CheckCombatAchievements(float busHealthRatio, float elapsedSeconds, int distinctComboPairsTriggered, int endlessBossCheckpointsCleared)
 	{

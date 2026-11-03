@@ -165,7 +165,6 @@ public partial class ProfileMenu : Control
 
 		AddStatRow(_generalStack, "Stages cleared", $"{gs.HighestUnlockedStage}/{gs.MaxStage}");
 		AddStatRow(_generalStack, "Stars earned", gs.TotalStarsEarned.ToString());
-		AddStatRow(_generalStack, "Hard mode cleared", gs.HardModeHighestCleared.ToString());
 	}
 
 	private void RebuildCombatPanel(GameState gs)

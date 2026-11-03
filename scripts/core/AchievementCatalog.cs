@@ -42,12 +42,12 @@ public static class AchievementCatalog
 
         // Collection (3)
         new("relic_collector", "Relic Collector", "Own at least 6 relics.", "collection"),
-        new("full_armory", "Full Armory", "Own all 12 relics.", "collection"),
-        new("full_roster", "Full Roster", "Own all 16 player units.", "collection"),
+        new("full_armory", "Full Armory", "Own 12 relics.", "collection"),
+        new("full_roster", "Full Roster", "Recruit every troop.", "collection"),
 
         // Mastery (3)
         new("max_unit", "Master at Arms", "Upgrade any unit to level 5.", "mastery"),
-        new("all_spells", "Arcane Scholar", "Own all 10 spells.", "mastery"),
+        new("all_spells", "Arcane Scholar", "Learn every spell and tactical tool.", "mastery"),
         new("daily_streak", "Dedicated", "Complete 7 daily challenges.", "mastery"),
 
         // New systems (4)
@@ -65,8 +65,6 @@ public static class AchievementCatalog
         new("guild_join", "Warband Recruit", "Join a guild.", "mastery"),
 
         // Endgame content (3)
-        new("hard_mode_10", "Hardened Veteran", "Clear 10 hard mode stages.", "campaign"),
-        new("hard_mode_complete", "Iron Legend", "Clear all hard mode stages.", "campaign"),
         new("raid_contributor", "Raid Striker", "Contribute to 3 weekly raids.", "mastery"),
 
         // Daily engagement and progression depth (7)

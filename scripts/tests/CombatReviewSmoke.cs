@@ -101,6 +101,7 @@ public partial class CombatReviewSmoke : Node
         CheckSpawnScheduling();
         CheckProgressionRewards();
         CheckPlayerLevels();
+        CheckAchievementReach();
         await CheckStageStars();
         await CheckBaseWeapons();
         await CheckFinishPacing();

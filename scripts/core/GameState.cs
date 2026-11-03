@@ -2981,8 +2981,15 @@ public partial class GameState : Node
 
 	public int GetEventProgress(string eventId)
 	{
-		return _eventStagesCleared.TryGetValue(eventId, out var count) ? count : 0;
+		return _eventStagesCleared.TryGetValue(EventEdition(eventId), out var count) ? count : 0;
 	}
+
+	/// <summary>
+	/// Events return every year, and each year's run keeps its own clears and milestone claims (midwinter_siege@2026).
+	/// Keys from before events were yearly are bare event ids, so they count toward no year's run.
+	/// </summary>
+	private static string EventEdition(string eventId) =>
+		SeasonalEventCatalog.GetById(eventId)?.EditionKey(System.DateTime.UtcNow) ?? eventId;
 
 	public void PrepareEventBattle(string eventId, int stageIndex)
 	{
@@ -2999,14 +3006,8 @@ public partial class GameState : Node
 			return;
 		}
 
-		if (_eventStagesCleared.ContainsKey(eventId))
-		{
-			_eventStagesCleared[eventId]++;
-		}
-		else
-		{
-			_eventStagesCleared[eventId] = 1;
-		}
+		var edition = EventEdition(eventId);
+		_eventStagesCleared[edition] = (_eventStagesCleared.TryGetValue(edition, out var cleared) ? cleared : 0) + 1;
 
 		Persist();
 		CheckAchievements();
@@ -3022,7 +3023,7 @@ public partial class GameState : Node
 			return false;
 		}
 
-		var rewardKey = $"{eventId}:{milestoneIndex}";
+		var rewardKey = $"{EventEdition(eventId)}:{milestoneIndex}";
 		if (_claimedEventRewardIds.Contains(rewardKey))
 		{
 			message = "Already claimed.";
@@ -3082,7 +3083,7 @@ public partial class GameState : Node
 
 	public bool HasClaimedEventReward(string eventId, int milestoneIndex)
 	{
-		return _claimedEventRewardIds.Contains($"{eventId}:{milestoneIndex}");
+		return _claimedEventRewardIds.Contains($"{EventEdition(eventId)}:{milestoneIndex}");
 	}
 
 	// ── Codex ────────────────────────────────────────────────
@@ -6815,9 +6816,10 @@ public partial class GameState : Node
 		}
 
 		// Check event completion
+		// Any year's run of any event counts.
 		foreach (var evt in SeasonalEventCatalog.GetAll())
 		{
-			if (GetEventProgress(evt.Id) >= evt.Stages.Length)
+			if (_eventStagesCleared.Any(pair => pair.Key.StartsWith(evt.Id + "@", StringComparison.OrdinalIgnoreCase) && pair.Value >= evt.Stages.Length))
 			{
 				TryUnlockAchievement("event_complete");
 				break;

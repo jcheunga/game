@@ -35,7 +35,7 @@ public partial class CombatReviewSmoke
             "The campaign stage under a tower floor keeps its own modifiers");
         Check(floor.Modifiers.All(m => m.Value > 0f), "Every tower modifier has a strength (elite vanguard and rapid assault do nothing without one)");
         var director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
-        Check(Mathf.IsEqualApprox(director.AdditionalEnemyHealthScale, floor.EnemyHealthScale * ChallengeTowerCatalog.ModifierValue("elite_vanguard")),
+        Check(Mathf.IsEqualApprox(director.AdditionalEnemyHealthScale, floor.EnemyHealthScale * StageModifiers.AuthoredStrength("elite_vanguard")),
             $"Elite vanguard strengthens the floor's enemies on top of its own scale (health ×{director.AdditionalEnemyHealthScale:0.00})");
         var strip = ((IEnumerable<Rect2>)Invoke(battle, "CursedGroundAreas")).Single();
         var unit = (Unit)Invoke(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit("player_defender")), strip.GetCenter());
@@ -222,9 +222,66 @@ public partial class CombatReviewSmoke
         GD.Print($"TOWER_SQUAD: stage {stage}, player level {level}, unit level {cap}, wagon rank {rank}: {string.Join(", ", deck)} + {spell.Id}");
     }
 
-    private async Task<(bool Won, float Seconds, float Hull, float Gate)> PlayTowerFloor(int floor, ulong seed, bool campaign = false)
+    private async Task<(bool Won, float Seconds, float Hull, float Gate)> PlayTowerFloor(int floor, ulong seed, bool campaign = false) =>
+        await PlayOpened(campaign ? await OpenBattle(ChallengeTowerCatalog.GetFloor(floor).BaseStageNumber) : await OpenTowerBattle(floor, seed));
+
+    private async Task<BattleController> OpenEventBattle(string eventId, int index, ulong seed)
     {
-        var battle = campaign ? await OpenBattle(ChallengeTowerCatalog.GetFloor(floor).BaseStageNumber) : await OpenTowerBattle(floor, seed);
+        GameState.Instance.PrepareEventBattle(eventId, index);
+        var battle = GD.Load<PackedScene>("res://scenes/Battle.tscn").Instantiate<BattleController>();
+        AddChild(battle);
+        battle.SetPhysicsProcess(false);
+        Read<RandomNumberGenerator>(battle, "_rng").Seed = seed;
+        Invoke(battle, "InitializeContent", seed);
+        Invoke(battle, "InitializeCourageDrops", seed);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        return battle;
+    }
+
+    /// <summary>
+    /// --event-fit: for each seasonal event stage, whether a player who just cleared its campaign stage (troops at that
+    /// stage's level cap, no relics) beats it on two seeds with its modifiers on. Where they don't, the strongest enemies
+    /// they beat on the line from the authored health and damage down to ×0.6 health, ×0.75 damage. Prints EVENT_FIT.
+    /// </summary>
+    private async Task FitEventStages()
+    {
+        const BindingFlags field = BindingFlags.Instance | BindingFlags.NonPublic;
+        var healthField = typeof(SeasonalEventStage).GetField("<EnemyHealthScale>k__BackingField", field)!;
+        var damageField = typeof(SeasonalEventStage).GetField("<EnemyDamageScale>k__BackingField", field)!;
+        foreach (var evt in SeasonalEventCatalog.GetAll())
+            for (var index = 0; index < evt.Stages.Length; index++)
+            {
+                var stage = evt.Stages[index];
+                var (health, damage) = (stage.EnemyHealthScale, stage.EnemyDamageScale);
+                async Task<bool> Beats(float k)
+                {
+                    healthField.SetValue(stage, .6f + (health - .6f) * k);
+                    damageField.SetValue(stage, .75f + (damage - .75f) * k);
+                    for (var seed = 0; seed < 2; seed++)
+                    {
+                        SeedTowerSquad(stage.BaseStageNumber);
+                        if (!(await PlayOpened(await OpenEventBattle(evt.Id, index, (ulong)(9000 + stage.BaseStageNumber * 10 + seed)))).Won) return false;
+                    }
+                    return true;
+                }
+                var (low, high) = (0f, 1f);
+                var authored = await Beats(1f);
+                var lowest = authored || await Beats(0f);
+                if (authored) low = 1f;
+                else if (lowest)
+                    for (var step = 0; step < 6; step++)
+                    {
+                        var mid = (low + high) / 2f;
+                        if (await Beats(mid)) low = mid; else high = mid;
+                    }
+                healthField.SetValue(stage, health);
+                damageField.SetValue(stage, damage);
+                GD.Print($"EVENT_FIT: {{\"event\":\"{evt.Id}\",\"stage\":{index + 1},\"base\":{stage.BaseStageNumber},\"authored\":{(authored ? "true" : "false")},\"beatsLowest\":{(lowest ? "true" : "false")},\"k\":{low:0.000},\"health\":{.6f + (health - .6f) * low:0.00},\"damage\":{.75f + (damage - .75f) * low:0.00},\"modifiers\":\"{string.Join(" ", stage.ForcedModifierIds)}\"}}");
+            }
+    }
+
+    private async Task<(bool Won, float Seconds, float Hull, float Gate)> PlayOpened(BattleController battle)
+    {
         var units = Read<List<Unit>>(battle, "_units");
         var deck = Read<BattleDeckState>(battle, "_deck");
         var spells = Read<BattleSpellState>(battle, "_spellDeck");

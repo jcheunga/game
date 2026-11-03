@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Godot;
 
 /// <summary>
@@ -80,11 +81,19 @@ public partial class EventMenu : RoyalBoard
             Image(RewardArt(stage.CompletionReward?.Type, stage.CompletionReward?.ItemId), new Rect2(row.Position.X + 8, row.Position.Y + 4, row.Size.Y - 8, row.Size.Y - 8),
                 cleared ? new Color(1, 1, 1, .45f) : null);
             var x = row.Position.X + row.Size.Y + 6;
-            Serif($"{i + 1}. {(data != null ? data.StageName : $"Stage {stage.BaseStageNumber}")}", new Rect2(x, row.Position.Y + 3, row.End.X - x - 150, 30), 19,
+            // The name, with the foes' strength (health / damage over the campaign stage) at the end of its line; the
+            // line below is the stage's modifiers. The reward is the picture on the left, named in its tooltip.
+            var text = new Rect2(x, row.Position.Y + 3, row.End.X - x - 150, 30);
+            var strength = $"×{stage.EnemyHealthScale:0.##} / ×{stage.EnemyDamageScale:0.##}";
+            Serif(strength, text, 18, Soft, HorizontalAlignment.Right, weight: 500);
+            Serif($"{i + 1}. {(data != null ? data.StageName : $"Stage {stage.BaseStageNumber}")}", new Rect2(text.Position, new Vector2(text.Size.X - 112, text.Size.Y)), 19,
                 cleared ? Soft : RoyalText.Cream, weight: 700);
-            // The reward is the picture on the left (named in its tooltip); the line below is the foe's strength.
-            Serif($"Enemy health ×{stage.EnemyHealthScale:0.##} · damage ×{stage.EnemyDamageScale:0.##}", new Rect2(x, row.Position.Y + 30, row.End.X - x - 150, 28), 18, Soft, weight: 500);
+            var modifiers = stage.Modifiers.Length == 0 ? "No modifiers" : StageModifiers.BuildInlineSummary(new StageDefinition { Modifiers = stage.Modifiers });
+            Serif(modifiers, new Rect2(x, row.Position.Y + 30, text.Size.X, 28), 18, Soft, weight: 500);
             Live.AddChild(new Control { Position = row.Position, Size = new Vector2(row.Size.Y, row.Size.Y), TooltipText = Reward(stage.CompletionReward), MouseFilter = MouseFilterEnum.Pass });
+            Live.AddChild(new Control { Position = text.Position, Size = new Vector2(text.Size.X, row.Size.Y), MouseFilter = MouseFilterEnum.Pass,
+                TooltipText = $"Enemy health ×{stage.EnemyHealthScale:0.##}, damage ×{stage.EnemyDamageScale:0.##}. " +
+                    (stage.Modifiers.Length == 0 ? "No modifiers." : string.Join(" ", stage.Modifiers.Select(m => StageModifiers.BuildModifierLabel(m) + ".")))});
             var button = new Rect2(row.End.X - 140, row.Position.Y + (row.Size.Y - 40) / 2, 128, 40);
             if (current)
             {
@@ -130,8 +139,7 @@ public partial class EventMenu : RoyalBoard
 
     private static string EndsIn(SeasonalEventDefinition evt)
     {
-        if (!DateTime.TryParse(evt.EndDate, out var end)) return null;
-        var days = (int)(end.Date - DateTime.UtcNow.Date).TotalDays;
+        var days = (int)(evt.Edition(DateTime.UtcNow).End - DateTime.UtcNow.Date).TotalDays;
         return days > 1 ? $"Ends in {days} days" : days == 1 ? "Ends tomorrow" : "Ends today";
     }
 

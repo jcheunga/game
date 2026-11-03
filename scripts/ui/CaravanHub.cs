@@ -74,7 +74,7 @@ public partial class CaravanHub : RoyalScreen
                     state.HighestUnlockedStage<=10?"Defeat the King's Road boss to unlock boss rush":null);
                 yield return new("Weekly raid", "activity-weeklyraid", "hubicon-weeklyraid", router.GoToRaid,
                     state.HighestUnlockedStage <= CampaignPacing.StagesPerZone ? "Defeat the King's Road boss to unlock raids" : null);
-                yield return new("Event", "activity-event", "hubicon-event", router.GoToEvent, state.GetActiveEvent() == null ? "No event is active" : null);
+                yield return new("Event", "activity-event", "hubicon-event", router.GoToEvent, state.GetActiveEvent() == null ? $"Next event {SeasonalEventCatalog.GetNextEvent(DateTime.UtcNow).Start:d MMM}" : null);
                 break;
             case 1:
                 yield return new("Expeditions", "activity-expeditions", "hubicon-bounties", router.GoToExpeditions);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public sealed class SeasonalEventReward
 {
@@ -21,6 +22,8 @@ public sealed class SeasonalEventStage
     public float EnemyHealthScale { get; }
     public float EnemyDamageScale { get; }
     public string[] ForcedModifierIds { get; }
+    /// <summary>The stage's modifiers at their authored strengths, added to its campaign stage's in battle.</summary>
+    public StageModifierDefinition[] Modifiers { get; }
     public SeasonalEventReward CompletionReward { get; }
 
     public SeasonalEventStage(int baseStageNumber, float enemyHealthScale, float enemyDamageScale,
@@ -30,6 +33,7 @@ public sealed class SeasonalEventStage
         EnemyHealthScale = enemyHealthScale;
         EnemyDamageScale = enemyDamageScale;
         ForcedModifierIds = forcedModifierIds ?? Array.Empty<string>();
+        Modifiers = StageModifiers.Authored(ForcedModifierIds);
         CompletionReward = completionReward;
     }
 }
@@ -40,23 +44,54 @@ public sealed class SeasonalEventDefinition
     public string Title { get; }
     public string Description { get; }
     public string BannerColorHex { get; }
-    public string StartDate { get; }
-    public string EndDate { get; }
+    /// <summary>"MM-DD": the event opens on this day every year and runs to the end day, which may fall in the next year.</summary>
+    public string StartMonthDay { get; }
+    public string EndMonthDay { get; }
     public SeasonalEventStage[] Stages { get; }
     public SeasonalEventMilestone[] Milestones { get; }
 
     public SeasonalEventDefinition(string id, string title, string description,
-        string bannerColorHex, string startDate, string endDate,
+        string bannerColorHex, string startMonthDay, string endMonthDay,
         SeasonalEventStage[] stages, SeasonalEventMilestone[] milestones)
     {
         Id = id;
         Title = title;
         Description = description;
         BannerColorHex = bannerColorHex;
-        StartDate = startDate;
-        EndDate = endDate;
+        StartMonthDay = startMonthDay;
+        EndMonthDay = endMonthDay;
         Stages = stages;
         Milestones = milestones;
+    }
+
+    /// <summary>The year's run that opened most recently on or before this day: its first and last days.</summary>
+    public (DateTime Start, DateTime End) Edition(DateTime utcNow)
+    {
+        var today = utcNow.Date;
+        var start = Day(today.Year, StartMonthDay);
+        if (start > today) start = Day(today.Year - 1, StartMonthDay);
+        var end = Day(start.Year, EndMonthDay);
+        if (end < start) end = Day(start.Year + 1, EndMonthDay);
+        return (start, end);
+    }
+
+    public bool IsActive(DateTime utcNow) => utcNow.Date <= Edition(utcNow).End;
+
+    /// <summary>The first day of the next run to open after this day.</summary>
+    public DateTime NextStart(DateTime utcNow)
+    {
+        var start = Day(utcNow.Year, StartMonthDay);
+        return start > utcNow.Date ? start : Day(utcNow.Year + 1, StartMonthDay);
+    }
+
+    /// <summary>The key a year's run keeps its clears and claims under, such as midwinter_siege@2026.</summary>
+    public string EditionKey(DateTime utcNow) => $"{Id}@{Edition(utcNow).Start.Year}";
+
+    private static DateTime Day(int year, string monthDay)
+    {
+        var parts = monthDay.Split('-');
+        var month = int.Parse(parts[0]);
+        return new DateTime(year, month, Math.Min(int.Parse(parts[1]), DateTime.DaysInMonth(year, month)));
     }
 }
 
@@ -79,7 +114,7 @@ public static class SeasonalEventCatalog
     private static readonly SeasonalEventDefinition[] Definitions =
     {
         new("midwinter_siege", "Midwinter Siege", "The Rotbound Host launches a desperate winter assault. Hold the line through 5 brutal encounters.",
-            "4488cc", "2026-03-20", "2026-04-03",
+            "4488cc", "12-15", "01-05",
             new SeasonalEventStage[]
             {
                 new(34, 1.15f, 1.10f, new[] { "elite_vanguard" }, new SeasonalEventReward("gold", amount: 300)),
@@ -96,7 +131,7 @@ public static class SeasonalEventCatalog
             }),
 
         new("harvest_moon", "Harvest Moon Hunt", "Under the blood-red harvest moon, ancient beasts stir in the wilds. Track and defeat them before dawn.",
-            "cc6622", "2026-05-01", "2026-05-15",
+            "cc6622", "09-20", "10-10",
             new SeasonalEventStage[]
             {
                 new(22, 1.10f, 1.10f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 250)),
@@ -131,17 +166,17 @@ public static class SeasonalEventCatalog
         return ById.TryGetValue(id, out var def) ? def : null;
     }
 
+    /// <summary>The event that opens next after this day, and the day it opens.</summary>
+    public static (SeasonalEventDefinition Event, DateTime Start) GetNextEvent(DateTime utcNow) =>
+        Definitions.Select(def => (def, def.NextStart(utcNow))).OrderBy(next => next.Item2).First();
+
     public static SeasonalEventDefinition GetActiveEvent(DateTime utcNow)
     {
         foreach (var def in Definitions)
         {
-            if (DateTime.TryParse(def.StartDate, out var start) &&
-                DateTime.TryParse(def.EndDate, out var end))
+            if (def.IsActive(utcNow))
             {
-                if (utcNow.Date >= start.Date && utcNow.Date <= end.Date)
-                {
-                    return def;
-                }
+                return def;
             }
         }
 

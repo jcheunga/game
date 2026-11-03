@@ -1,9 +1,30 @@
+using System;
 using System.Linq;
 using System.Text;
 using Godot;
 
 public static class StageModifiers
 {
+    /// <summary>
+    /// The strength each modifier was authored with in the campaign (scripts/analysis/expand_campaign.py), for modes
+    /// that add modifiers by name: the tower and seasonal events. Elite vanguard and rapid assault do nothing without one.
+    /// </summary>
+    public static float AuthoredStrength(string type) => type switch
+    {
+        "elite_vanguard" => 1.18f, // enemies' health and damage
+        "rapid_assault" => .82f, // time between enemy spawns
+        "cursed_ground" => 2.5f, // damage a second inside the strip
+        "fortified_deploy" => .6f, // damage a freshly deployed troop takes, for 4 s
+        "mirror_pressure" => .15f, // share of damage enemies reflect
+        "lich_graveyard" => .25f, // chance a fallen enemy rises again
+        "tunnel_invasion" => 1f,
+        _ => 0f
+    };
+
+    /// <summary>Modifiers named by id, at their authored strengths.</summary>
+    public static StageModifierDefinition[] Authored(string[] types) =>
+        Array.ConvertAll(types ?? Array.Empty<string>(), type => new StageModifierDefinition { Type = type, Value = AuthoredStrength(type) });
+
     public static bool HasModifiers(StageDefinition stage)
     {
         return stage?.Modifiers != null && stage.Modifiers.Length > 0;

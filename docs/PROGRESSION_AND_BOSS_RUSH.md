@@ -83,3 +83,19 @@ python3 scripts/analysis/tower_fit.py fit-*.log --write
 single runs for comparison. The scripted player is weaker than a person: it deploys whatever is ready and throws
 fireball at the nearest enemy, so these numbers are a floor, not proof that every squad wins. Playtest the late floors
 on a phone.
+
+## Seasonal events — 4 November 2026
+
+Both events had fixed 2026 dates (Midwinter Siege 20 March – 3 April, Harvest Moon 1–15 May) that had passed, so
+neither would have run after launch. They now return every year: Midwinter Siege from 15 December to 5 January, and
+Harvest Moon from 20 September to 10 October. Each year's run keeps its own clears and milestone claims, under keys
+such as `midwinter_siege@2026` (the year the run opened); a save's older bare keys count toward no year. Festival
+Champion counts a full run in any year. Between runs the hub's Event tile names the day the next one opens.
+
+The event screen promised "their own modifiers", and as on the tower, event battles never applied them. Each event
+stage now plays with its modifiers at their authored strengths (`StageModifiers.AuthoredStrength`, shared with the
+tower), and its row lists them under the stage name, with the foes' health and damage beside it.
+`CombatReviewSmoke --event-fit` found every event stage beatable at its authored strength, with its modifiers, by a
+player who just cleared its campaign stage (troops at that stage's level cap, no relics), so none was retuned.
+`CombatReviewSmoke --events` checks the windows (including the run across the new year), the per-year keys, that the
+battle plays with the modifiers, and that the reference player beats every stage.

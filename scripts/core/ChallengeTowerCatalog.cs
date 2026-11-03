@@ -25,7 +25,7 @@ public sealed class TowerFloorDefinition
 		EnemyHealthScale = enemyHealthScale;
 		EnemyDamageScale = enemyDamageScale;
 		ForcedModifierIds = forcedModifierIds ?? Array.Empty<string>();
-		Modifiers = Array.ConvertAll(ForcedModifierIds, id => new StageModifierDefinition { Type = id, Value = ChallengeTowerCatalog.ModifierValue(id) });
+		Modifiers = StageModifiers.Authored(ForcedModifierIds);
 		RewardGold = rewardGold;
 		RewardFood = rewardFood;
 		RewardEssence = rewardEssence;
@@ -57,19 +57,6 @@ public static class ChallengeTowerCatalog
 		0.102f, 0.204f, 0.253f, 0.187f, 0.155f, 0.134f, 0.136f, 0.065f, 0.226f, -0.070f,
 		0.081f, 0.044f, 0.122f, 0.137f, 0.152f, 0.275f, 0.184f, 0.145f, 0.077f, 0.008f,
 		0.179f, 0.138f, 0.212f, 0.508f, -0.070f, 0.115f, 0.147f, 0.087f, 0.104f, -0.100f,
-	};
-
-	/// <summary>
-	/// Each modifier's strength on a tower floor: the values the campaign authored them with
-	/// (scripts/analysis/expand_campaign.py). Elite vanguard and rapid assault do nothing without one.
-	/// </summary>
-	public static float ModifierValue(string id) => id switch
-	{
-		"elite_vanguard" => 1.18f, // enemies' health and damage
-		"rapid_assault" => .82f, // time between enemy spawns
-		"cursed_ground" => 2.5f, // damage a second inside the strip
-		"fortified_deploy" => .6f, // damage a freshly deployed troop takes, for 4 s
-		_ => 0f
 	};
 
 	private static readonly TowerFloorDefinition[] Floors;

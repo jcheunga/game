@@ -368,7 +368,8 @@ public partial class BattleController : Node2D
 				: null;
 			var baseStageNum = eventStage?.BaseStageNumber ?? 1;
 			_stage = Mathf.Clamp(baseStageNum, 1, GameState.Instance.MaxStage);
-			_stageData = GameData.GetStage(_stage);
+			// The event stage's modifiers join its campaign stage's own, on a copy so the campaign is untouched.
+			_stageData = eventStage == null ? GameData.GetStage(_stage) : GameData.GetStage(_stage).WithModifiers(eventStage.Modifiers);
 			_activeRouteId = NormalizeRouteId(_stageData.MapId);
 			var eventHealthScale = eventStage?.EnemyHealthScale ?? 1f;
 			var eventDamageScale = eventStage?.EnemyDamageScale ?? 1f;

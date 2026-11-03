@@ -361,13 +361,23 @@ days in `room_reports`.
 
 3. **Check the current nickname** with the lookup (`player.callsign`).
 4. **Decide** against `[nickname policy]`.
-5. **Act.** The tools are thin:
-   - There is no rename or ban. Changing `players.callsign` doesn't stick:
-     the device sends its nickname again at every profile sync
-     (`POST /player-profile`). The `can_join_rooms`, `can_submit_challenges`
-     and `relay_enabled` columns are never checked.
-   - What works now: remove the rooms the player hosts, whose titles carry
-     the nickname.
+5. **Act.**
+   - Rename the player. This sets the default name ("Lantern") and renames
+     their open rooms and seats. The old name can't come back: the device
+     still sends it at every profile sync, and the server answers with the
+     new one, which the game takes. The player can choose any other name.
+
+     ```sh
+     curl -fsS -X POST -H "X-Admin-Api-Key: $KEY" -H "Content-Type: application/json" \
+       -d '{"profileId":"CVY-…"}' "$API/admin/support/rename"
+     ```
+
+     The lookup then shows the old name as `player.blockedCallsign`. If the
+     filter should have caught it, add the word to
+     `scripts/core/Nickname.cs` (the game and the server share it).
+   - There is no ban. The `can_join_rooms`, `can_submit_challenges` and
+     `relay_enabled` columns are never checked.
+   - If the rooms themselves are abusive, remove the ones the player hosts:
 
      ```sql
      BEGIN;
@@ -385,9 +395,9 @@ days in `room_reports`.
    other player.
 7. **Log** the case: IDs, the nickname, the decision.
 
-**[Gap]** Before rooms go public: a name filter on the server
-(`/player-profile` and the room endpoints), a rename the device accepts,
-enforcement of `can_join_rooms`, and a block control.
+**[Gap]** Before rooms go public: enforcement of `can_join_rooms` and a block
+control. The name filter (in the game and on `/player-profile` and the room
+endpoints) and the rename are built.
 
 ## Outage
 

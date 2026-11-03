@@ -714,6 +714,14 @@ public static class Database
             TryAddColumn(conn, "wallet_adjustments", "shards_applied", "INTEGER NOT NULL DEFAULT 0");
             SetSchemaVersion(conn, 10);
         }
+
+        if (version < 11)
+        {
+            // The nickname support took away (POST /admin/support/rename), so a device that still has it can't put it
+            // back at its next profile sync. Safe to repeat.
+            TryAddColumn(conn, "players", "blocked_callsign", "TEXT NOT NULL DEFAULT ''");
+            SetSchemaVersion(conn, 11);
+        }
     }
 
     /// <summary>

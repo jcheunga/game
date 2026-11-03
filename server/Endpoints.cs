@@ -51,6 +51,7 @@ public static class Endpoints
             revoke.ExecuteNonQuery();
         }
 
+        callsign = AcceptCallsign(conn, tx, profileId, callsign, "Anonymous");
         UpsertPlayer(conn, tx, profileId, callsign, now);
         var sessionToken = SessionAuth.Issue(conn, tx, profileId, now);
         tx.Commit();
@@ -313,6 +314,7 @@ public static class Endpoints
 
         using var conn = Database.Open();
         using var tx = conn.BeginTransaction();
+        callsign = AcceptCallsign(conn, tx, profileId, callsign, "Host");
         try
         {
             using var ins = conn.CreateCommand();
@@ -401,6 +403,7 @@ public static class Endpoints
 
         // Atomic seat count check + insert inside a transaction to prevent race conditions
         using var tx = conn.BeginTransaction();
+        callsign = AcceptCallsign(conn, tx, profileId, callsign, "Runner");
         string seatLabel;
         var ticketId = NewId("JOIN");
         var joinToken = $"join-{Guid.NewGuid():N}";
@@ -781,6 +784,7 @@ public static class Endpoints
 
         // Atomic find-or-create + seat insert to prevent race conditions
         using var tx = conn.BeginTransaction();
+        callsign = AcceptCallsign(conn, tx, profileId, callsign, "Runner");
         string roomId, roomTitle;
         var ticketId = NewId("MATCH");
         var joinToken = $"match-{Guid.NewGuid():N}";
@@ -1242,6 +1246,24 @@ public static class Endpoints
         cmd.Parameters.AddWithValue("@cs", callsign);
         cmd.Parameters.AddWithValue("@now", now);
         cmd.ExecuteNonQuery();
+    }
+
+    // The nickname a device asks for, unless it is blocked (scripts/core/Nickname.cs) or is the one support took away
+    // (POST /admin/support/rename): then the player keeps the name they have, or gets the default.
+    private static string AcceptCallsign(DbConnection conn, DbTransaction tx, string profileId, string requested, string fallback)
+    {
+        var name = Nickname.Normalize(requested, fallback);
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = "SELECT callsign, blocked_callsign FROM players WHERE profile_id = @pid";
+        cmd.Parameters.AddWithValue("@pid", profileId);
+        string current = "", taken = "";
+        using (var reader = cmd.ExecuteReader())
+        {
+            if (reader.Read()) (current, taken) = (reader.GetString(0), reader.GetString(1));
+        }
+        if (!Nickname.IsBlocked(name) && !string.Equals(name, taken, StringComparison.OrdinalIgnoreCase)) return name;
+        return current.Length > 0 && !Nickname.IsBlocked(current) ? current : Nickname.Default;
     }
 
     // For endpoints that only need the player row to exist. They know no

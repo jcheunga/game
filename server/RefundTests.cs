@@ -1016,7 +1016,7 @@ public static partial class ServerTests
         Database.Initialize();
 
         long Scalar(string sql) => Database.ToInt64(RefundScalar(sql), -1);
-        Assert(Scalar("SELECT MAX(version) FROM schema_version") == 10, "expected schema version 10");
+        Assert(Scalar("SELECT MAX(version) FROM schema_version") >= 10, "expected schema version 10");
         Assert(Scalar("SELECT shards_credited FROM purchases WHERE purchase_id = 'PUR-LEGACY-SHARDS'") == 0 &&
             Scalar("SELECT gold_credited FROM purchases WHERE purchase_id = 'PUR-LEGACY-SHARDS'") == 500, "expected an earlier purchase to keep its gold and credit no shards");
         Assert(Scalar("SELECT shards_balance FROM player_wallets WHERE profile_id = 'LEGACY-SHARDS'") == 0 &&

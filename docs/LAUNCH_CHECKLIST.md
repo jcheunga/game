@@ -46,6 +46,10 @@ Already done and tested locally (2026-10-17):
   purchase the storehouse asks once whether to sign in. Shared challenge
   links (`/challenge/<code>`) open a page on the website that shows the code
   and how to load it.
+- Nickname moderation (2026-11-03): a word filter shared by the game and the
+  server (`scripts/core/Nickname.cs`) and `POST /admin/support/rename`, whose
+  rename a device holding the old name can't undo. Needed before nicknames
+  show beyond LAN races (server tests, on SQLite and PostgreSQL).
 - The iOS preset, set in the file with the editor closed (2026-10-28): Game
   Center entitlement and plugin on, StoreKit plugin on, minimum iOS 15.0, the
   Android preset's exclude filter, the privacy manifest's collected data types,

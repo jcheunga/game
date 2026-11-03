@@ -33,7 +33,7 @@ public static class SupportLookup
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         object? player = null;
-        using (var cmd = Command(conn, "SELECT callsign, created_at, synced_at FROM players WHERE profile_id = @pid", ("@pid", profileId)))
+        using (var cmd = Command(conn, "SELECT callsign, created_at, synced_at, blocked_callsign FROM players WHERE profile_id = @pid", ("@pid", profileId)))
         using (var reader = cmd.ExecuteReader())
         {
             if (reader.Read())
@@ -42,7 +42,8 @@ public static class SupportLookup
                 {
                     callsign = reader.GetString(0),
                     createdAtUnixSeconds = Database.ToInt64(reader.GetValue(1)),
-                    syncedAtUnixSeconds = Database.ToInt64(reader.GetValue(2))
+                    syncedAtUnixSeconds = Database.ToInt64(reader.GetValue(2)),
+                    blockedCallsign = reader.GetString(3)
                 };
             }
         }
@@ -233,6 +234,59 @@ public static class SupportLookup
         var revocations = AccountDeletion.Erase(profileId);
         var revoked = await AccountDeletion.RevokeQueuedAsync(revocations);
         return Results.Ok(new { status = "deleted", profileId, signInRevocationPending = !revoked });
+    }
+
+    /// <summary>
+    /// Replaces an offensive nickname: sets the player's name (body {"profileId", "callsign"}; the default when no
+    /// callsign is given) and renames their open rooms and seats. The old name is kept as taken away, so the device,
+    /// which sends its saved name at every profile sync, gets the new one back instead of restoring the old one. The
+    /// player can still choose any other name.
+    /// </summary>
+    public static async Task<IResult> AdminRename(HttpRequest request)
+    {
+        if (AdminAuth.Require(request) is { } adminError) return adminError;
+
+        string profileId, requested;
+        try
+        {
+            using var body = await JsonDocument.ParseAsync(request.Body, cancellationToken: request.HttpContext.RequestAborted);
+            profileId = Text(body.RootElement, "profileId");
+            requested = Text(body.RootElement, "callsign");
+        }
+        catch (JsonException)
+        {
+            return Results.BadRequest(new { error = "invalid_json" });
+        }
+        if (profileId.Length == 0) return Results.BadRequest(new { error = "profile_id_required" });
+        var callsign = Nickname.Normalize(requested);
+        if (callsign.Length < Nickname.MinLength || Nickname.IsBlocked(callsign))
+            return Results.BadRequest(new { error = "callsign_not_allowed" });
+
+        using var conn = Database.Open();
+        using var tx = conn.BeginTransaction();
+        string previous;
+        using (var read = Command(conn, "SELECT callsign FROM players WHERE profile_id = @pid", ("@pid", profileId)))
+        {
+            read.Transaction = tx;
+            if (read.ExecuteScalar() is not string name) return Results.NotFound(new { status = "not_found" });
+            previous = name;
+        }
+        void Run(string sql, params (string Name, object Value)[] values)
+        {
+            using var cmd = Command(conn, sql, values);
+            cmd.Transaction = tx;
+            cmd.ExecuteNonQuery();
+        }
+
+        if (!string.Equals(previous, callsign, StringComparison.OrdinalIgnoreCase))
+            Run("UPDATE players SET callsign = @cs, blocked_callsign = @old WHERE profile_id = @pid",
+                ("@cs", callsign), ("@old", previous), ("@pid", profileId));
+        // Hosted rooms are titled "<name> Relay"; quick matches keep their own title.
+        Run("UPDATE rooms SET host_callsign = @cs, title = CASE WHEN title = @oldTitle THEN @title ELSE title END WHERE host_profile_id = @pid",
+            ("@cs", callsign), ("@oldTitle", $"{previous} Relay"), ("@title", $"{callsign} Relay"), ("@pid", profileId));
+        Run("UPDATE room_seats SET callsign = @cs WHERE profile_id = @pid", ("@cs", callsign), ("@pid", profileId));
+        tx.Commit();
+        return Results.Ok(new { status = "renamed", profileId, callsign, previous });
     }
 
     /// <summary>

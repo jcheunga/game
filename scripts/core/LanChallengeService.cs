@@ -1537,9 +1537,8 @@ public partial class LanChallengeService : Node
 		}
 
 		var senderId = Multiplayer.GetRemoteSenderId();
-		_peerNames[senderId] = string.IsNullOrWhiteSpace(callsign)
-			? $"Runner {senderId}"
-			: callsign.Trim();
+		// A peer's game may be older or altered, so its name is checked here too.
+		_peerNames[senderId] = Nickname.Clean(callsign, $"Runner {senderId}");
 		SessionStatus = $"{ResolvePeerLabel(senderId)} updated their caravan callsign.";
 		BroadcastNameSnapshot();
 	}
@@ -1615,7 +1614,7 @@ public partial class LanChallengeService : Node
 					continue;
 				}
 
-				_peerNames[peerId] = parts[1];
+				_peerNames[peerId] = Nickname.Clean(parts[1], $"Runner {peerId}");
 			}
 		}
 

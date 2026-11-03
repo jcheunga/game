@@ -99,6 +99,8 @@ public static partial class ServerTests
                 ("CloudSavePrivacyMigration", TestCloudSavePrivacyMigration),
                 ("PurchaseTransactionMigration", TestPurchaseTransactionMigration),
                 ("CallsignSurvivesPurchaseAndCloudSave", () => TestCallsignSurvivesPurchaseAndCloudSave(client)),
+                ("NicknameFilter", TestNicknameFilter),
+                ("NicknameSupportRename", () => TestNicknameSupportRename(client)),
                 ("CredentialProtection", TestCredentialProtection),
                 ("AccountDeletion", () => TestAccountDeletion(client)),
                 ("AccountDeletionTellsOtherDevices", () => TestAccountDeletionTellsOtherDevices(client)),
@@ -253,6 +255,7 @@ public static partial class ServerTests
                     endpoints.MapPost("/admin/purchases", LiveSettings.AdminPurchasesSet);
                     endpoints.MapPost("/admin/support/delete-account", SupportLookup.AdminDeleteAccount);
                     endpoints.MapPost("/admin/support/grant", SupportLookup.AdminGrant);
+                    endpoints.MapPost("/admin/support/rename", SupportLookup.AdminRename);
                     endpoints.MapGet("/admin/refunds", PurchaseRefunds.AdminList);
                     endpoints.MapPost("/admin/refunds", PurchaseRefunds.AdminRecord);
                     endpoints.MapPost("/admin/refunds/poll-google", GooglePlayVoidedPurchases.AdminPoll);
@@ -1328,7 +1331,7 @@ public static partial class ServerTests
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT MAX(version) FROM schema_version";
         var version = Database.ToInt64(cmd.ExecuteScalar());
-        Assert(version >= 10, $"expected schema version >= 10, got {version}");
+        Assert(version >= 11, $"expected schema version >= 11, got {version}");
         await Task.CompletedTask;
     }
 

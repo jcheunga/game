@@ -157,6 +157,7 @@ app.MapGet("/admin/purchases", LiveSettings.AdminPurchasesGet);
 app.MapPost("/admin/purchases", LiveSettings.AdminPurchasesSet);
 app.MapPost("/admin/support/delete-account", SupportLookup.AdminDeleteAccount);
 app.MapPost("/admin/support/grant", SupportLookup.AdminGrant);
+app.MapPost("/admin/support/rename", SupportLookup.AdminRename);
 app.MapGet("/admin/refunds", PurchaseRefunds.AdminList);
 app.MapPost("/admin/refunds", PurchaseRefunds.AdminRecord);
 app.MapPost("/admin/refunds/poll-google", GooglePlayVoidedPurchases.AdminPoll);

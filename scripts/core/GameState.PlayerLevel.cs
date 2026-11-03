@@ -5,8 +5,8 @@ using System.Linq;
 /// <summary>The player's level, its claimable rewards and caps, and the nickname chosen on a new caravan.</summary>
 public partial class GameState
 {
-    public const int MinCallsignLength = 3;
-    public const int MaxCallsignLength = 18;
+    public const int MinCallsignLength = Nickname.MinLength;
+    public const int MaxCallsignLength = Nickname.MaxLength;
     private readonly HashSet<int> _claimedLevelRewards = new();
 
     public int PlayerXP { get; private set; }
@@ -93,6 +93,7 @@ public partial class GameState
         reason = name.Length < MinCallsignLength ? $"Use at least {MinCallsignLength} characters."
             : name.Length > MaxCallsignLength ? $"Use {MaxCallsignLength} characters or fewer."
             : name.Any(c => !char.IsLetterOrDigit(c) && c is not (' ' or '-' or '_')) ? "Use letters, numbers, spaces, hyphens or underscores."
+            : Nickname.IsBlocked(name) ? "Choose a different nickname."
             : "";
         return reason.Length == 0;
     }

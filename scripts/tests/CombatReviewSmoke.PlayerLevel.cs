@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 
 // Player levels: the XP curve, the unit and wagon caps they lift, claims, saves and nicknames.
@@ -75,6 +76,11 @@ public partial class CombatReviewSmoke
 
         Check(!GameState.IsValidCallsign("ab", out _) && !GameState.IsValidCallsign("Bad!Name", out _) && !GameState.IsValidCallsign(new string('x', 19), out _)
               && GameState.IsValidCallsign("Ser Rowan-2", out _), "Nicknames need 3 to 18 letters, numbers, spaces, hyphens or underscores");
+        var suggestions = from first in (string[])typeof(NicknameDialog).GetField("Firsts", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!
+                          from second in (string[])typeof(NicknameDialog).GetField("Seconds", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!
+                          select $"{first} {second}";
+        Check(!GameState.IsValidCallsign("Sh1t Lord", out var blockedReason) && blockedReason == "Choose a different nickname."
+              && suggestions.All(name => !Nickname.IsBlocked(name)), "Blocked nicknames are refused, and no suggested name is blocked");
         Check(!state.TryChooseCallsign("ab", out _) && !state.HasChosenCallsign && state.TryChooseCallsign("Ser Rowan", out _)
               && state.PlayerCallsign == "Ser Rowan" && state.HasChosenCallsign, "Choosing a valid nickname records the choice");
 

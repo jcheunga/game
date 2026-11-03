@@ -26,7 +26,7 @@ public partial class GameState : Node
 	private const string DefaultEndlessRouteId = "city";
 	private const string DefaultEndlessBoonId = EndlessBoonCatalog.SurplusCourageId;
 	private const string DefaultReport = "Pick a district and clear the route.";
-	private const string DefaultPlayerCallsign = "Lantern";
+	private const string DefaultPlayerCallsign = Nickname.Default;
 	private const string DefaultChallengeSyncProviderId = ChallengeSyncProviderCatalog.LocalJournalId;
 	private const string DefaultChallengeSyncEndpoint = "";
 	private const bool DefaultChallengeSyncAutoFlush = false;
@@ -5946,35 +5946,8 @@ public partial class GameState : Node
 		};
 	}
 
-	private static string NormalizePlayerCallsign(string callsign)
-	{
-		var raw = string.IsNullOrWhiteSpace(callsign)
-			? DefaultPlayerCallsign
-			: callsign.Trim();
-		var builder = new StringBuilder();
-		foreach (var character in raw)
-		{
-			if (char.IsLetterOrDigit(character) || character == ' ' || character == '-' || character == '_')
-			{
-				builder.Append(character);
-			}
-		}
-
-		var normalized = builder.ToString().Trim();
-		if (string.IsNullOrWhiteSpace(normalized))
-		{
-			normalized = DefaultPlayerCallsign;
-		}
-
-		if (normalized.Length > 18)
-		{
-			normalized = normalized[..18].TrimEnd();
-		}
-
-		return string.IsNullOrWhiteSpace(normalized)
-			? DefaultPlayerCallsign
-			: normalized;
-	}
+	// A blocked name, from an old save or the server, becomes the default.
+	private static string NormalizePlayerCallsign(string callsign) => Nickname.Clean(callsign, DefaultPlayerCallsign);
 
 	private static string NormalizePlayerProfileId(string profileId)
 	{

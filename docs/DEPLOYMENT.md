@@ -189,6 +189,17 @@ the storehouse opens, says "Support added 400 gold to your caravan." and
 reports back. The note is required; grants are capped at 100,000 gold,
 1,000 food and 1,000 relic shards.
 
+To take away an offensive nickname, `POST /admin/support/rename` with
+`{"profileId": "CVY-…"}` sets the player's name to the default ("Lantern"),
+or to `"callsign": "…"` when given, and renames their open rooms and seats.
+The old name is kept in `players.blocked_callsign` (the lookup shows it as
+`blockedCallsign`): the device still has it and sends it at every profile
+sync, and the server answers with the new name, which the game takes. The
+player can choose any other name. Names the shared filter blocks
+(`scripts/core/Nickname.cs`) never reach the players table: the game refuses
+them as they are typed, and the server swaps one from an old or altered game
+for the player's current name or the default.
+
 ### Pausing purchases
 
 `POST /admin/purchases` with `{"paused": true, "message": "…"}` stops the

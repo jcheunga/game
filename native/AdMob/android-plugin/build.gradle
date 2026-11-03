@@ -1,0 +1,28 @@
+// Godot Android plugin (v2) that shows AdMob rewarded ads after Google's consent form (UMP).
+// ./build.sh builds both AARs into addons/CrownroadAds/bin.
+plugins {
+    id 'com.android.library' version '8.6.1'
+}
+
+// Keep in step with the Godot editor version and addons/CrownroadAds/export_plugin.gd.
+ext.godotVersion = '4.6.1.stable'
+ext.adsVersion = '23.6.0'
+ext.umpVersion = '3.1.0'
+
+android {
+    namespace 'com.crownroad.ads'
+    compileSdk 36
+    defaultConfig {
+        minSdk 24
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    compileOnly "org.godotengine:godot:$godotVersion"
+    implementation "com.google.android.gms:play-services-ads:$adsVersion"
+    implementation "com.google.android.ump:user-messaging-platform:$umpVersion"
+}

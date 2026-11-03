@@ -108,6 +108,19 @@ public partial class AndroidServerReview : Node
         state.SetDeveloperMode(false);
 
         await ShopWithoutPlay();
+        await RewardedAdLoads();
+    }
+
+    /// <summary>
+    /// The AdMob plugin is in a debug build, Google's consent check completes, and Google's test rewarded ad loads: the
+    /// plugin, the SDK and the app ID the export puts in the manifest all work. Watching one needs a person.
+    /// </summary>
+    private async Task RewardedAdLoads()
+    {
+        Check(Engine.HasSingleton(RewardedAds.Singleton) && RewardedAds.Enabled && RewardedAds.UnitId == RewardedAds.TestAndroidUnit,
+            "A debug build carries the ad plugin with Google's test ad unit");
+        RewardedAds.Start();
+        Check(await Until(() => RewardedAds.Ready, 60), "Google's consent check completes and a test rewarded ad loads");
     }
 
     private async Task Relaunch()

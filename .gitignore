@@ -60,3 +60,10 @@ art/audio/.cache/
 # Royal UI: raw Codex generations (~200 MB) live locally; installed, trimmed copies are in assets/.
 # Re-run art/royal/codexgen.py to regenerate, then the install scripts in art/royal/.
 art/royal/gen/
+
+# Google's ad frameworks, fetched by native/AdMob/ios-plugin/build.sh
+ios/plugins/crownroadads/GoogleMobileAds.xcframework/
+ios/plugins/crownroadads/UserMessagingPlatform.xcframework/
+native/AdMob/ios-plugin/build/
+native/AdMob/android-plugin/build/
+native/AdMob/android-plugin/.gradle/

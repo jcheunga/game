@@ -42,6 +42,10 @@ DeepLinkHandler="*res://scenes/autoload/DeepLinkHandler.tscn"
 
 network/api_base_url=""
 play_games/project_id=""
+ads/android_app_id=""
+ads/android_rewarded_unit=""
+ads/ios_app_id=""
+ads/ios_rewarded_unit=""
 
 [display]
 
@@ -57,7 +61,7 @@ project/assembly_name="Game"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/PlayGamesSignIn/plugin.cfg")
+enabled=PackedStringArray("res://addons/CrownroadAds/plugin.cfg", "res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/PlayGamesSignIn/plugin.cfg")
 
 [gui]
 

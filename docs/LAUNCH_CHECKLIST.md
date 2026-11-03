@@ -102,18 +102,19 @@ What follows needs real accounts, a domain, a deployed server and phones.
 
 - [ ] **A domain you own.** Apple only accepts HTTPS return URLs on a real
   domain, and the server needs one for its certificate.
-- [ ] **Launch platforms: Android, iOS or both.** For Android only, leave
+- [x] **Launch platforms: Android, iOS or both.** Decided (2026-10-28): both.
+  For Android only, leave
   `APPLE_IAP_PRIVATE_KEY_SOURCE` unset in `.env.production` (section 3). The
   server then starts without the App Store key and refuses App Store
   purchases as not configured. Never use a placeholder key.
-- [ ] **The Adventurer's Kit (`starter_kit`): consumable or not.** It is sold
-  once per player, but the game treats it as a consumable on both stores, so
-  a player can pay for it twice (for example after restoring an old save). The server
-  then refuses the second grant. Google refunds the payment after 3 days;
-  Apple keeps it. Selling it as a non-consumable stops the second payment, but
-  the game must then restore it and acknowledge it on Google instead of
-  consuming it.
-- [ ] **Refund policy.** Refunds are now taken back automatically (see
+- [x] **The Adventurer's Kit (`starter_kit`): consumable or not.** Decided
+  (2026-10-28): a consumable on both stores that recruits a named troop, sold
+  once per player. A consumable could be paid for twice, for example after
+  restoring an old save, and the server would refuse the second grant. So the
+  shop checks the server's purchase history and never offers the kit to a
+  player who has bought it (50c42b07).
+- [x] **Refund policy.** Decided (2026-10-28): kept as built, below.
+  Refunds are now taken back automatically (see
   [DEPLOYMENT.md](DEPLOYMENT.md#refunds)). Confirm two choices:
   - Currency the player already spent is not taken below zero. The rest is
     recorded for review.
@@ -384,7 +385,11 @@ handling of every outcome passes on desktop
   machine. Its first run found that a player's profile sync, which every
   resume sends, counted against a small allowance per public address. So did
   the list of sign-in methods. Players behind one carrier address could have
-  throttled each other. Both are fixed.
+  throttled each other. Both are fixed, and the game now also sends its
+  session with the feed and leaderboards, which shared 60 reads a minute per
+  address. A later run caught both replicas creating the schema at once on
+  an empty database, which made one exit (6 of 24 servers started four at a
+  time). Replicas now take turns on a PostgreSQL advisory lock.
 
 ## 12. Test on real phones
 

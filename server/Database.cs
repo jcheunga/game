@@ -198,6 +198,26 @@ public static class Database
     public static void Initialize()
     {
         using var conn = Open();
+        // Every API replica starts here at once. PostgreSQL's CREATE ... IF NOT EXISTS and the migrations aren't safe
+        // side by side (the loser fails on pg_type's unique index and the replica exits), so replicas take turns.
+        if (IsPostgres) SchemaLock(conn, take: true);
+        try { CreateSchema(conn); }
+        finally { if (IsPostgres) SchemaLock(conn, take: false); }
+    }
+
+    internal const long SchemaLockKey = 0x43_52_4F_57_4E; // "CROWN"
+
+    /// <summary>A session advisory lock on this connection, released before it goes back to the pool.</summary>
+    private static void SchemaLock(DbConnection conn, bool take)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = take ? "SELECT pg_advisory_lock(@key)" : "SELECT pg_advisory_unlock(@key)";
+        cmd.Parameters.AddWithValue("@key", SchemaLockKey);
+        cmd.ExecuteScalar();
+    }
+
+    private static void CreateSchema(DbConnection conn)
+    {
         EnsureSchemaVersionTable(conn);
         using var cmd = conn.CreateCommand();
         var schemaSql = """

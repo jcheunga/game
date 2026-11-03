@@ -119,6 +119,16 @@ prompt. Use any username and the `admin-api-key` file’s value as the password.
 For an API client, send that value in an `X-Admin-Api-Key` request header. Do
 not use the administrator credential in the game client.
 
+## Schema changes
+
+Every API replica creates or upgrades the schema when it starts. On
+PostgreSQL they take turns on an advisory lock: on the first deploy to an
+empty database, or a deploy that adds a migration, one replica makes each
+change and the others wait, then find it done. Without the lock, replicas
+starting together could fail on PostgreSQL's catalog and exit. Migrations
+only add tables and columns, so replicas still on the previous version keep
+working while the new ones start.
+
 ## Privacy upgrade: schema 5
 
 The 2026-09-30 update removes session credentials, connection settings and

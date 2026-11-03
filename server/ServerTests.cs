@@ -166,6 +166,7 @@ public static partial class ServerTests
                 ("CrashReport_MissingDetails", () => TestCrashReport_MissingDetails(client)),
                 ("DatabaseBackup", () => TestDatabaseBackup(client)),
                 ("SchemaVersion", () => TestSchemaVersion()),
+                ("SchemaLock", TestSchemaLock),
                 ("RateLimitStore", TestRateLimitStore),
                 ("RateLimitPolicies", TestRateLimitPolicies),
                 ("DatabaseUrl", TestDatabaseUrl),
@@ -1333,6 +1334,33 @@ public static partial class ServerTests
         var version = Database.ToInt64(cmd.ExecuteScalar());
         Assert(version >= 11, $"expected schema version >= 11, got {version}");
         await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Replicas starting together take turns creating the schema: on PostgreSQL, Initialize waits while another
+    /// connection holds the schema lock (without it, 6 of 24 servers started four at a time crashed on pg_type).
+    /// </summary>
+    private static async Task TestSchemaLock()
+    {
+        if (!Database.IsPostgres) return;
+        using var holder = Database.Open();
+        using (var take = holder.CreateCommand())
+        {
+            take.CommandText = "SELECT pg_advisory_lock(@key)";
+            take.Parameters.AddWithValue("@key", Database.SchemaLockKey);
+            take.ExecuteScalar();
+        }
+        var starting = Task.Run(Database.Initialize);
+        var waited = await Task.WhenAny(starting, Task.Delay(1500)) != starting;
+        using (var release = holder.CreateCommand())
+        {
+            release.CommandText = "SELECT pg_advisory_unlock(@key)";
+            release.Parameters.AddWithValue("@key", Database.SchemaLockKey);
+            release.ExecuteScalar();
+        }
+        Assert(waited, "expected Initialize to wait while another replica holds the schema lock");
+        Assert(await Task.WhenAny(starting, Task.Delay(15000)) == starting, "expected Initialize to finish once the lock is free");
+        await starting;
     }
 
     private static async Task TestRateLimitStore()

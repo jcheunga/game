@@ -4,9 +4,9 @@
 #
 # Checks: the public /health answer and its speed, the TLS certificate's days
 # to expiry, Compose service state, health and restart counts, disk space, the
-# rate of Caddy 5xx answers, the API's p95 latency and failing purchase
-# validations over the last few minutes, the age of the newest backup, and
-# (optional) PostgreSQL connections.
+# rate of Caddy 5xx answers and of rate-limited (429) answers, the API's p95
+# latency and failing purchase validations over the last few minutes, the age
+# of the newest backup, and (optional) PostgreSQL connections.
 #
 # Problems go to ALERT_WEBHOOK_URL as one JSON POST per run (Slack, Discord,
 # ntfy or a generic receiver). The state directory remembers what was already
@@ -57,7 +57,7 @@ done
 SETTINGS="API_URL ALERT_WEBHOOK_URL ALERT_FORMAT ALERT_WEBHOOK_TOKEN ALERT_NAME STATE_DIR REALERT_MINUTES
 CHECKS HEALTH_TIMEOUT HEALTH_SLOW_MS TLS_WARN_DAYS TLS_CRIT_DAYS COMPOSE_PROJECT EXPECTED_SERVICES API_SERVICE
 API_REPLICAS DISK_PATHS DISK_WARN_PERCENT DISK_CRIT_PERCENT CADDY_SERVICE CADDY_LOG_FILE CADDY_WINDOW_MINUTES
-FIVEXX_WARN_PERCENT FIVEXX_CRIT_PERCENT FIVEXX_MIN_REQUESTS LATENCY_P95_WARN_MS PURCHASE_REFUSED_WARN BACKUP_DIR BACKUP_GLOB
+FIVEXX_WARN_PERCENT FIVEXX_CRIT_PERCENT FIVEXX_MIN_REQUESTS THROTTLED_WARN_PERCENT LATENCY_P95_WARN_MS PURCHASE_REFUSED_WARN BACKUP_DIR BACKUP_GLOB
 BACKUP_CHECK_CMD BACKUP_MAX_AGE_HOURS PG_MONITOR_URL PG_CONN_WARN_PERCENT PG_MAX_DB_GB HEARTBEAT_URL
 HOST_LABEL SERVER_DIR ENV_FILE"
 
@@ -122,6 +122,7 @@ CADDY_WINDOW_MINUTES="${CADDY_WINDOW_MINUTES:-5}"
 FIVEXX_WARN_PERCENT="${FIVEXX_WARN_PERCENT:-1}"
 FIVEXX_CRIT_PERCENT="${FIVEXX_CRIT_PERCENT:-5}"
 FIVEXX_MIN_REQUESTS="${FIVEXX_MIN_REQUESTS:-20}"
+THROTTLED_WARN_PERCENT="${THROTTLED_WARN_PERCENT:-2}"
 LATENCY_P95_WARN_MS="${LATENCY_P95_WARN_MS:-1000}"
 PURCHASE_REFUSED_WARN="${PURCHASE_REFUSED_WARN:-10}"
 
@@ -380,7 +381,7 @@ check_caddy() {
         fi
         source_desc="the $CADDY_SERVICE container log"
     fi
-    local counts total errors unavailable refused p95
+    local counts total errors unavailable refused limited p95
     # Caddy writes one JSON object per line: "ts" (epoch seconds), "status"
     # and "duration" (seconds) at the top level, the URI under "request".
     counts="$(awk -v since="$since" -v durations="$TMP/durations" '
@@ -394,6 +395,7 @@ check_caddy() {
             status = number("status")
             total++
             if (status >= 500) errors++
+            if (status == 429) limited++
             # WebSocket relay requests last as long as the connection.
             d = number("duration")
             if ($0 !~ /"uri": *"\/ws\// && d != "") print d > durations
@@ -404,8 +406,8 @@ check_caddy() {
                 else if (status == 400) refused++
             }
         }
-        END { print total + 0, errors + 0, unavailable + 0, refused + 0 }' "$TMP/caddy.log")"
-    read -r total errors unavailable refused <<<"$counts"
+        END { print total + 0, errors + 0, unavailable + 0, refused + 0, limited + 0 }' "$TMP/caddy.log")"
+    read -r total errors unavailable refused limited <<<"$counts"
     if [[ "$unavailable" -gt 0 ]]; then
         record purchases crit "$unavailable purchase validation(s) answered 503 in the last $CADDY_WINDOW_MINUTES min: store verification is not working, so paid purchases are not being granted"
     elif [[ "$refused" -ge "$PURCHASE_REFUSED_WARN" ]]; then
@@ -432,6 +434,13 @@ check_caddy() {
         record caddy warn "$pct% of API requests answered 5xx in the last $CADDY_WINDOW_MINUTES min ($errors of $total)"
     else
         record caddy ok "$total requests, $errors 5xx ($pct%) in the last $CADDY_WINDOW_MINUTES min"
+    fi
+    # Players behind one carrier address share the per-address allowances (server/ops/README.md, "Rate limits").
+    pct="$(awk -v e="$limited" -v t="$total" 'BEGIN { printf "%.1f", 100 * e / t }')"
+    if [[ "$total" -ge "$FIVEXX_MIN_REQUESTS" ]] && awk -v p="$pct" -v l="$THROTTLED_WARN_PERCENT" 'BEGIN { exit !(p >= l) }'; then
+        record throttling warn "$pct% of API requests were refused by the rate limiter (429) in the last $CADDY_WINDOW_MINUTES min ($limited of $total); players sharing a network address may be throttling each other"
+    else
+        record throttling ok "$limited of $total API requests rate-limited in the last $CADDY_WINDOW_MINUTES min"
     fi
     if [[ -s "$TMP/durations" ]]; then
         p95="$(sort -g "$TMP/durations" | awk '{ v[NR] = $1 } END { i = int(NR * 0.95 + 0.999); if (i < 1) i = 1; if (i > NR) i = NR; printf "%d", v[i] * 1000 }')"

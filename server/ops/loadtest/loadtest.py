@@ -302,8 +302,9 @@ class VirtualPlayer(threading.Thread):
         self.conn = None
 
     def read_headers(self) -> bool:
-        # The current game sends no session on public reads (leaderboards,
-        # feed, rooms, health), so they count against the per-IP bucket.
+        # The game sends its session on the feed and leaderboards, so they
+        # count against the session's bucket (/health is always per IP).
+        # --no-bearer-on-reads models builds before 2026-11-03, which sent none.
         return self.run_.bearer_on_reads
 
     # ── game calls ──
@@ -726,7 +727,7 @@ def build_report(run: LoadRun, args, wall_seconds: float, cpu_seconds: float) ->
                  f"{run.started_vus} player sessions · wall {wall_seconds:.0f}s")
     if run.target.source_ips:
         lines.append(f"Source IPs: {', '.join(run.target.source_ips)}")
-    lines.append(f"Public reads carry the session: {'yes (--bearer-on-reads)' if run.bearer_on_reads else 'no (as the game does today)'}")
+    lines.append(f"Public reads carry the session: {'yes (as the game does)' if run.bearer_on_reads else 'no (--no-bearer-on-reads, as builds before 2026-11-03 did)'}")
     lines.append("")
 
     lines.append(f"{'Stage':<6}{'Length':>8}{'VUs':>6}{'Reqs':>8}{'Req/s':>8}{'429':>6}{'Err':>6}"
@@ -858,9 +859,10 @@ def main() -> int:
                              "starts a new or returning player.")
     parser.add_argument("--returning-ratio", type=float, default=0.7,
                         help="Chance that a new player session reuses an earlier guest instead of registering.")
-    parser.add_argument("--bearer-on-reads", action="store_true",
-                        help="Send the session on public reads (health, feed, boards, rooms). Not what the game does "
-                             "today; models a client change so reads use the per-session rate-limit bucket.")
+    parser.add_argument("--bearer-on-reads", action=argparse.BooleanOptionalAction, default=True,
+                        help="Send the session on public reads, as the game does since 2026-11-03, so the feed and boards "
+                             "use the per-session rate-limit bucket (/health is always per IP). --no-bearer-on-reads "
+                             "models older builds, whose reads all share the per-IP bucket.")
     parser.add_argument("--source-ip", action="append", metavar="ADDR",
                         help="Local address to send from; repeat to spread VUs over several addresses.")
     parser.add_argument("--timeout", type=float, default=15.0, help="Per-request timeout in seconds (the game uses 6-15).")

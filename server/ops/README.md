@@ -145,7 +145,7 @@ Rehearse it once before launch and after any provider change:
 | `tls` | `openssl s_client` on the API host, certificate `notAfter` | WARN < 21 days, CRIT < 7 days (Caddy renews ~30 days ahead, so either means renewal is failing). Invalid certificates already fail `health`. |
 | `containers` | `docker ps`/`docker inspect` on Compose project `server` (label `com.docker.compose.project`) | CRIT fewer than 1 redis / `API_REPLICAS` (2) crownroad-server / 1 caddy running and healthy, or Docker unreachable; WARN starting/unhealthy extras; WARN once when a restart count rose since the last run |
 | `disk` | `df -P` on `/` and Docker's data directory | WARN ≥ 80 %, CRIT ≥ 90 % |
-| `caddy`, `latency`, `purchases` | `docker logs --since 5m` of the caddy container. The Caddyfile logs API requests as JSON to stdout (`log { output stdout format json }`), which Docker keeps in its rotated json-file log; the parser reads `ts`, `status`, `duration` and `request.uri` | 5xx share: WARN ≥ 1 %, CRIT ≥ 5 % (from 20 requests). p95 latency (WebSocket relay excluded): WARN > 1000 ms. Purchases: CRIT on any `503` from `/purchase/validate` (store verification broken, paid purchases not granted); WARN on ≥ 10 refused (400) |
+| `caddy`, `throttling`, `latency`, `purchases` | `docker logs --since 5m` of the caddy container. The Caddyfile logs API requests as JSON to stdout (`log { output stdout format json }`), which Docker keeps in its rotated json-file log; the parser reads `ts`, `status`, `duration` and `request.uri` | 5xx share: WARN ≥ 1 %, CRIT ≥ 5 % (from 20 requests). Rate-limited (429) share: WARN ≥ 2 % (from 20 requests): players behind one carrier address may be using up a shared per-address allowance; see Rate limits below. p95 latency (WebSocket relay excluded): WARN > 1000 ms. Purchases: CRIT on any `503` from `/purchase/validate` (store verification broken, paid purchases not granted); WARN on ≥ 10 refused (400) |
 | `backup` | Newest file matching `BACKUP_GLOB` in `BACKUP_DIR`, or `BACKUP_CHECK_CMD` printing the newest backup's time | CRIT older than 26 h, empty, or missing. Skipped when neither is set. |
 | `postgres` (optional) | `PG_MONITOR_URL`, read-only: client connections vs `max_connections`, database size | WARN ≥ 80 % of connections, or over `PG_MAX_DB_GB` |
 
@@ -299,11 +299,12 @@ locally, and per replica during a Redis outage):
 
 | Requests | Counted per | Limit / min |
 | --- | --- | --- |
-| `/auth/*` (sign-in attempts) | client IP | 10 (40 for `/auth/google/poll`, `/auth/apple/poll`) |
+| `/auth/providers` (the sign-in methods on offer) | client IP | 600 |
+| other `/auth/*` (sign-in attempts) | client IP | 10 (40 for `/auth/google/poll`, `/auth/apple/poll`) |
 | `/health` | client IP | 600 |
-| `/player-profile` (guest registration **and** profile sync) | client IP | 20 |
+| `/player-profile` without a session checked on that replica (guest registration, recovery) | client IP | 20 |
 | `/store/apple/notifications` | client IP | 600 |
-| any request whose bearer token has passed a session check on that replica | that token | 180 (30 for `/ws/…`) |
+| any other request whose bearer token has passed a session check on that replica, profile syncs included | that token | 180 (30 for `/ws/…`) |
 | everything else, including requests with an unknown token: `/challenge-feed`, `/challenge-boards`, `/challenge-rooms`, `/daily/leaderboard/…`, `/challenge-room-scoreboard` | client IP | 60 |
 
 The client IP: production Compose sets `TrustForwardedHeaders=true`, so the
@@ -313,12 +314,15 @@ whatever the client sent). The API trusts any forwarder, which is safe only
 because port 8080 is not published. So every VU on one machine is **one
 client IP** to the server, and:
 
-- New players are capped at about 10 per minute in total (a registration and a
-  profile sync each), however many VUs you start. VUs that are refused wait
-  45 s and retry, like the game.
-- The current game sends no session on public reads, so all VUs share 60 per
-  minute for the feed, boards, rooms and daily leaderboards. `/health` has its
-  own 600 per minute, enough for about 450 players polling every 45 s.
+- New players are capped at 10 to 20 per minute in total, however many VUs
+  you start: each registration counts per IP, and so does its profile sync
+  when that reaches a replica that hasn't seen the new token yet. VUs that are
+  refused wait 45 s and retry, like the game.
+- The game sends its session on the feed and the challenge and daily
+  leaderboards (since 2026-11-03), so those count per session once the token
+  is known. `--no-bearer-on-reads` models older builds, whose VUs all share 60
+  per minute for them. `/health` has its own 600 per minute, enough for about
+  450 players polling every 45 s.
 - A VU's first authenticated requests on each replica count per IP until its
   token has passed a session check there.
 - Everything authenticated (saves, wallet, sync, analytics, rooms) is per
@@ -329,8 +333,7 @@ fails when more than 1 % of requests got 429 and says why. To measure the
 deployed API properly:
 
 1. **Several source IPs.** Run the script on several machines at once (small
-   cloud VMs, each keeping its ramp under ~10 new players per minute and ~30
-   players in total, which keeps its public reads under 60 per minute), give
+   cloud VMs, each keeping its ramp under ~10 new players per minute), give
    each a `--json-out` file, and add the results up.
    Or give one machine several addresses (secondary IPv4s, or addresses from
    an IPv6 /64 when the API has an AAAA record) and repeat `--source-ip ADDR`;
@@ -341,10 +344,11 @@ deployed API properly:
    with in Production, like `CROWNROAD_DEV_SIGN_IN`. Measure capacity on
    staging with it on, then check the limiter separately. No bypass was added
    to the server.
-3. `--bearer-on-reads` sends the player's session on public reads, so they
-   use the per-session bucket. That is **not** what the game does today; it
-   models a client change, and is useful to separate read capacity from the
-   per-IP limit.
+
+A single machine can now hold many returning players, since their reads
+count per session, but new players still queue behind the registration limit.
+`--no-bearer-on-reads` sends no session on public reads, as builds before
+2026-11-03 did, so every VU's reads share the per-IP bucket.
 
 ### Setting the target
 

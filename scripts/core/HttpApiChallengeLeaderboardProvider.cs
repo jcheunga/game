@@ -35,7 +35,10 @@ public sealed class HttpApiChallengeLeaderboardProvider : IChallengeLeaderboardP
 
 		var normalizedCode = AsyncChallengeCatalog.NormalizeCode(code);
 		var encodedCode = Uri.EscapeDataString(normalizedCode);
-		var response = Client.GetAsync($"{_endpointUrl}?code={encodedCode}&limit={Math.Max(1, limit)}").GetAwaiter().GetResult();
+		using var request = new HttpRequestMessage(HttpMethod.Get, $"{_endpointUrl}?code={encodedCode}&limit={Math.Max(1, limit)}");
+		// The board is public; the session only counts the read against the player's own rate limit, not their network address's.
+		PlayerSessionHttp.Apply(request, GameState.Instance?.PlayerProfileId ?? "");
+		using var response = Client.SendAndWait(request);
 		if (!response.IsSuccessStatusCode)
 		{
 			throw new InvalidOperationException($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}");

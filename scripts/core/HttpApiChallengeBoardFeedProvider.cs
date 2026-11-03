@@ -36,7 +36,10 @@ public sealed class HttpApiChallengeBoardFeedProvider : IChallengeBoardFeedProvi
 
 		var url =
 			$"{_endpointUrl}?stageCap={Math.Max(1, highestUnlockedStage)}&maxStage={Math.Max(1, maxStage)}&limit={Math.Max(1, limit)}";
-		var response = Client.GetAsync(url).GetAwaiter().GetResult();
+		using var request = new HttpRequestMessage(HttpMethod.Get, url);
+		// The feed is public; the session only counts the read against the player's own rate limit, not their network address's.
+		PlayerSessionHttp.Apply(request, GameState.Instance?.PlayerProfileId ?? "");
+		using var response = Client.SendAndWait(request);
 		if (!response.IsSuccessStatusCode)
 		{
 			throw new InvalidOperationException($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}");

@@ -103,6 +103,7 @@ first and ask after.
 | API errors | 5xx share CRIT (≥ 5 %) for 15 minutes, or WARN (≥ 1 %) for an hour | Roll back the server if the deploy started it; otherwise find the failing route first |
 | Purchase verification | Any `watch.sh` purchases CRIT (`/purchase/validate` answering 503), or one confirmed charge that wasn't delivered | Pause purchases, then fix credentials or roll back |
 | Wallet | A ledger total that disagrees with a wallet, or a grant applied twice | Pause purchases |
+| Throttling | `watch.sh` throttling WARN (≥ 2 % of requests answered 429) for an hour | Find the route in Caddy's log. If players sharing one address are using up a per-address allowance, raise that route's limit in `server/RateLimiter.cs` and deploy |
 | Crashes | Play's user-perceived crash rate over 1.09 % or ANR rate over 0.47 % for the new version, or a crash at launch on any common device | Halt the Play rollout and pause the App Store phased release |
 | Progress | Two or more reports of lost progress or currency after updating | Halt both rollouts |
 

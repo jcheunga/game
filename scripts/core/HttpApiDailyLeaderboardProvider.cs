@@ -79,7 +79,10 @@ public sealed class HttpApiDailyLeaderboardProvider
 		}
 
 		var encodedDate = Uri.EscapeDataString(date);
-		var response = Client.GetAsync($"{_baseUrl}/daily/leaderboard/{encodedDate}").GetAwaiter().GetResult();
+		using var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/daily/leaderboard/{encodedDate}");
+		// The board is public; the session only counts the read against the player's own rate limit, not their network address's.
+		PlayerSessionHttp.Apply(request, GameState.Instance?.PlayerProfileId ?? "");
+		using var response = Client.SendAndWait(request);
 		if (!response.IsSuccessStatusCode)
 		{
 			throw new InvalidOperationException($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}");

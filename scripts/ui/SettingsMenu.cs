@@ -158,6 +158,7 @@ public partial class SettingsMenu : RoyalScreen
                 yield return new SwitchRow("flag", "Send crash reports", () => state.CrashReportingConsent, state.SetCrashReportingConsent);
                 yield return new InfoRow("gold", "Payments", () => $"{state.TotalPurchaseCount} purchases · {DetectPurchasePlatform()}");
                 yield return new EditRow("gold", "Payment endpoint", () => state.PurchaseValidationEndpoint, state.SetPurchaseValidationEndpoint, "https://api.example.com", !state.IsReleaseBackendConfigured);
+                if (RewardedAds.PrivacyOptionsRequired) yield return new ActionRow("eye", "Ad privacy choices", "Change", RewardedAds.ShowPrivacyOptions);
                 yield return new ActionRow("book", "Privacy policy", "Open", () => OS.ShellOpen(SiteLinks.Privacy));
                 yield return new ActionRow("book", "Terms of use", "Open", () => OS.ShellOpen(SiteLinks.Terms));
                 yield return new ActionRow("book", "Help and support", "Open", () => OS.ShellOpen(SiteLinks.Support));

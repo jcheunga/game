@@ -17,6 +17,8 @@ public partial class RoyalResult : Control
     public string LeaveText = MapNavigation.Caption, RetryText = "Restart";
     public int RetryFoodCost;
     public Action Leave, Retry;
+    /// <summary>When set, the gold tile offers to pay the win's gold again for a rewarded ad; returns whether it did.</summary>
+    public Func<System.Threading.Tasks.Task<bool>> DoubleGold;
     public RoyalButton RetryButton { get; private set; }
     public RoyalButton LeaveButton { get; private set; }
 
@@ -104,6 +106,7 @@ public partial class RoyalResult : Control
             caption.Position = new Vector2(4, caption.Position.Y - origin.Y - 10); caption.Size = new Vector2(rect.Size.X - 8, caption.Size.Y);
             tile.AddChild(caption);
             canvas.AddChild(tile);
+            if (tiles[i].Kind == "gold" && DoubleGold != null) OfferDoubleGold(canvas, rect, tiles[i].Amount, amount, caption);
         }
         var cards = mastery.Count > 0 || experience != null;
         if (tiles.Count == 0 && (Detail.Length > 0 || !cards))
@@ -160,6 +163,29 @@ public partial class RoyalResult : Control
     }
 
     private const int ActionSize = 22;
+
+    /// <summary>The whole gold tile is the button (a fingertip's size): its caption offers ×2 for an ad, then says it's done.</summary>
+    private void OfferDoubleGold(Control canvas, Rect2 rect, int gold, RoyalLabel amount, RoyalLabel caption)
+    {
+        caption.Text = "×2 WITH AD";
+        caption.Ink = new Color("f3d48a");
+        RoyalButton button = null;
+        button = RoyalButton.Over(rect, "Watch an ad to double the gold", async () =>
+        {
+            button.Disabled = true;
+            caption.Text = "AD PLAYING";
+            if (await DoubleGold())
+            {
+                amount.Text = $"+{gold * 2:N0}";
+                caption.Text = "DOUBLED";
+                return;
+            }
+            caption.Text = "×2 WITH AD";
+            button.Disabled = false;
+        }, 12);
+        button.Name = "DoubleGold";
+        canvas.AddChild(button);
+    }
 
     /// <summary>The player's level: its medallion, the XP this battle paid and the bar toward the next level.</summary>
     private void BuildLevelCard(Control canvas, Rect2 rect, int gained)

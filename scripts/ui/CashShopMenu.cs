@@ -29,6 +29,7 @@ public partial class CashShopMenu : Control
     private Label _noticeLabel = null !;
     private HBoxContainer _refillRow = null !;
     private RoyalButton _refillButton = null !;
+    private RoyalButton _adFoodButton = null !;
     private Label _rechargeLabel = null !;
     private int _selectedCategory;
     // A native purchase is open in the store sheet or waiting on server verification.
@@ -254,6 +255,23 @@ public partial class CashShopMenu : Control
         refill.AccessibilityName = refill.TooltipText = $"Buy {GameState.FoodRefillAmount} food for {GameState.FoodRefillGold} gold";
         _refillRow.AddChild(refill);
         _refillButton = refill;
+        // Rations for a rewarded ad, in the same footer; shown only where this build offers ads.
+        _adFoodButton = FooterButton(new Vector2(150, 32), "navy", async () =>
+        {
+            _adFoodButton.Disabled = true;
+            var watched = await RewardedAds.ShowAsync();
+            var message = "The ad didn't finish, so nothing was added.";
+            var claimed = watched && GameState.Instance.TryClaimAdReward(GameState.AdFood, 0, out message);
+            AudioDirector.Claimed(claimed);
+            RefreshUi();
+            _noticeLabel.Text = message;
+        });
+        _adFoodButton.Arrange(StorePackCard.Caps($"+{GameState.AdFoodAmount} food", 14, RoyalText.Cream, 700), HomeMapArt.Icon("food"), new Vector2(22, 22),
+            StorePackCard.Caps("AD", 14, RoyalText.Cream, 700), null, Vector2.Zero, gap: 6, rule: 10);
+        _adFoodButton.Text = $"{GameState.AdFoodAmount} food · ad";
+        _refillRow.AddChild(_adFoodButton);
+        RewardedAds.Changed += UpdateRefill;
+        TreeExiting += () => RewardedAds.Changed -= UpdateRefill;
         var recharge = StorePackCard.Serif("", 15, Muted);
         recharge.AutowrapMode = TextServer.AutowrapMode.Off;
         recharge.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
@@ -336,6 +354,11 @@ public partial class CashShopMenu : Control
         _refillButton.Disabled = left == 0;
         _rechargeLabel.Text = (left == 0 ? "No refills left today" : left == 1 ? "1 refill left today" : $"{left} refills left today")
             + $" · +{GameState.FoodRechargeAmount} food every {GameState.FoodRechargeSeconds / 60} minutes";
+        var ads = GameState.Instance.AdRewardsLeftToday(GameState.AdFood);
+        _adFoodButton.Visible = RewardedAds.Enabled;
+        _adFoodButton.Disabled = ads <= 0 || !RewardedAds.Ready;
+        _adFoodButton.AccessibilityName = _adFoodButton.TooltipText = ads <= 0 ? "No ad rations left today"
+            : !RewardedAds.Ready ? "No ad is ready yet" : $"Watch an ad for {GameState.AdFoodAmount} food · {ads} left today";
     }
 
     private void RefreshUi(bool preserveStatus = false)

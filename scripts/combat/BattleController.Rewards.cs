@@ -101,6 +101,9 @@ public partial class BattleController
             RetryFoodCost = IsCampaignMode ? GameState.Instance.GetStageEntryFoodCost(_stage) : 0,
             Leave = HandleEndPanelSecondaryAction, Retry = HandleEndPanelPrimaryAction
         };
+        var gold = rewards.Where(reward => reward.Kind == "gold").Sum(reward => reward.Amount);
+        if (won && IsCampaignMode && gold > 0 && RewardedAds.Ready && GameState.Instance.AdRewardsLeftToday(GameState.AdDoubleGold) > 0)
+            _royalResult.DoubleGold = async () => await RewardedAds.ShowAsync() && GameState.Instance.TryClaimAdReward(GameState.AdDoubleGold, gold, out _);
         // The board is drawn on the full canvas, so it stands outside the HUD's larger scale.
         _royalResult.Theme = _battleHudRoot.Theme;
         _battleHudRoot.GetParent().AddChild(_royalResult);

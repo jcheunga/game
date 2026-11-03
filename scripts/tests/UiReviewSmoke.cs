@@ -100,6 +100,14 @@ public partial class UiReviewSmoke : Node
                 GD.Print($"MAP_NOTICE_REVIEW_RESULT: {_failures} failures");
                 QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
+            if (OS.GetCmdlineUserArgs().Contains("--ads"))
+            {
+                _output = ProjectSettings.GlobalizePath("res://artifacts/ads");
+                System.IO.Directory.CreateDirectory(_output);
+                await ReviewAds();
+                GD.Print($"ADS_REVIEW_RESULT: {_failures} failures");
+                QuitAfterAudio(_failures == 0 ? 0 : 1); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--storehouse"))
             {
                 _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/home-map/small" : "res://artifacts/home-map/desktop");

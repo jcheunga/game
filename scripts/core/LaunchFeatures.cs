@@ -12,4 +12,10 @@ public static class LaunchFeatures
 
 	/// <summary>The season pass's premium track. Off for 1.0: no store product sells it yet.</summary>
 	public static bool SeasonPremiumTrack { get; set; }
+
+	/// <summary>
+	/// Rewarded video ads (RewardedAds). On: a release build still shows none until the real AdMob IDs are set, and
+	/// its export leaves the ad SDK out until then.
+	/// </summary>
+	public static bool RewardedAds { get; set; } = true;
 }

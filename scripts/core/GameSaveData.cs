@@ -79,6 +79,10 @@ public sealed class GameSaveData
     /// <summary>The day (UTC, yyyy-MM-dd) of the storehouse refills counted in FoodRefillsOnDay.</summary>
     public string FoodRefillDay { get; set; } = "";
     public int FoodRefillsOnDay { get; set; }
+    /// <summary>The day (UTC) of the ad rewards counted below (GameState.AdRewards).</summary>
+    public string AdRewardDay { get; set; } = "";
+    public int AdDoubleGoldOnDay { get; set; }
+    public int AdFoodOnDay { get; set; }
     public int Scrap { get => Gold; set => Gold = value; }
     public int Fuel { get => Food; set => Food = value; }
     public int HighestUnlockedStage { get; set; } = 1;

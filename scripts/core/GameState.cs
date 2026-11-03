@@ -4203,6 +4203,7 @@ public partial class GameState : Node
 		Food = DefaultFood;
 		FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 		_foodRefillDay = ""; _foodRefillsOnDay = 0;
+		ResetAdRewards();
 		ResetAdventureProgress();
 		HighestUnlockedStage = DefaultUnlockedStage;
 		SelectedStage = DefaultUnlockedStage;
@@ -4369,6 +4370,7 @@ public partial class GameState : Node
 		FoodRechargedAtUnixSeconds = saved.FoodRechargedAtUnixSeconds;
 		_foodRefillDay = saved.FoodRefillDay?.Trim() ?? "";
 		_foodRefillsOnDay = Math.Max(0, saved.FoodRefillsOnDay);
+		LoadAdRewards(saved);
 		HighestUnlockedStage = saved.HighestUnlockedStage;
 		LoadAdventureProgress(saved);
 		SelectedStage = saved.SelectedStage;
@@ -5103,7 +5105,7 @@ public partial class GameState : Node
 
 	internal GameSaveData BuildSaveData()
 	{
-		return new GameSaveData
+		var data = new GameSaveData
 		{
 			Gold = Gold,
 			Food = Food,
@@ -5285,6 +5287,8 @@ public partial class GameState : Node
 			ClaimedLevelRewards = _claimedLevelRewards.OrderBy(level => level).ToArray(),
 			HasChosenCallsign = HasChosenCallsign
 		};
+		SaveAdRewards(data);
+		return data;
 	}
 
 	public bool HasClaimedDistrictReward(string districtId)

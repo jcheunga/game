@@ -34,7 +34,16 @@ rehearse a restore before releasing paid currency.
 ## Before the first deploy
 
 1. Create a Linux VM and install Docker Engine plus the Docker Compose v2
-   plugin. Use a non-root deployment account.
+   plugin. Use a non-root deployment account. `deploy.sh` also runs the server
+   tests and builds the website on the VM before it deploys, so install the
+   .NET 10 SDK, Python 3 and git too. Give it 2 vCPU and 2 GB of memory at
+   least, 4 GB for headroom: a clean server build peaks near 450 MB and the
+   tests near 200 MB (measured 2026-11-03), and the running API replicas,
+   Redis and Caddy stay up while a redeploy builds. Put it in the same region
+   as the database, and set the database URL's `max_pool_size` so that
+   `CROWNROAD_SERVER_REPLICAS` times it stays below the plan's connection
+   limit, with a few spare for `restore_drill.sh` and `watch.sh` (small
+   managed plans often allow only 25 to 50).
 2. Point an A (and, if used, AAAA) record such as `api.your-domain.example` at
    the VM, plus records for the website domain and its `www.` alias. Make ports
    80 and 443 available from the public internet. Caddy uses that reachability

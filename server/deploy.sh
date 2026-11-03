@@ -35,6 +35,11 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 1
 fi
 
+if ! command -v dotnet >/dev/null 2>&1; then
+    echo "The .NET 10 SDK is required: the server tests run before every deploy."
+    exit 1
+fi
+
 echo "Building the public website for $SITE_DOMAIN..."
 python3 ../scripts/tools/build_site.py --strict --domain "$SITE_DOMAIN"
 

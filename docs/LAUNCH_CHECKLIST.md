@@ -135,7 +135,13 @@ What follows needs real accounts, a domain, a deployed server and phones.
   client.
 - [ ] **A transactional email service**, such as Postmark, Amazon SES or
   Resend.
-- [ ] **A Linux VM and a managed PostgreSQL database.**
+- [ ] **A Linux VM and a managed PostgreSQL database.** 2 vCPU and 4 GB for
+  the VM, the database in the same region, and a connection limit above what
+  the API pools use (see [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy)).
+- [ ] **The stores' 15 % fee tiers**, before the first sale. Both take 30 %
+  of sales without them. Apple: apply to the App Store Small Business Program
+  once the Paid Apps Agreement is accepted. Google: set up your account group
+  in Play Console so the 15 % rate on the first $1M a year applies.
 
 ## 3. Deploy the server
 
@@ -441,3 +447,9 @@ handling of every outcome passes on desktop
   linked sign-in IDs, player IDs, purchase history, account deletion and
   refunds. Have both reviewed, then set the policy's `effective_date` in
   `site/site.json`.
+
+## 14. Launch day
+
+See [LAUNCH_DAY.md](LAUNCH_DAY.md): freeze the release with
+`scripts/release/freeze.py`, back up, deploy and verify, roll out in stages,
+on-call cover, rollback triggers and the last good versions.

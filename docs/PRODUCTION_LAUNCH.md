@@ -441,6 +441,9 @@ receipt stub, or a backend unit test as store certification.
 
 ## Final go/no-go and launch day
 
+The runbook, with the freeze script, rollback triggers and the last good
+versions, is [LAUNCH_DAY.md](LAUNCH_DAY.md).
+
 1. Freeze the release commit and record Godot/export-template/SDK versions,
    signed artifact hashes, backend image digest, schema version, and product
    catalog. Run `./scripts/verify_all.sh`; keep the `Verify Crownroad` workflow

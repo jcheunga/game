@@ -102,6 +102,22 @@ What follows needs real accounts, a domain, a deployed server and phones.
 
 - [ ] **A domain you own.** Apple only accepts HTTPS return URLs on a real
   domain, and the server needs one for its certificate.
+- [x] **Publisher: a company, not an individual.** Decided (2026-11-04). Both
+  stores then want an organisation account. **[Check]** the stores' current
+  enrollment pages, but expect:
+  - A registered legal entity. Apple doesn't accept a trade name (DBA) alone.
+  - The company's **D-U-N-S number**, with the name and address exactly as
+    registered. Look it up first; requesting a new one is free but can take
+    days to weeks. Start this before anything else in section 2.
+  - A public website on a domain the company owns (Apple checks it), and an
+    email address at that domain for the enrollment.
+  - Authority to sign legal agreements for the company.
+  - The company's legal name as the seller on both stores and in
+    `site/site.json` (`legal_name`).
+  - Google Play's 12-tester closed test (section 2) doesn't apply to
+    organisation accounts.
+  - In the EU the company is a trader: both stores show its address, phone
+    and email to EU players.
 - [x] **Launch platforms: Android, iOS or both.** Decided (2026-10-28): both.
   For Android only, leave
   `APPLE_IAP_PRIVATE_KEY_SOURCE` unset in `.env.production` (section 3). The
@@ -130,6 +146,7 @@ What follows needs real accounts, a domain, a deployed server and phones.
 ## 2. Accounts
 
 - [ ] **Google Play Console**: $25 once. Play Games and Android purchases.
+  Sign up as an organisation (section 1).
   **A personal account can't publish straight away:** accounts made after
   13 Nov 2023 must first run a closed test with at least 12 testers opted in
   for 14 days in a row, then request production access (about three weeks in
@@ -137,7 +154,8 @@ What follows needs real accounts, a domain, a deployed server and phones.
   Play Console Help for the current numbers when you sign up (noted
   2026-11-04).
 - [ ] **Apple Developer Program**: $99 a year. Game Center, Sign in with Apple
-  and iOS.
+  and iOS. Enroll as an organisation (section 1). Apple verifies the company
+  with Dun & Bradstreet and may phone to confirm you can sign for it.
 - [ ] **Google Cloud**: free. Google sign-in client and the Play Games server
   client.
 - [ ] **A transactional email service**, such as Postmark, Amazon SES or

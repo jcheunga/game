@@ -46,6 +46,11 @@ roughly a third to a half as much, in exchange for no permission prompt and "Tra
 privacy label. Don't add `NSUserTrackingUsageDescription` to the plist. Reversing this later needs that key,
 an ATT prompt before the first ad, and "Tracking: Yes" for the advertising data on the label.
 
+**Android ads stay personalized (decided 2026-11-04).** Android has no tracking prompt, so the iPhone reasons
+don't apply. Google's SDK reads the advertising ID, players in consent regions choose on the consent form,
+and anyone can opt out in the phone's own settings. The Data safety answers below already list the
+advertising ID.
+
 ## What changes in the stores and documents
 
 These apply only to a release with ads. Google publishes the exact answers its SDK needs; **[Check]** each

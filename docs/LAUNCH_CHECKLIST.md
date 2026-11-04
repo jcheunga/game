@@ -130,6 +130,12 @@ What follows needs real accounts, a domain, a deployed server and phones.
 ## 2. Accounts
 
 - [ ] **Google Play Console**: $25 once. Play Games and Android purchases.
+  **A personal account can't publish straight away:** accounts made after
+  13 Nov 2023 must first run a closed test with at least 12 testers opted in
+  for 14 days in a row, then request production access (about three weeks in
+  all). Organisation accounts skip this but need a D-U-N-S number. [Check]
+  Play Console Help for the current numbers when you sign up (noted
+  2026-11-04).
 - [ ] **Apple Developer Program**: $99 a year. Game Center, Sign in with Apple
   and iOS.
 - [ ] **Google Cloud**: free. Google sign-in client and the Play Games server

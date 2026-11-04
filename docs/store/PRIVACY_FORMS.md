@@ -216,8 +216,8 @@ every stored record carries the player ID. Nothing is used for tracking: no
 advertising ID, no data brokers, and the hashed player ID goes to Apple only
 to verify purchases. So the app needs no App Tracking Transparency prompt.
 These answers are for a release without ads; a release with rewarded ads adds
-Google's entries in [ADS.md](ADS.md), and still needs no tracking prompt while
-it doesn't use the advertising identifier.
+Google's entries in [ADS.md](ADS.md), and still needs no tracking prompt:
+iPhone ads aren't personalized, so the advertising identifier is never read.
 
 Apple's labels have no "optional" field. The opt-in analytics and crash
 reports are still declared, because they are collected repeatedly and don't

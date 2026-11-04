@@ -40,10 +40,11 @@ Settings → Account then offers **Ad privacy choices** to the players it applie
 choices are set in AdMob (Privacy & messaging); create a GDPR message there before launch, or Google serves
 no ads in those regions.
 
-**[Decide] Personalized ads on iPhone.** The build doesn't ask for Apple's tracking permission (App Tracking
-Transparency), so iPhone ads use no advertising identifier. They are less targeted and earn roughly half to a
-third as much. Turning it on needs `NSUserTrackingUsageDescription`, an ATT prompt before the first ad, and
-"Tracking: Yes" on the App Store privacy label.
+**No personalized ads on iPhone (decided 2026-11-04).** The build never asks for Apple's tracking permission
+(App Tracking Transparency), so iPhone ads use no advertising identifier. They are less targeted and earn
+roughly a third to a half as much, in exchange for no permission prompt and "Tracking: No" on the App Store
+privacy label. Don't add `NSUserTrackingUsageDescription` to the plist. Reversing this later needs that key,
+an ATT prompt before the first ad, and "Tracking: Yes" for the advertising data on the label.
 
 ## What changes in the stores and documents
 
@@ -65,7 +66,7 @@ against AdMob's current help pages ("Data disclosure for Google Play" and "Apple
 - **App Store Connect, App Privacy:**
   - Add Coarse Location, Device ID, Product Interaction, Advertising Data, Crash Data, Performance Data and
     Other Diagnostic Data, for Third-Party Advertising and Analytics.
-  - "Used to track you": No while the build doesn't request ATT.
+  - "Used to track you": No, because the build doesn't request ATT (decided above).
   - GoogleMobileAds and UserMessagingPlatform ship their own privacy manifests, which Xcode merges.
 - **Age rating (IARC):** "Does the app contain ads?" becomes Yes. The rating itself doesn't change. Keep the
   target audience 13 and over: a younger audience needs Google's Families-certified ad settings.

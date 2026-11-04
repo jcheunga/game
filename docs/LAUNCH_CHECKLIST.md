@@ -465,7 +465,8 @@ handling of every outcome passes on desktop
   - Put the app and ad unit IDs in project settings (`crownroad/ads/…`) and the
     iOS preset's CrownroadAds option, and the publisher ID in `site/site.json`
     for `app-ads.txt`.
-  - Decide whether iPhone ads may ask for tracking (personalized ads).
+  - ~~Decide whether iPhone ads may ask for tracking.~~ Decided 2026-11-04: no
+    tracking prompt, so iPhone ads aren't personalized.
   - Answer Play's Ads and Data safety questions, Apple's App Privacy labels and
     the IARC ads question as ADS.md lists.
   - On phones with debug builds: watch a test ad in each placement, check the

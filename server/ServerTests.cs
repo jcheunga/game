@@ -117,6 +117,7 @@ public static partial class ServerTests
                 ("AdminRefund", () => TestAdminRefund(client)),
                 ("SupportLookup", () => TestSupportLookup(client)),
                 ("PurchasePause", () => TestPurchasePause(client)),
+                ("AdsSwitch", () => TestAdsSwitch(client)),
                 ("SupportGrant", () => TestSupportGrant(client)),
                 ("GoogleVoidedPurchases", () => TestGoogleVoidedPurchases(client)),
                 ("RefundLedgerMigration", TestRefundLedgerMigration),
@@ -254,6 +255,9 @@ public static partial class ServerTests
                     endpoints.MapGet("/admin/support/player", SupportLookup.AdminPlayer);
                     endpoints.MapGet("/admin/purchases", LiveSettings.AdminPurchasesGet);
                     endpoints.MapPost("/admin/purchases", LiveSettings.AdminPurchasesSet);
+                    endpoints.MapGet("/admin/ads", LiveSettings.AdminAdsGet);
+                    endpoints.MapPost("/admin/ads", LiveSettings.AdminAdsSet);
+                    endpoints.MapGet("/live-settings", LiveSettings.PublicGet);
                     endpoints.MapPost("/admin/support/delete-account", SupportLookup.AdminDeleteAccount);
                     endpoints.MapPost("/admin/support/grant", SupportLookup.AdminGrant);
                     endpoints.MapPost("/admin/support/rename", SupportLookup.AdminRename);

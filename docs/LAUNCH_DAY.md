@@ -6,7 +6,7 @@ phones, store review) is in [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md).
 
 ## 1. Freeze the release
 
-1. `python3 scripts/release/preflight.py` reports 20 of 20.
+1. `python3 scripts/release/preflight.py` reports 24 of 24.
 2. The end-to-end test passes against the production stack, with Docker
    running: `scripts/tests/server_e2e.sh --stack`.
 3. Export the signed builds: `scripts/release/android_release.sh` and
@@ -51,6 +51,7 @@ Then check, in order:
 - `server/ops/watch.sh --test` reaches the on-call channel, and the timer is
   running (`systemctl list-timers | grep crownroad`).
 - `GET /admin/purchases` shows purchases not paused.
+- `GET /admin/ads` shows ads the way you mean to launch (they start off).
 - A sandbox purchase on each platform is granted once, and shows in
   `/admin/support/player`.
 

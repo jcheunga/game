@@ -105,6 +105,7 @@ public partial class ServerEndToEnd : Node
         await PurchaseRecovery(state);
         await RefundRecovery(state);
         await PurchasePause(state);
+        await AdsSwitch(state);
         await SupportGrant(state);
 
         // A late-game save makes the full trip: upload, sign-out, sign back in, download.

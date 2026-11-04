@@ -6,7 +6,10 @@
 # Needs full Xcode signed in to your Apple Developer account (Xcode → Settings → Accounts), so
 # automatic signing can make the distribution certificate and App Store profile for
 # com.crownroad.game. The team ID stays out of export_presets.cfg: the script sets it on a copy of
-# the preset for the export and puts the committed file back whatever happens.
+# the preset for the export and puts the committed file back whatever happens. On that copy it also
+# turns the CrownroadAds plugin on, with the AdMob app ID from project.godot, when both iOS ad IDs
+# are set (crownroad/ads/ios_app_id and ios_rewarded_unit), and off otherwise, like the Android
+# export. Whether players then see ads is the server's switch (docs/store/ADS.md).
 #
 # 1. Runs the release preflight for iOS and stops if anything fails.
 # 2. Exports the Xcode project to builds/ios/xcode with Godot's iOS template.
@@ -28,13 +31,20 @@ rm -rf "$work/xcode" && mkdir -p "$work/xcode"
 presets="$root/export_presets.cfg"
 cp "$presets" "$work/export_presets.cfg.keep"
 trap 'cp "$work/export_presets.cfg.keep" "$presets"' EXIT
-python3 - "$presets" "$team" <<'EOF'
+ad_app_id="$(sed -n 's/^ads\/ios_app_id="\(.*\)"$/\1/p' project.godot)"
+ad_unit="$(sed -n 's/^ads\/ios_rewarded_unit="\(.*\)"$/\1/p' project.godot)"
+[ -n "$ad_app_id" ] && [ -n "$ad_unit" ] || ad_app_id=""
+python3 - "$presets" "$team" "$ad_app_id" <<'EOF'
 import re, sys
-path, team = sys.argv[1], sys.argv[2]
+path, team, ad_app_id = sys.argv[1], sys.argv[2], sys.argv[3]
 text = open(path, encoding="utf-8").read()
 start = text.index('name="iOS"')
 head, ios = text[:start], text[start:]
 ios = re.sub(r'application/app_store_team_id=".*?"', f'application/app_store_team_id="{team}"', ios, count=1)
+options = ios.index('.options]\n') + len('.options]\n')
+ios = re.sub(r'\nplugins/CrownroadAds=\w+|\nplugins_plist/GADApplicationIdentifier=".*?"', '', ios)
+ads = f'plugins/CrownroadAds=true\nplugins_plist/GADApplicationIdentifier="{ad_app_id}"\n' if ad_app_id else 'plugins/CrownroadAds=false\n'
+ios = ios[:options] + ads + ios[options:]
 ios = ios.replace('application/export_project_only=false', 'application/export_project_only=true', 1)
 if 'application/export_project_only=true' not in ios:
     ios = ios.replace('.options]\n', '.options]\n\napplication/export_project_only=true\n', 1)
@@ -55,6 +65,15 @@ privacy="$work/xcode/PrivacyInfo.xcprivacy"
 for type in EmailAddress UserID PurchaseHistory ProductInteraction GameplayContent CrashData; do
 	grep -q "NSPrivacyCollectedDataType$type<" "$privacy" || { echo "PrivacyInfo.xcprivacy does not declare $type" >&2; exit 1; }
 done
+if [ -n "$ad_app_id" ]; then
+	[ "$(/usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "$plist")" = "$ad_app_id" ] \
+		|| { echo "Info.plist lacks the AdMob app ID $ad_app_id" >&2; exit 1; }
+	echo "Rewarded ads are in, with AdMob app $ad_app_id."
+else
+	! /usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "$plist" >/dev/null 2>&1 \
+		|| { echo "Info.plist has an AdMob app ID but the iOS ad IDs aren't set" >&2; exit 1; }
+	echo "No ad IDs are set, so this build has no ads."
+fi
 echo "Info.plist and the privacy manifest match the store answers."
 
 echo "Archiving (this signs with your team; Xcode may ask for keychain access)..."

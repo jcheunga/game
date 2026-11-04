@@ -458,17 +458,22 @@ handling of every outcome passes on desktop
   linked sign-in IDs, player IDs, purchase history, account deletion and
   refunds. Have both reviewed, then set the policy's `effective_date` in
   `site/site.json`.
-- [ ] **Rewarded ads, if they ship** ([store/ADS.md](store/ADS.md)). The game
-  side and both plugins are built; a release has ads only with real IDs.
-  - Create the AdMob account, both apps and a Rewarded ad unit in each, and the
-    GDPR consent message in Privacy & messaging.
+- [ ] **Rewarded ads, in the store builds and off until switched on**
+  ([store/ADS.md](store/ADS.md)). The game side, both plugins and the server
+  switch (`/admin/ads`, off by default) are built (2026-11-04). The release
+  preflight fails until the IDs are set.
+  - Before the first store build: create the AdMob account, both apps and a
+    Rewarded ad unit in each, and the GDPR consent message in Privacy &
+    messaging.
   - Put the app and ad unit IDs in project settings (`crownroad/ads/…`) and the
-    iOS preset's CrownroadAds option, and the publisher ID in `site/site.json`
-    for `app-ads.txt`.
+    publisher ID in `site/site.json` for `app-ads.txt`. `ios_release.sh` turns
+    the iOS plugin on from the IDs.
   - ~~Decide whether iPhone ads may ask for tracking.~~ Decided 2026-11-04: no
     tracking prompt, so iPhone ads aren't personalized.
   - Answer Play's Ads and Data safety questions, Apple's App Privacy labels and
-    the IARC ads question as ADS.md lists.
+    the IARC ads question as ADS.md lists, from the first release.
+  - When you want ads: follow "Before switching ads on" in ADS.md, then
+    `POST /admin/ads {"enabled": true}`.
   - On phones with debug builds: watch a test ad in each placement, check the
     reward arrives once, and from an EEA connection check the consent form and
     Settings → Ad privacy choices.

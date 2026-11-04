@@ -43,6 +43,18 @@ def text(value):
     return value.strip().strip('"') if value is not None else ""
 
 
+GOOGLE_TEST_PUBLISHER = "3940256099942544"
+
+
+def ad_ids(project, platform):
+    """The AdMob app and rewarded unit IDs for a platform, checked for shape and that they aren't Google's test IDs."""
+    ads = project.get("crownroad", {})
+    app, unit = text(ads.get(f"ads/{platform}_app_id")), text(ads.get(f"ads/{platform}_rewarded_unit"))
+    ok = (re.fullmatch(r"ca-app-pub-\d{16}~\d{10}", app) and re.fullmatch(r"ca-app-pub-\d{16}/\d{10}", unit)
+          and GOOGLE_TEST_PUBLISHER not in app + unit)
+    return bool(ok), app, unit
+
+
 def preset(presets, name):
     for section, values in presets.items():
         if re.fullmatch(r"preset\.\d+", section) and text(values.get("name")) == name:
@@ -73,6 +85,12 @@ def main():
           "Make SiteLinks.Base in scripts/core/SiteLinks.cs match the domain in site/site.json.")
     check("both", not missing, "Website launch values are filled in" + (f" (missing {', '.join(missing)})" if missing else ""),
           "Fill site/site.json, then run python3 scripts/tools/build_site.py --strict.")
+    # Ads ship in the store builds, switched off on the server until an operator turns them on (docs/store/ADS.md).
+    publisher = text(site.get("admob_publisher_id"))
+    app_ids = [ad_ids(project, platform)[1] for platform in ("android", "ios")]
+    check("both", re.fullmatch(r"pub-\d{16}", publisher) and all(publisher[4:] in app for app in app_ids if app),
+          f"AdMob publisher ID is set for app-ads.txt ({publisher or 'blank'})",
+          "Copy the publisher ID (pub-…) from AdMob → Settings into admob_publisher_id in site/site.json.")
 
     if "android" in wanted:
         header, options = preset(presets, "Android")
@@ -89,6 +107,10 @@ def main():
               "Raise version/code for every upload; Play refuses a code it has seen.")
         check("android", text(options.get("permissions/internet")) == "true", "Internet permission is on",
               "Turn on Permissions → Internet.")
+        ok, app, unit = ad_ids(project, "android")
+        check("android", ok, f"AdMob app and rewarded ad unit IDs are set ({app or 'blank'}, {unit or 'blank'})",
+              "Copy the Android app ID (ca-app-pub-…~…) and its Rewarded unit (ca-app-pub-…/…) from AdMob into "
+              "crownroad/ads/android_app_id and android_rewarded_unit. Without them the build has no ads.")
 
     if "ios" in wanted:
         header, options = preset(presets, "iOS")
@@ -112,6 +134,13 @@ def main():
         android_header, _ = preset(presets, "Android")
         check("ios", text(header.get("exclude_filter")) == text(android_header.get("exclude_filter")),
               "iOS leaves out the same unused files as Android", "Copy the Android preset's exclude filter to iOS.")
+        ok, app, unit = ad_ids(project, "ios")
+        check("ios", ok, f"AdMob app and rewarded ad unit IDs are set ({app or 'blank'}, {unit or 'blank'})",
+              "Copy the iOS app ID and its Rewarded unit from AdMob into crownroad/ads/ios_app_id and "
+              "ios_rewarded_unit. ios_release.sh then turns the ad plugin on. Without them the build has no ads.")
+        sdk = ROOT / "ios/plugins/crownroadads"
+        check("ios", all((sdk / f"{name}.xcframework").is_dir() for name in ("GoogleMobileAds", "UserMessagingPlatform", "crownroadads.release")),
+              "Google's ad SDK and the ad plugin are built", "Run native/AdMob/ios-plugin/build.sh (it downloads Google's SDK).")
         art = ROOT / "assets/ui/signin"
         # The iPhone shows no Sign in with Apple button (AccountDialog.BrowserSignIn), so only the Game Center icon is needed.
         check("ios", (art / "game-center.png").exists(), "Apple's Game Center icon is in",

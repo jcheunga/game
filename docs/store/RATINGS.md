@@ -27,7 +27,7 @@ Each answer below rests on these facts:
 | Where other players see a nickname | **Only in a LAN race.** Players on the same local network who join the host by its address see each other's nicknames in the race standings (`LanRaceMenu.cs`). A nickname a LAN peer sends goes through the same filter. Internet rooms are hidden: the Multiplayer screen shows Records, **New code** and **Copy code** instead of the room list, **Match** and **Host**. Challenge and daily leaderboards show an anonymous tag per board, "Player" and six hex characters from a hash of the player ID and the board, and "You" for the player's own entry, never a player ID or nickname. The Rankings screen shows only the player's own row ("Rankings are offline"). The nickname is still sent to the server and kept there | `LaunchFeatures.cs`, `MultiplayerMenu.Royal.cs`, `LeaderboardTag.cs`, `LeaderboardMenu.cs` |
 | Chat or messaging | None | `MultiplayerMenu.cs` |
 | Reporting | None reachable in 1.0. The room report (**Submit report**, with reasons such as Offensive name) lives in the hidden rooms | `OnlineRoomReportReasonCatalog.cs`, `MultiplayerMenu.cs` |
-| Ads | Optional rewarded video ads (AdMob) only in a release with the AdMob IDs set; otherwise none, with no ad SDK and no advertising ID | [ADS.md](ADS.md) |
+| Ads | Optional rewarded video ads (AdMob). The store builds carry them, switched on from the server; nothing plays unless the player chooses an ad | [ADS.md](ADS.md) |
 | Gambling or simulated gambling | None. No wagers, slot machines, card games or wheels | Search of `scripts/` |
 | Paid random items | **None.** The Adventurer's Kit (US$4.99) recruits a fixed troop: the first one the player doesn't own, by lowest unlock stage, then roster order. The card names it before **Buy** ("Recruits Militia" on a fresh save) | `NextKitUnitId` in `scripts/core/GameState.cs`, `StorePackCard.cs` |
 | Other random rewards | Free only: relic fusion (3 relics in, 1 random relic of the next rarity out, no currency), expedition relic drops (no cost to start), bounty templates. None is sold. The relics that go into a fusion can be crafted with shards and gold, and both are sold (relic shard packs since 2026-10-31), so a player can craft fusion inputs entirely from currency they bought and reach a random relic. That indirect path is read as No below **[Legal]** | `TryFuseRelics`, `RelicForgeCatalog`, `ExpeditionCatalog`, `BountyBoardCatalog` |
@@ -57,7 +57,7 @@ from Apple's "Age ratings values and definitions" page (iOS 26 age ranges:
 | Unrestricted web access | No | No in-app browser. The system browser opens only the website's privacy, terms and support pages. On iPhone there is no browser sign-in |
 | User-generated content | **No** | Apple: "broad distribution of content created by users". The nickname is the only player-written text. In 1.0 only players on the same local network who join a LAN race see it, which isn't broad distribution, and the filter refuses offensive names. Turning rooms on later makes this Yes and brings guideline 1.2 (a filter, a report tool, blocking, published contact details) |
 | Messaging and chat | No | None |
-| Advertising | No without ads; **Yes** in a release with rewarded ads | [ADS.md](ADS.md) |
+| Advertising | **Yes**: optional rewarded ads, which the server can switch on without an update | [ADS.md](ADS.md) |
 | Social media | No | None |
 
 ### Mature themes
@@ -236,11 +236,11 @@ Not recommended for this release.
 | --- | --- | --- |
 | Privacy policy | `https://crownroad.game/privacy` | |
 | App access | All functionality available without special access | See [REVIEW_NOTES.md](REVIEW_NOTES.md) |
-| Ads | No in a release without AdMob IDs; **Yes, my app contains ads** in one with them | [ADS.md](ADS.md) |
+| Ads | **Yes, my app contains ads**, from the first release, even while the server's switch is off | [ADS.md](ADS.md) |
 | Content rating | IARC, above | |
 | Target audience and content | 13 and over, above | |
 | Data safety | See [PRIVACY_FORMS.md](PRIVACY_FORMS.md) | |
-| Advertising ID | No without ads: **[Check]** the release AAB's merged manifest has no `com.google.android.gms.permission.AD_ID` (Google libraries can add it; remove it in the manifest). **Yes** with rewarded ads, for advertising | [ADS.md](ADS.md) |
+| Advertising ID | **Yes**, for advertising: the release AAB's merged manifest has `com.google.android.gms.permission.AD_ID` from Google's ad SDK | [ADS.md](ADS.md) |
 | Government app | No | |
 | Financial features | None. In-app packs of game currency aren't financial features | |
 | Health apps | None | |

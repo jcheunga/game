@@ -253,6 +253,15 @@ The switch lives in the database (`live_settings`, schema 9), so every API
 replica follows it within 10 seconds, with no redeploy. Use it during an
 incident on launch day, before anything else.
 
+### Switching rewarded ads
+
+`POST /admin/ads` with `{"enabled": true}` switches rewarded ads on;
+`{"enabled": false}` switches them off, and `GET /admin/ads` shows the state.
+They start off. It's the same `live_settings` table, so replicas follow within
+10 seconds. The game reads it from the public `GET /live-settings` when the
+map opens, at most every 5 minutes. What to do before switching ads on the
+first time is in [store/ADS.md](store/ADS.md).
+
 ## Refunds
 
 When Google or Apple refunds a pack, the server takes back what it granted.

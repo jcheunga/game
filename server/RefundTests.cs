@@ -744,6 +744,41 @@ public static partial class ServerTests
         Assert(!resumed.GetProperty("purchasesPaused").GetBoolean() && resumed.GetProperty("purchasesMessage").GetString() == "", "expected purchases to resume");
     }
 
+    private static async Task TestAdsSwitch(HttpClient client)
+    {
+        async Task<(HttpStatusCode Status, string Text)> Admin(HttpMethod method, object? body = null, bool authorized = true)
+        {
+            using var request = new HttpRequestMessage(method, "/admin/ads");
+            if (body != null) request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+            if (authorized) request.Headers.TryAddWithoutValidation("X-Admin-Api-Key", TestAdminApiKey);
+            using var response = await client.SendAsync(request);
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+        async Task<bool> GameSeesAds() => (await Get(client, "/live-settings")).RootElement.GetProperty("adsEnabled").GetBoolean();
+
+        Assert(!await GameSeesAds(), "expected ads to start switched off");
+        Assert((await Admin(HttpMethod.Get, authorized: false)).Status == HttpStatusCode.Unauthorized, "expected the ads switch to need the admin key");
+        Assert((await Admin(HttpMethod.Post, new { enabled = true }, authorized: false)).Status == HttpStatusCode.Unauthorized,
+            "expected a player to be unable to switch ads on");
+        Assert((await Admin(HttpMethod.Post, new { enabled = "yes" })).Status == HttpStatusCode.BadRequest, "expected a body without a true/false flag to change nothing");
+        Assert(!await GameSeesAds(), "expected a refused change to leave ads off");
+        try
+        {
+            var on = await Admin(HttpMethod.Post, new { enabled = true });
+            Assert(on.Status == HttpStatusCode.OK && on.Text.Contains("\"enabled\":true"), "expected the operator to switch ads on");
+            Assert(await GameSeesAds(), "expected the game to be told ads are on");
+            Assert((await Admin(HttpMethod.Get)).Text.Contains("\"enabled\":true"), "expected the admin read to agree");
+            // The ads switch and the purchase pause are separate rows.
+            Assert(!(await Get(client, "/purchase/products")).RootElement.GetProperty("purchasesPaused").GetBoolean(),
+                "expected switching ads on to leave purchases open");
+        }
+        finally
+        {
+            Assert((await Admin(HttpMethod.Post, new { enabled = false })).Status == HttpStatusCode.OK, "expected the operator to switch ads off");
+        }
+        Assert(!await GameSeesAds(), "expected the game to be told ads are off again");
+    }
+
     private static async Task TestAdminRefund(HttpClient client)
     {
         const string profile = "TEST-REFUND-ADMIN";

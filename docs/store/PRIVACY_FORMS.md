@@ -215,8 +215,9 @@ prevention, security and reducing crashes. Every type is linked, because
 every stored record carries the player ID. Nothing is used for tracking: no
 advertising ID, no data brokers, and the hashed player ID goes to Apple only
 to verify purchases. So the app needs no App Tracking Transparency prompt.
-These answers are for a release without ads; a release with rewarded ads adds
-Google's entries in [ADS.md](ADS.md), and still needs no tracking prompt:
+These answers cover the game itself. The store builds also carry Google's ad
+SDK, switched on from the server, so add Google's entries in [ADS.md](ADS.md)
+from the first release. They still need no tracking prompt:
 iPhone ads aren't personalized, so the advertising identifier is never read.
 
 Apple's labels have no "optional" field. The opt-in analytics and crash

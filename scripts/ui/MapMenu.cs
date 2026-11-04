@@ -41,7 +41,7 @@ public partial class MapMenu : Control
         _mapCanvas.ShowMap(_activeMapId, _selected.Id);
         RefreshUi();
         ShowArrivalPrompts();
-        if (GameState.Instance.HasChosenCallsign) RewardedAds.Start();
+        if (GameState.Instance.HasChosenCallsign) _ = RewardedAds.RefreshAndStartAsync();
     }
     public string ActiveMapId => _activeMapId;
 

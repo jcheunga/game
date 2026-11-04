@@ -238,6 +238,36 @@ public partial class ServerEndToEnd
     }
 
     /// <summary>An operator request with the admin key server_e2e.sh gives the server.</summary>
+    /// <summary>
+    /// The operator's ads switch: off until switched on, read by the game (and kept in its save), and a release build
+    /// offers ads only while it is on.
+    /// </summary>
+    private async Task AdsSwitch(GameState state)
+    {
+        await state.RefreshAdsSwitchAsync(force: true);
+        Check(!state.AdsSwitchedOn, "Rewarded ads start switched off on the server");
+        var on = await Admin(HttpMethod.Post, "/admin/ads", new { enabled = true });
+        Check(on.Status == 200 && on.Body.GetProperty("enabled").GetBoolean(), $"The operator switches rewarded ads on ({on.Status})");
+        if (_settle > 0) await Wait(_settle);
+        RewardedAds.IgnoreSwitch = false;
+        RewardedAds.TestShow = () => Task.FromResult(true);
+        try
+        {
+            await state.RefreshAdsSwitchAsync(force: true);
+            Check(state.AdsSwitchedOn && state.BuildSaveData().AdsSwitchedOn && RewardedAds.Enabled,
+                "The game reads the switch, keeps it in its save, and a release build then offers ads");
+        }
+        finally
+        {
+            await Admin(HttpMethod.Post, "/admin/ads", new { enabled = false });
+        }
+        if (_settle > 0) await Wait(_settle);
+        await state.RefreshAdsSwitchAsync(force: true);
+        Check(!state.AdsSwitchedOn && !RewardedAds.Enabled, "Switching ads off takes them out of the game again");
+        RewardedAds.TestShow = null;
+        RewardedAds.IgnoreSwitch = OS.IsDebugBuild();
+    }
+
     private async Task<(int Status, JsonElement Body)> Admin(HttpMethod method, string path, object body = null)
     {
         using var request = new HttpRequestMessage(method, _server + path);

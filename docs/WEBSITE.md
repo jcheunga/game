@@ -37,7 +37,7 @@ http://localhost:8000 with the same clean URLs Caddy uses (`/privacy` serves
      `/.well-known/security.txt`.
    - `governing_law`: for example `New South Wales, Australia`.
    - `effective_date`: `YYYY-MM-DD`, the day the privacy policy and terms apply.
-   - `admob_publisher_id` (only with rewarded ads): the AdMob publisher ID,
+   - `admob_publisher_id`: the AdMob publisher ID (the release preflight needs it),
      `pub-` and 16 digits. The build then publishes `/app-ads.txt`, which AdMob
      checks before serving ads ([store/ADS.md](store/ADS.md)).
 2. **Have the privacy policy and terms reviewed.** They were written from what

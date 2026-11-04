@@ -17,6 +17,12 @@ public partial class UiReviewSmoke
         RewardedAds.TestShow = async () => { await Wait(.2); return watched; };
         try
         {
+            // A release build obeys the server's ads switch (debug builds ignore it and show Google's test ads).
+            RewardedAds.IgnoreSwitch = false;
+            state.ApplyAdsSwitch(false);
+            Check(!RewardedAds.Enabled && !RewardedAds.Ready, "A release build offers no ad while the server's switch is off");
+            state.ApplyAdsSwitch(true);
+            Check(RewardedAds.Enabled && state.BuildSaveData().AdsSwitchedOn, "Switching ads on offers them, and the save keeps the switch");
             var fixture = state.BuildSaveData();
             fixture.Gold = 500; fixture.Food = 10;
             fixture.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -41,6 +47,10 @@ public partial class UiReviewSmoke
                 $"Each watched ad pays {GameState.AdFoodAmount} food");
             Check(ad.Disabled && (ad.TooltipText + ad.AccessibilityName).Contains("No ad rations left today"), $"Ad rations stop at {GameState.AdFoodPerDay} a day");
             AuditText("Storehouse / ad rations");
+            state.ApplyAdsSwitch(false);
+            typeof(CashShopMenu).GetMethod("UpdateRefill", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(store, null);
+            Check(!ad.IsVisibleInTree(), "Switching ads off takes the ad button out of the storehouse");
+            state.ApplyAdsSwitch(true);
 
             // The result board: the gold tile pays the win's gold again for an ad, once.
             var gold = state.Gold;
@@ -67,6 +77,8 @@ public partial class UiReviewSmoke
         finally
         {
             RewardedAds.TestShow = null;
+            RewardedAds.IgnoreSwitch = OS.IsDebugBuild();
+            state.ApplyAdsSwitch(false);
             state.ResetProgress();
         }
     }

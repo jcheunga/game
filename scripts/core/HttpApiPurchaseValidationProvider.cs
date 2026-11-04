@@ -179,6 +179,18 @@ public sealed class HttpApiPurchaseValidationProvider
 		return (paused, paused ? GetString(root, "purchasesMessage", "") : "");
 	}
 
+	/// <summary>The operator's ads switch from /live-settings, or null when the server can't be read.</summary>
+	public bool? GetAdsSwitch()
+	{
+		if (string.IsNullOrWhiteSpace(_baseUrl)) return null;
+		using var message = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/live-settings");
+		PlayerSessionHttp.Apply(message, "");
+		using var response = Client.SendAndWait(message);
+		if (!response.IsSuccessStatusCode) return null;
+		using var document = JsonDocument.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
+		return document.RootElement.TryGetProperty("adsEnabled", out var flag) && flag.ValueKind == JsonValueKind.True;
+	}
+
 	public List<PurchaseHistoryEntry> GetPurchaseHistory(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(_baseUrl))

@@ -6,8 +6,10 @@ using Godot;
 /// Rewarded video ads: AdMob through the CrownroadAds plugin (native/AdMob) on Android and iOS. A player chooses to
 /// watch one for a reward, never unasked. Debug builds use Google's test ads. A release build shows ads only once the
 /// real AdMob IDs are in the project settings (crownroad/ads/...); until then the export leaves the plugin out, so the
-/// build carries no ad SDK at all. Google's consent form runs first wherever the law asks for one (EEA, UK,
-/// Switzerland), and Settings → Account then offers the player's ad privacy choices.
+/// build carries no ad SDK at all. A release build with the IDs also waits for the operator's switch on the server
+/// (GameState.AdsSwitchedOn, docs/store/ADS.md): while it is off the SDK never starts, no consent form shows and no ad
+/// is offered. Google's consent form runs first wherever the law asks for one (EEA, UK, Switzerland), and
+/// Settings → Account then offers the player's ad privacy choices.
 /// </summary>
 public static class RewardedAds
 {
@@ -18,6 +20,12 @@ public static class RewardedAds
 
     /// <summary>A stand-in ad for review drivers: returns whether the player earned the reward.</summary>
     public static Func<Task<bool>> TestShow { get; set; }
+
+    /// <summary>Debug builds offer Google's test ads whatever the server's switch says; release builds obey it.</summary>
+    public static bool IgnoreSwitch { get; set; } = OS.IsDebugBuild();
+
+    /// <summary>Whether the operator's switch lets ads show.</summary>
+    public static bool SwitchedOn => IgnoreSwitch || GameState.Instance?.AdsSwitchedOn == true;
 
     private static GodotObject _plugin;
     private static bool _started, _canRequestAds, _loaded;
@@ -43,11 +51,20 @@ public static class RewardedAds
         return value.Length > 0 ? value : OS.IsDebugBuild() ? test : "";
     }
 
-    /// <summary>Whether this build offers ads at all.</summary>
-    public static bool Enabled => LaunchFeatures.RewardedAds && (TestShow != null || (UnitId.Length > 0 && Engine.HasSingleton(Singleton)));
+    /// <summary>Whether ads are offered: the build carries them and the switch is on.</summary>
+    public static bool Enabled => LaunchFeatures.RewardedAds && SwitchedOn && (TestShow != null || (UnitId.Length > 0 && Engine.HasSingleton(Singleton)));
 
     /// <summary>Whether an ad can be shown now: consent allows ads and one has loaded.</summary>
     public static bool Ready => Enabled && (TestShow != null || (_canRequestAds && _loaded));
+
+    /// <summary>Reads the operator's switch, then starts ads if it allows them. The map calls this each time it opens.</summary>
+    public static async Task RefreshAndStartAsync()
+    {
+        var wasEnabled = Enabled;
+        if (GameState.Instance != null) await GameState.Instance.RefreshAdsSwitchAsync();
+        Start();
+        if (Enabled != wasEnabled) Changed?.Invoke();
+    }
 
     /// <summary>Starts consent and the ad SDK once, which then loads the first ad. Safe to call again.</summary>
     public static void Start()

@@ -83,6 +83,8 @@ public sealed class GameSaveData
     public string AdRewardDay { get; set; } = "";
     public int AdDoubleGoldOnDay { get; set; }
     public int AdFoodOnDay { get; set; }
+    /// <summary>The operator's ads switch as the server last gave it (GameState.AdsSwitchedOn).</summary>
+    public bool AdsSwitchedOn { get; set; }
     public int Scrap { get => Gold; set => Gold = value; }
     public int Fuel { get => Food; set => Food = value; }
     public int HighestUnlockedStage { get; set; } = 1;

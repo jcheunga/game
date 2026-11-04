@@ -41,12 +41,38 @@ public partial class UiReviewSmoke
             "The home card shows the nickname, the level and the rewards waiting");
         var resources = Walk(menu).OfType<RoyalResourceBar>().Single();
         var card = Walk(menu).OfType<RoyalButton>().Single(x => x.Name == "PlayerCard");
-        Check(card.GetGlobalRect().Position.X < GetViewport().GetVisibleRect().Size.X * .1f && resources.Position.X + resources.BarRect.Position.X >= 850
+        var settingsButton = Walk(menu).OfType<RoyalButton>().Single(x => x.Name == "SettingsButton").GetRect();
+        Check(settingsButton.Position.X < 40 && settingsButton.End.X < card.GetRect().Position.X && card.GetRect().Position.X < 100
+              && resources.Position.X + resources.BarRect.Position.X >= 850
               && !Walk(menu).OfType<RoyalLabel>().Any(x => x.IsVisibleInTree() && x.Text.StartsWith("LEVEL ")),
-            "The player card sits top left with just the nickname, and the resources move to the top right");
+            "The settings ring takes the top left corner, the player card sits beside it with just the nickname, and the resources take the top right");
         var amounts = Walk(resources).OfType<RoyalLabel>().Where(x => x.IsVisibleInTree()).Select(x => x.FontSize).ToArray();
         Check(amounts.Length == 3 && amounts.All(size => size >= 18), $"Resource amounts stay readable beside the zone plaque ({string.Join(", ", amounts)} px)");
         AuditText("Home / player card"); await Capture("03-home-card");
+
+        // A long-played caravan's balances (eight-figure gold, then the most an int holds, food bought past the cap,
+        // every star) still fit between the zone plaque and the screen edge at reading size, and the longest
+        // nickname keeps the card clear of the plaque's left banner (which starts at x 434, on the HUD's canvas).
+        var apply = typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var refresh = typeof(MapMenu).GetMethod("RefreshUi", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var baseline = state.BuildSaveData();
+        foreach (var (wallet, capture) in new[] { (12_345_678, "03b-home-rich"), (int.MaxValue, "03c-home-richest") })
+        {
+            var rich = state.BuildSaveData(); rich.Gold = wallet; rich.Food = 124; rich.StageStars = Enumerable.Repeat(3, state.MaxStage).ToArray();
+            rich.PlayerCallsign = new string('W', GameState.MaxCallsignLength);
+            apply.Invoke(state, new object[] { rich }); refresh.Invoke(menu, null); await Wait(.2);
+            var strip = resources.GetChildren().OfType<Control>().Where(x => x.Visible && x is not RoyalButton)
+                .Select(x => new Rect2(resources.Position + x.Position, x.Size)).Aggregate((a, b) => a.Merge(b));
+            amounts = Walk(resources).OfType<RoyalLabel>().Where(x => x.IsVisibleInTree()).Select(x => x.FontSize).ToArray();
+            Check(strip.Position.X >= 848 && strip.End.X <= RoyalArt.Canvas.X && !strip.Intersects(settingsButton)
+                  && amounts.All(size => size >= ReadingText.PhoneCaps) && state.TotalStarsEarned == state.MaxStage * 3,
+                $"{wallet:N0} gold, 124 food and every star fit beside the zone plaque at reading size (strip x {strip.Position.X:0}–{strip.End.X:0}, {string.Join(", ", amounts)} px)");
+            var nickname = Walk(menu).OfType<RoyalLabel>().Single(x => x.IsVisibleInTree() && x.Text.StartsWith("WWW"));
+            Check(card.GetRect().End.X <= 434 && nickname.Text.EndsWith('…') && nickname.TextWidth(nickname.FittedSize()) <= nickname.Size.X,
+                $"The widest nickname is cut short inside the player card, clear of the zone plaque (\"{nickname.Text}\", card ends at x {card.GetRect().End.X:0})");
+            AuditText("Home / rich wallet"); await Capture(capture);
+        }
+        apply.Invoke(state, new object[] { baseline }); refresh.Invoke(menu, null); await Wait(.2);
 
         Walk(menu).OfType<RoyalButton>().Single(x => x.Name == "PlayerCard").EmitSignal(BaseButton.SignalName.Pressed); await Wait(.5);
         var track = Walk(menu).OfType<PlayerLevelMenu>().SingleOrDefault(x => x.IsVisibleInTree());

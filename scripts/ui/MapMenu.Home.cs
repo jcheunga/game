@@ -26,15 +26,19 @@ public partial class MapMenu
         _hud = new Control { Name = "HomeHud", MouseFilter = MouseFilterEnum.Ignore, Position = Vector2.Zero, Size = RoyalArt.Canvas };
         AddChild(_hud);
         var spec = RoyalSpec.For("home");
-        foreach (var piece in new[] { new Rect2(434, 0, 414, 108), new Rect2(1199, 12, 64, 64), new Rect2(27, 504, 1253, 216) })
+        // The plate paints the settings ring at the top right; it moves to the top left corner so the resource
+        // strip has the whole stretch beside the zone plaque for long balances.
+        var settingsShift = new Vector2(SettingsRingLeft - 1199, 0);
+        foreach (var (piece, shift) in new[] { (new Rect2(434, 0, 414, 108), Vector2.Zero), (new Rect2(1199, 12, 64, 64), settingsShift), (new Rect2(27, 504, 1253, 216), Vector2.Zero) })
             _hud.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
-                Texture = RoyalArt.Cut("hud-home", piece), Position = piece.Position, Size = piece.Size, MouseFilter = MouseFilterEnum.Ignore });
+                Texture = RoyalArt.Cut("hud-home", piece), Position = piece.Position + shift, Size = piece.Size, MouseFilter = MouseFilterEnum.Ignore });
         BuildResources(spec);
         BuildPlayerCard();
         BuildDeveloperControls();
         BuildZoneHeading(spec);
-        var settings = RoyalButton.Over(spec.Rect("settings.ring"), "Settings", () => SceneRouter.Instance.GoToSettings(), 28);
-        var ring = spec.Rect("settings.ring");
+        var ring = new Rect2(spec.Rect("settings.ring").Position + settingsShift, spec.Rect("settings.ring").Size);
+        var settings = RoyalButton.Over(ring, "Settings", () => SceneRouter.Instance.GoToSettings(), 28);
+        settings.Name = "SettingsButton";
         settings.SetGlyph(RoyalKit.Texture("settings-face"), new Rect2(7, 7, ring.Size.X - 14, ring.Size.Y - 14));
         _hud.AddChild(settings);
         BuildSitePanel();
@@ -42,13 +46,15 @@ public partial class MapMenu
     }
 
     private RoyalResourceBar _resources;
+    /// <summary>Left edge of the settings ring's painted piece: the plate's right margin, mirrored.</summary>
+    private const float SettingsRingLeft = 17;
 
     private void BuildResources(RoyalSpec spec)
     {
-        // The resources sit at the top right beside the settings ring; the player's card takes the top left.
+        // The resources take the top right corner; the settings ring and the player's card take the top left.
         // Compact spacing keeps it clear of the zone plaque's right banner (which ends at x 848).
-        _resources = new RoyalResourceBar { Name = "Resources", BarRect = new Rect2(19, 13, 220, 62), MaxWidth = 340, RightEdge = 1192,
-            IconScale = .76f, BeforeDivider = 3, AfterDivider = 4, EndPadding = 14, StartInset = 20 };
+        _resources = new RoyalResourceBar { Name = "Resources", BarRect = new Rect2(19, 13, 220, 62), MaxWidth = 409, RightEdge = 1261,
+            IconScale = .76f, BeforeDivider = 3, AfterDivider = 4, EndPadding = 22, StartInset = 20 };
         _hud.AddChild(_resources);
         _resources.Add(spec, "res", "gold", HomeMapArt.Icon("gold"), "Royal storehouse", () => SceneRouter.Instance.GoToCashShop(), "0,000");
         _foodHint = _resources.Add(spec, "res", "food", HomeMapArt.Icon("food"), "Refill food", () => SceneRouter.Instance.GoToCashShop(), "00 / 00");

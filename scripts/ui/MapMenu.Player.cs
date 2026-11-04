@@ -1,13 +1,13 @@
 using Godot;
 
 /// <summary>
-/// The player's card at the top left of the home HUD: the level medallion (its ring is the XP bar, its badge
-/// the rewards waiting) and the nickname. It opens the level track, which shows the XP in full, and a new
-/// caravan is asked for its nickname here.
+/// The player's card at the top left of the home HUD, beside the settings ring: the level medallion (its ring is
+/// the XP bar, its badge the rewards waiting) and the nickname. It opens the level track, which shows the XP in
+/// full, and a new caravan is asked for its nickname here.
 /// </summary>
 public partial class MapMenu
 {
-    private static readonly Rect2 PlayerCardRect = new(19, 11, 330, 66);
+    private static readonly Rect2 PlayerCardRect = new(86, 11, 330, 66);
     private const float MedallionSize = 66, NameLeft = 80, NameEndPadding = 26;
     private LevelMedallion _medallion;
     private RoyalLabel _playerName;
@@ -39,7 +39,15 @@ public partial class MapMenu
         _medallion.Progress = state.IsMaxPlayerLevel ? 1f : state.PlayerXPIntoLevel / (float)Mathf.Max(1, state.PlayerXPForNextLevel);
         _medallion.Badge = ready;
         _medallion.Lit = ready > 0;
-        _playerName.Text = state.PlayerCallsign;
+        // A name too wide even at the reading floor is cut short; the level track shows it in full.
+        var shown = state.PlayerCallsign;
+        var room = PlayerCardRect.Size.X - NameLeft - NameEndPadding;
+        if (_playerName.TextWidth(shown, _playerName.MinimumFontSize) > room)
+        {
+            while (shown.Length > 1 && _playerName.TextWidth(shown + "…", _playerName.MinimumFontSize) > room) shown = shown[..^1].TrimEnd();
+            shown += "…";
+        }
+        _playerName.Text = shown;
         // The parchment hugs the nickname rather than leaving an empty run after a short name.
         var width = Mathf.Clamp(NameLeft + _playerName.TextWidth(_playerName.FontSize) + NameEndPadding, 200, PlayerCardRect.Size.X);
         _playerBar.Size = new Vector2(width - 30, _playerBar.Size.Y);

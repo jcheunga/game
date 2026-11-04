@@ -1,0 +1,22 @@
+[config]
+name="CrownroadAds"
+binary="crownroadads.xcframework"
+
+initialization="register_crownroadads_types"
+deinitialization="unregister_crownroadads_types"
+
+[dependencies]
+linked=["GoogleMobileAds.xcframework", "UserMessagingPlatform.xcframework"]
+embedded=[]
+system=["JavaScriptCore.framework", "AdSupport.framework", "WebKit.framework", "StoreKit.framework"]
+linker_flags=["-ObjC"]
+
+capabilities=[]
+
+files=[]
+
+[plist]
+; Google's test app until the real AdMob iOS app ID is entered in the export preset's plugin options.
+GADApplicationIdentifier:string_input="ca-app-pub-3940256099942544~1458002511"
+; Google's own SKAdNetwork ID, so ad clicks can be attributed without tracking.
+SKAdNetworkItems:raw="<array><dict><key>SKAdNetworkIdentifier</key><string>cstr6suwn9.skadnetwork</string></dict></array>"

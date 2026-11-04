@@ -22,8 +22,14 @@ The network is Google AdMob, through the CrownroadAds plugin (`native/AdMob/andr
     (GADApplicationIdentifier).
 
   Without them the Android export leaves the plugin and Google's SDK out, so the build has no ad SDK, no
-  advertising ID permission and nothing below to declare. On iOS, turn the CrownroadAds plugin off in the
-  preset for a release without ads.
+  advertising ID permission and nothing below to declare.
+- **iOS links the plugin only when the preset says so.** The CrownroadAds plugin is off in the committed iOS
+  preset, so iOS exports carry no ad SDK. For a release with ads, tick Plugins → CrownroadAds in the iOS
+  preset and enter the AdMob iOS app ID in its GADApplicationIdentifier option (it defaults to Google's test
+  app). The simulator test turns it on in its own temporary copy of the preset.
+- **Building the plugins.** `native/AdMob/android-plugin/build.sh` and `native/AdMob/ios-plugin/build.sh`.
+  The iOS script downloads Google's Mobile Ads SDK for iOS (13.12.0 on 2026-11-04) the first time.
+  Google's frameworks aren't committed, so run it on each new checkout that exports iOS.
 - `LaunchFeatures.RewardedAds` switches the placements off altogether.
 
 ## Consent
@@ -83,8 +89,9 @@ against AdMob's current help pages ("Data disclosure for Google Play" and "Apple
 ## Testing
 
 - `UiReviewSmoke --ads` checks both placements, the daily limits and an unfinished ad, with a stand-in ad.
-- `scripts/tests/android_e2e.sh` checks a debug build carries the plugin, that consent completes and that
-  Google's test rewarded ad loads.
+- `scripts/tests/android_e2e.sh` (emulator) and `native/StoreKit/test/simulator_e2e.sh` (its `ads` phase, iOS
+  simulator) check a debug build carries the plugin, that consent completes and that Google's test rewarded
+  ad loads.
 - On a phone with a debug build, watch a test ad in each placement and check the reward arrives once. Use
   Google's test ads or a registered test device; never tap your own live ads. From an EEA connection (or
   AdMob's debug geography), check the consent form appears and Settings offers Ad privacy choices.

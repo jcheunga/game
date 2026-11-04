@@ -44,6 +44,7 @@ prepare_only=0 reuse=0
 [ "${1:-}" = "--reuse" ] && reuse=1
 
 [ -f "$root/ios/plugins/storekit/storekit.gdip" ] || { echo "Run native/StoreKit/build.sh first." >&2; exit 1; }
+[ -d "$root/ios/plugins/crownroadads/GoogleMobileAds.xcframework" ] || { echo "Run native/AdMob/ios-plugin/build.sh first." >&2; exit 1; }
 [ -d "$godot_source" ] || { echo "No Godot $godot_tag source; run native/StoreKit/build.sh first." >&2; exit 1; }
 app="$work/derived/Build/Products/Debug-iphonesimulator/crownroad.app"
 project="$work/export/crownroad.xcodeproj"
@@ -62,6 +63,8 @@ start = text.index('name="iOS"')
 head, ios = text[:start], text[start:]
 ios = ios.replace('application/app_store_team_id=""', 'application/app_store_team_id="ABCDE12345"', 1)
 ios = ios.replace('scripts/tests/*,scenes/tests/*,', '', 1)
+# The ads phase needs the CrownroadAds plugin (native/AdMob/ios-plugin/build.sh), off in the committed preset.
+ios = ios.replace('plugins/StoreKit=true', 'plugins/StoreKit=true\nplugins/CrownroadAds=true', 1)
 # Godot 4.6.1's editor writes the option itself, and a later line wins over one added at the top.
 if 'application/export_project_only=' in ios:
     ios = ios.replace('application/export_project_only=false', 'application/export_project_only=true', 1)
@@ -140,6 +143,7 @@ phase() {
 	local name="$1" reset="${2:-0}" ask="${3:-0}" fail="${4:-}" log="$work/phase-$1.log" errors="$work/phase-$1.err.log"
 	local scene=res://scenes/tests/StoreKitPluginReview.tscn
 	[ "$name" = shop ] && scene=res://scenes/tests/StoreKitShopReview.tscn
+	[ "$name" = ads ] && scene=res://scenes/tests/RewardedAdsReview.tscn
 	: > "$errors"
 	xcrun simctl spawn booted log stream --level info --style compact --predicate 'subsystem == "com.crownroad.game"' > "$log" 2>&1 &
 	sleep 1
@@ -181,7 +185,7 @@ load_errors="Failed to load game data|ShopProductCatalog: failed|Failed to parse
 # unknown error and still records the purchase, and signs a declined Ask to Buy request like a
 # completed purchase. The shop's handling of both is checked by shop_desktop.sh; StoreKit's needs a
 # device or an Xcode run where the payment sheet is cancelled by hand.
-for name in ${STOREKIT_E2E_PHASES:-buy clean unverified ask-to-buy interrupt recover clean shop}; do
+for name in ${STOREKIT_E2E_PHASES:-buy clean unverified ask-to-buy interrupt recover clean shop ads}; do
 	case "$name" in
 		buy | shop) phase "$name" 1 ;;
 		unverified) phase unverified 0 0 unverified ;;

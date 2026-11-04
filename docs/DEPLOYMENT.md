@@ -82,6 +82,13 @@ rehearse a restore before releasing paid currency.
    application role. Put its **pooled** PostgreSQL URL in `DATABASE_URL` in
    `.env.production`. It must use verified TLS, such as
    `sslmode=verify-full`; do not use `Ssl Mode=Disable` for a public provider.
+   `sslrootcert=system` trusts the public certificate authorities. If the
+   provider signs with its own CA (DigitalOcean, AWS RDS and Supabase do),
+   download its CA certificate to `secrets/database-ca.pem`, set
+   `DATABASE_CA_SOURCE=./secrets/database-ca.pem` and use
+   `sslrootcert=/run/secrets/database_ca.pem` instead. A pooled URL in
+   transaction mode is fine: replicas take turns creating the schema inside
+   one transaction.
    Treat the populated environment file as a secret and do not commit it.
 6. Create `secrets/` (the repository path is `server/secrets/`) with owner-only permissions and add the files
    `redis-password`, `admin-api-key`, `google-play-service-account.json`, and,

@@ -49,6 +49,8 @@ services:
         target: google_play_service_account.json
       - source: apple_iap_private_key
         target: apple_iap_private_key.p8
+      - source: database_ca
+        target: database_ca.pem
     read_only: true
     tmpfs:
       - /tmp
@@ -115,3 +117,8 @@ secrets:
   # file, and App Store purchases fail closed as "not configured".
   apple_iap_private_key:
     file: ${APPLE_IAP_PRIVATE_KEY_SOURCE:-./empty-secret}
+  # Optional: the database provider's CA certificate (PEM), for providers whose
+  # TLS certificate isn't publicly trusted. DATABASE_URL then names it with
+  # sslrootcert=/run/secrets/database_ca.pem instead of sslrootcert=system.
+  database_ca:
+    file: ${DATABASE_CA_SOURCE:-./empty-secret}

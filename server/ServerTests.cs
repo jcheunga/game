@@ -1365,6 +1365,16 @@ public static partial class ServerTests
         Assert(waited, "expected Initialize to wait while another replica holds the schema lock");
         Assert(await Task.WhenAny(starting, Task.Delay(15000)) == starting, "expected Initialize to finish once the lock is free");
         await starting;
+
+        // The lock ends with Initialize's transaction, so no connection is left holding it (behind a transaction-mode
+        // pooler a session lock could stay on a server connection after its unlock went to another).
+        using var check = holder.CreateCommand();
+        check.CommandText = "SELECT COUNT(*) FROM pg_locks WHERE locktype = 'advisory' AND objsubid = 1 AND ((classid::bigint << 32) | objid::bigint) = @key";
+        check.Parameters.AddWithValue("@key", Database.SchemaLockKey);
+        Assert(Convert.ToInt64(check.ExecuteScalar()) == 0, "expected no schema lock left once Initialize finishes");
+        var again = Task.Run(Database.Initialize);
+        Assert(await Task.WhenAny(again, Task.Delay(15000)) == again, "expected the next replica to start straight after");
+        await again;
     }
 
     private static async Task TestRateLimitStore()

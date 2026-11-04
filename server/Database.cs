@@ -198,23 +198,26 @@ public static class Database
     public static void Initialize()
     {
         using var conn = Open();
+        if (!IsPostgres) { CreateSchema(conn); return; }
         // Every API replica starts here at once. PostgreSQL's CREATE ... IF NOT EXISTS and the migrations aren't safe
-        // side by side (the loser fails on pg_type's unique index and the replica exits), so replicas take turns.
-        if (IsPostgres) SchemaLock(conn, take: true);
-        try { CreateSchema(conn); }
-        finally { if (IsPostgres) SchemaLock(conn, take: false); }
+        // side by side (the loser fails on pg_type's unique index and the replica exits), so replicas take turns on an
+        // advisory lock. The lock belongs to a transaction holding the whole schema setup, not to the session: behind a
+        // transaction-mode pooler (a provider's pooled URL) a session lock and its unlock can reach different server
+        // connections, leaving the lock held and the next replica waiting for good. A failed migration also rolls back
+        // whole, instead of leaving half a schema behind.
+        using var tx = conn.BeginTransaction();
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = "SELECT pg_advisory_xact_lock(@key)";
+            cmd.Parameters.AddWithValue("@key", SchemaLockKey);
+            cmd.ExecuteScalar();
+        }
+        CreateSchema(conn);
+        tx.Commit();
     }
 
     internal const long SchemaLockKey = 0x43_52_4F_57_4E; // "CROWN"
-
-    /// <summary>A session advisory lock on this connection, released before it goes back to the pool.</summary>
-    private static void SchemaLock(DbConnection conn, bool take)
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = take ? "SELECT pg_advisory_lock(@key)" : "SELECT pg_advisory_unlock(@key)";
-        cmd.Parameters.AddWithValue("@key", SchemaLockKey);
-        cmd.ExecuteScalar();
-    }
 
     private static void CreateSchema(DbConnection conn)
     {

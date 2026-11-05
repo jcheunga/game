@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CATALOG = ROOT / "scripts/core/ChallengeTowerCatalog.cs"
 FLOORS = 100
 MARGIN = 0.02
-LOWEST = -0.1
+LOWEST = -0.2  # --tower-lowest can take a fit below the usual -0.1 for a floor the reference player can't beat there
 
 
 def main():

@@ -8,6 +8,12 @@ public partial class GameState
     /// <summary>Rations paid for a campaign stage's first win, so exploring a zone's atlas doesn't rest on the recharge alone.</summary>
     public const int CampaignFirstClearFood = 6;
     /// <summary>
+    /// Rations to replay a campaign stage already won (a first attempt or a retry costs 2). Grinding replays is how a
+    /// player who doesn't pay catches up on training, so it is what the food store paces: a full recharge (24) buys
+    /// four replays. See <see cref="GetStageEntryFoodCost"/> and docs/PLAYTHROUGH_SIM.md.
+    /// </summary>
+    public const int CampaignReplayFoodCost = 6;
+    /// <summary>
     /// The storehouse's gold-for-food refill: 30 gold a ration, so every food pack buys more food per dollar than a
     /// gold pack spent on refills (the best gold rate, 550 a dollar, refills 18 food; the weakest food pack is 20).
     /// </summary>

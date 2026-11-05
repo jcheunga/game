@@ -25,7 +25,7 @@ With developer mode on, the pause menu adds **Win battle**, **Lose battle** (**E
 
 | Version | File | Shape |
 | --- | --- | --- |
-| Standard | `data/stages.json` | The campaign's own waves, rebuilt by `scripts/tools/revamp_content.py` |
+| Standard | `data/stages.json` | The campaign's own waves, written by `scripts/tools/design_waves.py` ([campaign waves](CAMPAIGN_WAVES.md)) |
 | Horde | `data/waves/horde.json` | Many light bodies on short gaps around each standard wave's featured enemies; grave rats join from stage 5 |
 | Regional | `data/waves/regional.json` | Each zone's four regional enemies beside the opening four, in fewer, heavier packs; newcomers at slots 2, 4, 6 and 8 |
 

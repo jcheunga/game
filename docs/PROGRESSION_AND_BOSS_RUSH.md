@@ -99,3 +99,20 @@ tower), and its row lists them under the stage name, with the foes' health and d
 player who just cleared its campaign stage (troops at that stage's level cap, no relics), so none was retuned.
 `CombatReviewSmoke --events` checks the windows (including the run across the new year), the per-year keys, that the
 battle plays with the modifiers, and that the reference player beats every stage.
+
+## Tower and events on the tuned campaign — 5 November 2026
+
+The campaign now has a per-stage strength table (`CampaignPacing`, see [the playthrough simulation](PLAYTHROUGH_SIM.md)),
+new waves ([campaign waves](CAMPAIGN_WAVES.md)), a steeper level curve and slower courage. Tower floors and event
+stages are built on campaign stages, so:
+
+- They apply the campaign stage's strength first and their own fitted strength on top, as the tower screen already
+  says ("Enemy health compared with the battlefield's campaign stage").
+- The reference player (`SeedTowerSquad`, used by `--tower`, `--tower-fit`, `--events` and `--event-fit`) is the
+  campaign fit's trained player: every wagon track at its rank cap, the spell at level 3 and the milestone relics. It
+  had three wagon tracks, an untrained Fireball and no relics.
+- `--event-fit` and repeat runs of `--events` eased all ten event stages, to enemy health ×0.60–1.08 (they were
+  ×1.10–1.50), with a margin: these battles don't repeat exactly from run to run (relic order was one cause, now
+  fixed; others remain), so an exact fit fails some runs. `--tower-fit` refitted every floor (s from −0.15 to 0.13 on
+  top of the tuned stage). Its search floor can go below −0.1 with `--tower-lowest`, used for the boss floors 20, 78
+  and 90, which the reference player could not win at −0.1; the catalog check accepts floors down to s = −0.2.

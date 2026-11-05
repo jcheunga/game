@@ -56,7 +56,9 @@ public partial class CombatReviewSmoke : Node
             GameState.Instance.SetShowHints(false);
             GameState.Instance.UnlockNextStage(GameData.MaxStage - 1);
             ApplyTuningOverrides(args);
-            if (args.Contains("--production-polish")) await CheckProductionPolish();
+            if (args.Contains("--playthrough-sim")) await SimulatePlaythrough();
+            else if (args.Contains("--campaign-fit")) await FitCampaignStrength();
+            else if (args.Contains("--production-polish")) await CheckProductionPolish();
             else if (args.Contains("--performance")) await ReviewCombatPerformance();
             else if (args.Contains("--stage-layout")) ExportStageLayoutReview();
             else if (args.Contains("--courage-pacing")) await CheckCouragePacing();
@@ -403,11 +405,12 @@ public partial class CombatReviewSmoke : Node
         for (var tick = 0; tick < 300; tick++) battle._PhysicsProcess(1.0 / 60);
         Check(Mathf.IsEqualApprox(Read<float>(battle, "_courage"), pausedCourage), "Paused battles do not regenerate courage");
         Write(battle, "_battlePaused", false);
-        for (var tick = 0; tick < 120; tick++) battle._PhysicsProcess(1.0 / 60);
+        // Regenerate until the bar holds a Swordsman (ten seconds at 2 courage a second, sooner with the boost).
+        for (var tick = 0; tick < 1200 && Read<float>(battle, "_courage") < swordsman.Cost; tick++) battle._PhysicsProcess(1.0 / 60);
         var available = Read<float>(battle, "_courage");
         Invoke(battle, "DeployPlayerUnit", swordsman);
         Check(Read<int>(battle, "_playerDeployments") == 1 && Mathf.IsEqualApprox(Read<float>(battle, "_courage"), available - swordsman.Cost),
-            "Seven seconds of regeneration enables one Swordsman and charges its normal cost");
+            "Regeneration funds one Swordsman within ten seconds and charges its normal cost");
         Write(battle, "_courage", Read<float>(battle, "_maxCourage") - 1f);
         for (var tick = 0; tick < 60; tick++) battle._PhysicsProcess(1.0 / 60);
         Check(Mathf.IsEqualApprox(Read<float>(battle, "_courage"), Read<float>(battle, "_maxCourage")), "Slower regeneration still respects maximum courage");

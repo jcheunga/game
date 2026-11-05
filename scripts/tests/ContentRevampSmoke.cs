@@ -47,7 +47,7 @@ public partial class ContentRevampSmoke : Node
             var sword=GameData.GetUnit(GameData.PlayerBrawlerId);
             var a=state.BuildPlayerUnitStatsAtLevel(sword,1);
             var z=state.BuildPlayerUnitStatsAtLevel(sword,20);
-            Check(Math.Abs(z.MaxHealth-82)<.1f && Math.Abs(z.AttackDamage/a.AttackDamage-1.19f)<.001,"Swordsman retains shallow level growth");
+            Check(Math.Abs(z.MaxHealth-119)<.1f && Math.Abs(z.AttackDamage/a.AttackDamage-1.57f)<.001,"Swordsman gains 85.5% health and 57% damage by level 20");
             Check(a.Armor==z.Armor && a.CriticalChance==z.CriticalChance && a.CriticalDamageBonus==z.CriticalDamageBonus,"Defense and critical stats stay fixed with level");
             var budget=new UnitStatBonuses {Health=4,Damage=4,Armor=200,MagicalResistance=100,CriticalChance=100,CriticalDamage=100,AttackInterval=.9f};
             budget.ApplyCaps();

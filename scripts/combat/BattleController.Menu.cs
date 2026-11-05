@@ -166,9 +166,15 @@ public partial class BattleController
         BuildDeveloperBattleTools(stack);
     }
 
+    /// <summary>What a restart charges: a campaign stage's entry (a replay's once it is won), the authored entry in the
+    /// tower and events, nothing in boss rush. TryRestartBattle charges through the same GameState methods.</summary>
+    private int RestartFoodCost => IsBossRushMode ? 0
+        : IsCampaignMode ? GameState.Instance.GetStageEntryFoodCost(_stage)
+        : GameState.Instance.GetBattleRestartFoodCost(_stage);
+
     private void StyleRestartButton(Button button)
     {
-        var cost = IsBossRushMode?0:GameState.Instance.GetStageEntryFoodCost(_stage);
+        var cost = RestartFoodCost;
         button.Text = $"Restart  ·  {cost}";
         button.SetMeta("painted_resource_icon", true); button.Icon = HomeMapArt.Icon("food");
         button.IconAlignment = HorizontalAlignment.Right; button.AddThemeConstantOverride("icon_max_width", 28);
@@ -181,9 +187,9 @@ public partial class BattleController
     private void RefreshRestartAvailability()
     {
         if (_restartButton != null)
-            _restartButton.Disabled = _restartPending || IsLanRaceMode || IsOnlineRoomMode || (!IsBossRushMode && GameState.Instance.Food < GameState.Instance.GetStageEntryFoodCost(_stage));
+            _restartButton.Disabled = _restartPending || IsLanRaceMode || IsOnlineRoomMode || GameState.Instance.Food < RestartFoodCost;
         if (IsInstanceValid(_royalResult) && !IsLanRaceMode && !IsOnlineRoomMode)
-            _royalResult.RetryButton.Disabled = _restartPending || (!IsBossRushMode && GameState.Instance.Food < GameState.Instance.GetStageEntryFoodCost(_stage));
+            _royalResult.RetryButton.Disabled = _restartPending || GameState.Instance.Food < RestartFoodCost;
     }
 
     private void TryRestartBattle()

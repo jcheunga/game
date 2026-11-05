@@ -47,7 +47,7 @@ for p in roster['core_units']:
     visual,weapon=visuals.get(p['family'],('fighter','sword'))
     unit.update({
       'Id':p['id'],'DisplayName':p['name'],'Side':'Player','SquadTag':p['role'],
-      'UnlockStage':p['discovery'],'GoldCost':0 if p['name']=='Peasant' else min(420,max(50,round(p['recruit_gold']*.3))),
+      'UnlockStage':p['discovery'],'GoldCost':0 if p['name']=='Peasant' else 5*round(60*1.04**(p['discovery']-1)/5),  # climbs with the unlock stage (Nov 2026)
       'Cost':int(p['courage']),'MaxHealth':b['hp'],'AttackDamage':b['damage'],
       'Armor':b['armor'],'MagicalResistance':b['magic'],'CriticalChance':b['crit'],
       'CriticalDamageBonus':b['crit_damage'],'DamageType':'magical' if b['damage_type']=='M' else 'physical',
@@ -177,7 +177,7 @@ spells=[]
 for spell in concepts['existing_spells']:
     s={k:v for k,v in spell.items() if k and k[0].isupper()}
     s['CardKind']='spell'
-    s['GoldCost']=max(0,min(350,s.get('GoldCost',0)))
+    s['GoldCost']=0 if not s.get('GoldCost') else 5*round(50*1.035**(s['UnlockStage']-1)/5)  # climbs with the unlock stage (Nov 2026)
     if s['EffectType']=='polymorph':
         s['Description']='Briefly disables one enemy. Ordinary targets resist repeated control; bosses recover sooner.'
     spells.append(s)
@@ -197,7 +197,7 @@ for e in concepts['new_spells']:
     if e['name']=='Soul Harvest': power*=MANA_SCALE  # mana recovered per corpse
     spells.append({
       'Id':e['id'],'DisplayName':e['name'],'UnlockStage':e['discovery_stage'],
-      'GoldCost':60+e['discovery_stage']*2,'ManaCost':round(e['prototype_mana']*MANA_SCALE),
+      'GoldCost':5*round(50*1.035**(e['discovery_stage']-1)/5),'ManaCost':round(e['prototype_mana']*MANA_SCALE),
       'Cooldown':e['prototype_cooldown'],'EffectType':e['id'].removeprefix('spell_'),
       'Power':power,'SecondaryPower':secondary,'Radius':radius,'Duration':duration,
       'Description':e['effect']+' '+e['tradeoff'],'ColorHex':'b8a7d3',
@@ -209,7 +209,7 @@ for i,e in enumerate(read('docs/design/balance-stat-catalog.json')['tactical_ite
     power=v['damage'] or v['heal'] or v['courage']
     spells.append({
       'Id':e['id'],'DisplayName':e['name'],'UnlockStage':[6,25,8,28,18,44,84,16,36,21,55,48][i],
-      'GoldCost':70+i*12,'ManaCost':round(v['mana']*MANA_SCALE),'Cooldown':v['cooldown'],
+      'GoldCost':5*round(50*1.035**([6,25,8,28,18,44,84,16,36,21,55,48][i]-1)/5),'ManaCost':round(v['mana']*MANA_SCALE),'Cooldown':v['cooldown'],
       'EffectType':e['id'],'Power':power,'Radius':v['radius'],'Duration':v['lifetime'],
       'SecondaryPower':v['control'],'ObjectHealth':v['hp'],'ObjectArmor':v['armor'],
       'ObjectMagicalResistance':v['magic'],'Charges':int(v['charges']),
@@ -323,9 +323,9 @@ codex_path.write_text(prefix+'\tprivate static readonly CodexEntry[] Entries =\n
 
 def f32(v): return struct.unpack('f',struct.pack('f',v))[0]
 def resolved(u,level):
-    return {'level':level,'health':round(f32(u['MaxHealth']*f32(1+f32((level-1)*f32(.015))))),
-      'attack':round(u['AttackDamage']*(1+(level-1)*.01),3),
-      'structure_damage':round(u.get('BaseDamage',0)*(1+(level-1)*.01),3),
+    return {'level':level,'health':round(f32(u['MaxHealth']*f32(1+f32((level-1)*f32(.045))))),
+      'attack':round(u['AttackDamage']*(1+(level-1)*.03),3),
+      'structure_damage':round(u.get('BaseDamage',0)*(1+(level-1)*.03),3),
       'armor':u.get('Armor',0),'physical_resistance':round(min(75,100*u.get('Armor',0)/(100+u.get('Armor',0))+u.get('PhysicalResistanceBonus',0)),3),
       'magic_resistance':u.get('MagicalResistance',0),'critical_chance':u.get('CriticalChance',0),
       'critical_damage_bonus':u.get('CriticalDamageBonus',50),'damage_type':u.get('DamageType','physical'),
@@ -342,7 +342,7 @@ catalog={'status':'implemented prototype; generated from playable definitions','
 lines=['# Crownroad playable content and stats','',
  'Implemented prototype · Generated from the playable data. Rebuild with `python3 scripts/tools/revamp_content.py`.','',
  '32 core recruits plus 5 retained legacy ownership IDs; 59 ordinary hostile types, 14 bosses and the optional Ash Pilgrim; 100 equipment relics; 30 spells and 12 tactical cards. New art uses existing placeholder models and pictures.','',
- 'Stats below are bare values before equipment and temporary effects. HP and attack show level 1 → level 20. HP gains 1.5% of base per level, attack and structure damage gain 1%; other stats stay fixed. Crit damage is bonus damage: +50% means a critical hit deals 150%. Militia and Sapper stats are per body.','',
+ 'Stats below are bare values before equipment and temporary effects. HP and attack show level 1 → level 20. HP gains 4.5% of base per level, attack and structure damage gain 3%; other stats stay fixed. Crit damage is bonus damage: +50% means a critical hit deals 150%. Militia and Sapper stats are per body.','',
  'Every level record is available in [the playable catalog](../design/playable-content-catalog.json). Main campaign enemies progress from level 1 to 20; ten regional debuts preserve familiar troops. Other ordinary types enter the regional endless pools.','']
 for title,group in [('Core recruits',[u for u in units if u['Side']=='Player' and not u.get('LegacyRecruit')]),
  ('Retained legacy recruits',[u for u in units if u['Side']=='Player' and u.get('LegacyRecruit')]),

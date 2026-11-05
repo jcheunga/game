@@ -11,7 +11,7 @@ public partial class BattleController
     private void OpenCombatGuide()
     {
         var page = GuidePage.Open(this, "CombatGuide", "Combat guide", "codex", 66);
-        page.Tabs(0, ("This battle", body => EncounterBriefing.Build(body, _stageData)), ("Signs", BuildGuideSigns), ("Caravan spell", BuildGuideCaravan));
+        page.Tabs(0, ("This battle", body => EncounterBriefing.Build(body, _stageData, IsCampaignMode || IsTowerMode || IsSeasonalEventMode)), ("Signs", BuildGuideSigns), ("Caravan spell", BuildGuideCaravan));
     }
 
     private void BuildGuideSigns(VBoxContainer body)

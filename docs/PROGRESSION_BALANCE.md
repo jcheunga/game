@@ -4,25 +4,25 @@ Version 3 implemented balance prototype · 9 October 2026
 
 Keep early recruits useful throughout the campaign. Later discoveries offer a modest strength increase, a specialized skill, or another way to answer a threat, paid for by courage, deployment time, attack recovery, lower stats elsewhere, or a real weakness. Recruitment stage and rarity do not grant an extra stat tier. This design supersedes the earlier compounded-growth proposal and retunes all 32 core units. The core stat curves and shared permanent caps are implemented. Enemy base profiles have received additional encounter tuning; [the playable catalog](catalogs/CURRENT_CONTENT_STATS.md) is the current numeric reference.
 
-## Shallow level growth
+## Level growth
 
-Every player card can level from 1 to 20 on the same curve, up to the cap set by the player's own level ([player level](PLAYER_LEVEL.md)). Health adds 1.5% of level 1 base per level gained; ordinary attack and structure damage add 1% of base per level gained. The totals at level 20 are **+28.5% health and +19% damage**. Armor, magical resistance, critical chance, critical damage bonus, movement, range, and attack/deployment timing do not increase with unit level.
+Every player card can level from 1 to 20 on the same curve, up to the cap set by the player's own level ([player level](PLAYER_LEVEL.md)). Health adds 4.5% of level 1 base per level gained; ordinary attack and structure damage add 3% of base per level gained. The totals at level 20 are **+85.5% health and +57% damage**. Armor, magical resistance, critical chance, critical damage bonus, movement, range, and attack/deployment timing do not increase with unit level. Enemies use the same curve at their own level.
 
-The earlier proposal multiplied level 20 health by 4.316 and attack damage by 3.026 before other upgrades. Those gains are retired for the current design. Defense and critical growth are also retired; they remain visible authored stats influenced by bounded equipment choices.
+Until November 2026 the curve was shallow (1.5% health and 1% damage a level, +28.5% and +19% at level 20). A [whole-campaign simulation](PLAYTHROUGH_SIM.md) showed what that meant: a squad trained to its caps beat barely stronger enemies than one four levels behind (at stage 50, campaign strength 1.44 against 1.38), so training was not worth its gold and a stuck player had nothing to grind for. The steeper curve makes four levels worth roughly a fifth of a squad's fighting strength. It is still linear and shared by every card, so early recruits keep up with late ones at the same level.
 
 | Level | HP multiplier | Damage multiplier |
 | --- | --- | --- |
 | 1 | 1.000 | 1.000 |
-| 5 | 1.060 | 1.040 |
-| 10 | 1.135 | 1.090 |
-| 15 | 1.210 | 1.140 |
-| 20 | 1.285 | 1.190 |
+| 5 | 1.180 | 1.120 |
+| 10 | 1.405 | 1.270 |
+| 15 | 1.630 | 1.420 |
+| 20 | 1.855 | 1.570 |
 
 No recruit starts with a free level advantage merely because it appears in a later zone. Essential counters and intrinsic roles work when the unit is recruited. If an extra skill unlocks at a level milestone, early and late cards share that milestone. Training never turns a Peasant card automatically into a knight card.
 
 ## Core comparisons
 
-Paired HP and attack values are level 1 / level 20 per body. Militia pays once for two bodies. Ordinary level 20 DPS includes baseline critical probability and body count, before defenses and special skills. A heavy weapon can deal a larger individual hit while attacking less frequently.
+Paired HP and attack values are level 1 / level 20 per body, on the shallow curve this table was written with (level 20 is now +85.5% health and +57% damage; see the [playable catalog](catalogs/CURRENT_CONTENT_STATS.md)). Militia pays once for two bodies. Ordinary level 20 DPS includes baseline critical probability and body count, before defenses and special skills. A heavy weapon can deal a larger individual hit while attacking less frequently.
 
 | Unit | Courage | Bodies | HP 1 / 20 | Attack 1 / 20 | Attack interval s | Ordinary DPS at 20 per card |
 | --- | --- | --- | --- | --- | --- | --- |

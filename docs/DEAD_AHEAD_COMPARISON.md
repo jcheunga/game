@@ -250,3 +250,27 @@ All values below come from the current JSON definitions. "Attack cooldown" is a 
 - Read current unit/relic/spell definitions and the relevant combat, equipment, progression, combo and codex implementations.
 - Counted **combat definitions**, not portraits, asset files, codex entries or promoted titles. The codex includes legacy names/IDs and flavor text, so it is not a reliable independent roster census.
 - Did not run the game or measure balance, pacing, usability, acquisition time, or production availability of each side mode. No gameplay changes were made.
+
+## Costs and waves (November 2026)
+
+The user asked for unit, courage and spell costs closer to Dead Ahead's, and for waves that make each stage more
+fun and distinct. Figures are from the wiki's unit, courage, rage, fuel and level-data pages; we take the ratios and
+pacing, not its units or levels.
+
+| | Dead Ahead | Crownroad before | Crownroad now |
+| --- | --- | --- | --- |
+| Courage | Starts at 10, regenerates 1.5 a second; kills sometimes drop 25 | Started at 0, 3 a second; 10% drop of 20 | Starts at 10, 2 a second (our battles are shorter); drops unchanged |
+| Troop courage | 15 (Redneck) to 35 (Juggernaut, Medic) | 8 to 36 | 10 to 36 (Peasant 8 → 10) |
+| Deploy cooldown | 6 to 45 s | 2.8 to 14 s | 5 to 21 s (half as long again, at least 5 s) |
+| Support / spells | Rage from kills (1–2 a weak foe); items cost 9–15, about 6–10 kills | Mana 7 a kill; spells 14–63, 2–9 kills | Mana 5 a kill: 3–13 kills; the caravan spell 20 |
+| Troop price | 20 coins (Mechanic) to 17,000 (Juggernaut), rising with the unlock level | 100–720 gold, unrelated to unlock stage | 60 × 1.04^(stage − 1): 60 at stage 2, 400 at 50, 2,600 at 98 |
+| Support price | 330–1,150 coins | 136–512 | 50 × 1.035^(stage − 1): 55 at stage 4, 300 at 53, 1,400 at 98 |
+| Training | ×1.16 a level: 40 coins for level 2, 2,795 for level 30 (21,850 in all) | Linear, 35 + 7 a level (1,862 to level 20) | ×1.18 a level: 40 for level 2, 785 for level 20 (4,935 in all) |
+| Energy | Fuel: 20, 1 every 10 minutes; a mission costs 2 | Food: 24, 2 every 5 minutes; 2 a battle | Replays of a won stage cost 6; first attempts and retries 2 |
+
+Waves are now written per stage from recipes (vanguard, swarm, raiders, shield line, siege, necromancy, ambush,
+elite, long march, commander), bring in the 45 enemy types the campaign never fielded (all 59 now appear), one stage at a time, and end
+in a Reckoning surge for a defence that hasn't broken the gate about two minutes in, like Dead Ahead's timer wave.
+See [campaign waves](CAMPAIGN_WAVES.md). The campaign strength table was refitted to the new waves and economy
+([playthrough simulation](PLAYTHROUGH_SIM.md)).
+

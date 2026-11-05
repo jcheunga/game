@@ -35,8 +35,9 @@ public partial class CombatReviewSmoke
             "The campaign stage under a tower floor keeps its own modifiers");
         Check(floor.Modifiers.All(m => m.Value > 0f), "Every tower modifier has a strength (elite vanguard and rapid assault do nothing without one)");
         var director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
-        Check(Mathf.IsEqualApprox(director.AdditionalEnemyHealthScale, floor.EnemyHealthScale * StageModifiers.AuthoredStrength("elite_vanguard")),
-            $"Elite vanguard strengthens the floor's enemies on top of its own scale (health ×{director.AdditionalEnemyHealthScale:0.00})");
+        Check(Mathf.IsEqualApprox(director.AdditionalEnemyHealthScale,
+                CampaignPacing.EnemyHealthScale(floor.BaseStageNumber) * floor.EnemyHealthScale * StageModifiers.AuthoredStrength("elite_vanguard")),
+            $"Elite vanguard strengthens the floor's enemies on top of its own scale and its campaign stage's (health ×{director.AdditionalEnemyHealthScale:0.00})");
         var strip = ((IEnumerable<Rect2>)Invoke(battle, "CursedGroundAreas")).Single();
         var unit = (Unit)Invoke(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit("player_defender")), strip.GetCenter());
         var hp = unit.Health;
@@ -64,8 +65,8 @@ public partial class CombatReviewSmoke
         Check(StageModifiers.ResolveEnemySpawnIntervalScale(rapid) < 1f, "Rapid assault shortens the time between enemy spawns");
 
         var all = ChallengeTowerCatalog.GetAll();
-        Check(all.Count == ChallengeTowerCatalog.MaxFloor && all.All(f => f.EnemyHealthScale >= .6f && f.EnemyDamageScale >= .75f && f.EnemyHealthScale <= 5f),
-            "Every floor has a fitted enemy scale between the search's limits");
+        Check(all.Count == ChallengeTowerCatalog.MaxFloor && all.All(f => f.EnemyHealthScale >= .2f && f.EnemyDamageScale >= .5f && f.EnemyHealthScale <= 5f),
+            "Every floor has a fitted enemy scale between the search's limits (s from -0.2 to the original curve)");
         // The fitted floors stay beatable: the reference player wins sample floors on the fit's own seeds. A change to
         // campaign stages, modifiers or troops that fails this needs the fit rerun (scripts/analysis/tower_fit.py).
         foreach (var number in new[] { 21, 61, 100 })
@@ -164,7 +165,8 @@ public partial class CombatReviewSmoke
             // A tower battle lacks the campaign's battlefield help, so a floor whose modifiers are too much for the
             // reference player even unscaled searches down to enemies weaker than its campaign stage's (s = -0.1:
             // health ×0.6, damage ×0.75).
-            const float lowest = -.1f;
+            // --tower-lowest lowers the search's floor for floors the reference player can't beat even there.
+            var lowest = float.Parse(SimArg("tower-lowest", "-0.1"), System.Globalization.CultureInfo.InvariantCulture);
             var beatsPlain = await Beats(0f);
             if (!beatsPlain) (low, high) = (lowest, 0f);
             var beatsLow = beatsPlain || await Beats(lowest);
@@ -190,7 +192,12 @@ public partial class CombatReviewSmoke
         return Mathf.RoundToInt(cap + (UnitBalance.MaxPlayerLevel - cap) * number / (float)ChallengeTowerCatalog.MaxFloor);
     }
 
-    /// <summary>A player who first-cleared the campaign to this stage; unitLevel above zero overrides their troops' level.</summary>
+    /// <summary>
+    /// A player who first-cleared the campaign to this stage and trained to the caps that allows, as the campaign's
+    /// strength table assumes (--campaign-fit's "cap" player): every wagon track at its rank cap, the spell at level
+    /// 3 and the milestone relics earned so far. unitLevel above zero overrides their troops' level. (Until November
+    /// 2026 it had three wagon tracks, an untrained Fireball and no relics; the campaign then had no strength table.)
+    /// </summary>
     private void SeedTowerSquad(int stage, int unitLevel = 0)
     {
         var state = GameState.Instance;
@@ -215,10 +222,14 @@ public partial class CombatReviewSmoke
         save.ActiveDeckUnitIds = deck.ToArray();
         save.OwnedPlayerSpellIds = new[] { spell.Id };
         save.ActiveDeckSpellIds = new[] { spell.Id };
-        var rank = PlayerLevelCatalog.WagonRankCap(level);
-        save.BaseUpgradeLevels = new[] { BaseUpgradeCatalog.HullPlatingId, BaseUpgradeCatalog.PantryId, BaseUpgradeCatalog.DispatchConsoleId }
-            .ToDictionary(id => id, _ => rank);
+        save.SpellLevels = new Dictionary<string, int> { [spell.Id] = 3 };
+        var rank = Math.Min(5, PlayerLevelCatalog.WagonRankCap(level));
+        save.BaseUpgradeLevels = SimWagonPriority.ToDictionary(id => id, _ => rank);
+        save.OwnedEquipmentIds = CampaignProgressionCatalog.GetAll().Where(m => m.Stage <= stage && !string.IsNullOrEmpty(m.RelicId))
+            .Select(m => m.RelicId).ToArray();
+        save.UnitEquipmentSlots = new();
         Invoke(state, "ApplySavedData", save);
+        SimEquipRelics(state);
         GD.Print($"TOWER_SQUAD: stage {stage}, player level {level}, unit level {cap}, wagon rank {rank}: {string.Join(", ", deck)} + {spell.Id}");
     }
 

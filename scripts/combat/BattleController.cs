@@ -551,6 +551,15 @@ public partial class BattleController : Node2D
 				_spawnDirector.AdditionalEnemyDamageScale * diffDef.EnemyDamageScale);
 		}
 
+		if (IsCampaignMode || IsTowerMode || IsSeasonalEventMode)
+		{
+			// The campaign stage's own strength (CampaignPacing). Tower floors and event stages are built on the campaign
+			// stage as tuned, so it applies to them too, under their own fitted strength below.
+			_spawnDirector.SetEnemyScaleModifiers(
+				_spawnDirector.AdditionalEnemyHealthScale * CampaignPacing.EnemyHealthScale(_stage),
+				_spawnDirector.AdditionalEnemyDamageScale * CampaignPacing.EnemyDamageScale(_stage));
+		}
+
 		if (IsSeasonalEventMode || IsTowerMode)
 		{
 			_spawnDirector.SetEnemyScaleModifiers(

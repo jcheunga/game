@@ -2050,9 +2050,13 @@ public partial class GameState : Node
 
 	public int GetUnitUpgradeCost(string unitId)
 	{
-		var definition = GameData.GetUnit(unitId);
+		// 40 gold for level 2, then 18% more each level (78 at level 5, 177 at 10, 405 at 15, 785 for level 20;
+		// 4,935 from level 1 to 20), the way Dead Ahead's training climbs. Was 35 + 7 a level until November 2026:
+		// a squad kept at its caps now costs about twice what first clears pay, and the difference is a long grind or
+		// a purchase (docs/PLAYTHROUGH_SIM.md).
+		_ = GameData.GetUnit(unitId);
 		var level = GetUnitLevel(unitId);
-		return 35 + ((level - 1) * 7);
+		return (int)Math.Round(40 * Math.Pow(1.18, level - 1));
 	}
 
 	public bool TryUpgradeUnit(string unitId, out string message)
@@ -2175,7 +2179,8 @@ public partial class GameState : Node
 	public int GetBaseUpgradeCost(string upgradeId)
 	{
 		var level = GetBaseUpgradeLevel(upgradeId);
-		return upgradeId switch
+		// Each track's price, raised by half in November 2026 with the rest of the training costs.
+		return (upgradeId switch
 		{
 			BaseUpgradeCatalog.ArcherCrewId => 85 + (level * 65),
 			BaseUpgradeCatalog.BallistaId => 150 + (level * 85),
@@ -2191,7 +2196,7 @@ public partial class GameState : Node
 			BaseUpgradeCatalog.ProjectileWardId => 100 + (level * 75),
 			BaseUpgradeCatalog.GateBreakerId => 95 + (level * 80),
 			_ => 100 + (level * 60)
-		};
+		}) * 3 / 2;
 	}
 
 	public bool TryUpgradeBase(string upgradeId, out string message)
@@ -3956,7 +3961,7 @@ public partial class GameState : Node
     public bool TrySpendBattleRestartFood(int stage, out string message)
     {
         RefreshFoodRecharge();
-        var cost = GetStageEntryFoodCost(stage);
+        var cost = GetBattleRestartFoodCost(stage);
         if (Food < cost) { message = $"Need {cost} rations to restart."; return false; }
         Food -= cost;
         LastResultMessage = $"Battle restarted. -{cost} rations.";
@@ -3979,7 +3984,21 @@ public partial class GameState : Node
 		return true;
 	}
 
+	/// <summary>
+	/// Rations to enter a campaign stage. A stage not yet won costs its authored entry (2); a replay of one already won
+	/// costs <see cref="CampaignReplayFoodCost"/>. Replays pay full gold and XP, so they are how a player who doesn't
+	/// pay catches up on training; their price makes that grind draw on the food store, which recharges 2 rations every
+	/// five minutes or is bought. Retries of a stage still being fought keep the low price.
+	/// </summary>
 	public int GetStageEntryFoodCost(int stage)
+	{
+		stage = Mathf.Clamp(stage, 1, MaxStage);
+		var cost = GetBattleRestartFoodCost(stage);
+		return GetStageStars(stage) > 0 ? Math.Max(cost, CampaignReplayFoodCost) : cost;
+	}
+
+	/// <summary>The authored entry cost of a stage, which restarts in the modes built on it (tower, events) pay.</summary>
+	public int GetBattleRestartFoodCost(int stage)
 	{
 		var definition = GameData.GetStage(Mathf.Clamp(stage, 1, MaxStage));
 		return Math.Max(1, definition.EntryFoodCost);

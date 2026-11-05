@@ -547,6 +547,8 @@ public partial class AudioDirector : Node
 	private void SetDinLevel(float pressure, float seconds)
 	{
 		if (_din == null) return;
+		// Muted means silent: the din's loop is not started (every start adds a playback to the audio server).
+		if (GameState.Instance?.AudioMuted ?? false) pressure = 0f;
 		var target = pressure <= 0.02f ? -60f : Mathf.Lerp(-22f, -3f, pressure);
 		if (target > -59f && !_din.Playing && _cues.TryGetValue("battle_din", out var din) && din.Streams.Length > 0)
 		{

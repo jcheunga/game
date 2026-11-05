@@ -16,9 +16,9 @@
     "StructureScale": 0.58,
     "ViewWidth": 600.0,
 
-    "CourageStart": 0.0,
+    "CourageStart": 10.0,
     "CourageMax": 100.0,
-    "CourageGainPerSecond": 3.0,
+    "CourageGainPerSecond": 2.0,
     "CourageDropChance": 0.10,
     "CourageDropAmount": 20.0,
     "CourageDropLifetime": 8.0,
@@ -26,7 +26,7 @@
     "CourageDropGuaranteeAfterMisses": 15,
     "ManaStart": 0.0,
     "ManaMax": 100.0,
-    "ManaPerEnemyKill": 7.0,
+    "ManaPerEnemyKill": 5.0,
     "CaravanSpell": {
       "Id": "caravan_arcane_barrage",
       "DisplayName": "Arcane Barrage",

@@ -14,7 +14,7 @@ The previous 50-unit draft remains a reserve pool. It is not the current recruit
 
 ## Stats and progression
 
-Units level from 1 to 20. Each level adds 1.5% of base health and 1% of base ordinary/structure damage: level 20 gives +28.5% health and +19% damage. Armor, magical resistance, critical chance, critical damage, speed, reach and timing stay fixed with unit level.
+Units level from 1 to 20. Each level adds 4.5% of base health and 3% of base ordinary/structure damage: level 20 gives +85.5% health and +57% damage (1.5% and 1% until November 2026; see [progression balance](PROGRESSION_BALANCE.md)). Armor, magical resistance, critical chance, critical damage, speed, reach and timing stay fixed with unit level.
 
 Physical resistance comes from `100 × armor / (100 + armor)` plus direct resistance points, capped at 75%. Magical resistance is separate, also capped at 75%. Critical damage is displayed as bonus damage: +50% produces a 150% hit. Physical, magical and scripted true damage have explicit paths.
 

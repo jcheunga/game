@@ -88,8 +88,11 @@ public sealed record UnitBonusLimit(string Label,float Supplied,float Applied,st
 public static class UnitBalance
 {
     public const int MaxPlayerLevel = 20;
-    public static float HealthScale(int level) => 1f + Math.Max(0, level - 1) * .015f;
-    public static float DamageScale(int level) => 1f + Math.Max(0, level - 1) * .01f;
+    // Each level adds 4.5% of level-1 health and 3% of level-1 damage (level 20: +85.5% health, +57% damage), for
+    // troops and foes alike. Steep enough that training is worth its gold: a squad four levels behind its foes fights
+    // at about a fifth less strength. (It was 1.5% and 1% until November 2026, when training barely mattered.)
+    public static float HealthScale(int level) => 1f + Math.Max(0, level - 1) * .045f;
+    public static float DamageScale(int level) => 1f + Math.Max(0, level - 1) * .03f;
     public static float PhysicalResistance(float armor, float points = 0f)
         => Mathf.Clamp(100f * Math.Max(0f, armor) / (100f + Math.Max(0f, armor)) + points, 0f, 75f);
     public static CombatDamageType ParseDamageType(string type) => type?.ToLowerInvariant() switch

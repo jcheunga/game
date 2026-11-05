@@ -7,14 +7,15 @@ using Godot;
 /// </summary>
 public static class EncounterBriefing
 {
-    public static void Show(Node host, StageDefinition stage)
+    public static void Show(Node host, StageDefinition stage, bool campaign = true)
     {
         var page = GuidePage.Open(host, "EncounterBriefing", $"Stage {stage.StageNumber} · Battle tips", "codex", 70);
-        Build(page.Body, stage);
+        Build(page.Body, stage, campaign);
         page.Finish();
     }
 
-    public static void Build(VBoxContainer body, StageDefinition stage)
+    /// <param name="campaign">A battle on a campaign stage (campaign, tower or event), whose foes carry the stage's campaign strength.</param>
+    public static void Build(VBoxContainer body, StageDefinition stage, bool campaign = true)
     {
         var newEnemy = stage.NewEnemyId ?? "";
         body.AddChild(GuidePage.Callout(newEnemy.Length > 0 ? "icon-skull-red" : "icon-open-book", CombatGuideCatalog.StageTip(stage.StageNumber)));
@@ -22,7 +23,9 @@ public static class EncounterBriefing
         var director = new BattleSpawnDirector(rng);
         director.Initialize(stage.StageNumber, stage, GameData.Combat, GameData.GetEnemyUnits());
         var difficulty = GameState.Instance.GetDifficulty();
-        director.SetEnemyScaleModifiers(difficulty.EnemyHealthScale, difficulty.EnemyDamageScale);
+        director.SetEnemyScaleModifiers(
+            difficulty.EnemyHealthScale * (campaign ? CampaignPacing.EnemyHealthScale(stage.StageNumber) : 1f),
+            difficulty.EnemyDamageScale * (campaign ? CampaignPacing.EnemyDamageScale(stage.StageNumber) : 1f));
         // The boss and the stage's new enemy lead; the rest keep the order they march in.
         var enemies = stage.Waves.SelectMany(w => w.Entries).Select(e => e.UnitId).Distinct().Select(GameData.GetUnit)
             .OrderByDescending(e => e.IsBoss).ThenByDescending(e => e.Id == newEnemy).ToArray();

@@ -138,7 +138,7 @@ All pairs are level 1 / level 20 before equipment, promotions, synergy, or tempo
 | Banner Knight | 64 / 82 | 7 / 8.33 | 16 / 16 | 13.79 / 13.79 | 5 / 5 | 4 / 4 | 50 / 50 |
 | Ballista Crew | 54 / 69 | 18 / 21.42 | 8 / 8 | 7.41 / 7.41 | 0 / 0 | 5 / 5 | 55 / 55 |
 
-Health gains 1.5% of its level 1 base per level, and attack and structure damage gain 1% of their level 1 base per level. These increases are linear, without compounding. At level 20 the gains total 28.5% HP and 19% damage. Armor, magical resistance, critical chance, critical damage bonus, movement, reach, and timing stay fixed with level. Armor still derives physical resistance as 100 × armor / (100 + armor), with explicit resistance points afterward. Global defense and critical safety caps remain 75% resistance, 60% critical chance, and 200% critical damage bonus; ordinary authored profiles stay well below them. A 50% critical bonus means a 1.5× eligible hit before defenses.
+Health gains 4.5% of its level 1 base per level, and attack and structure damage gain 3% of their level 1 base per level (1.5% and 1% until November 2026). These increases are linear, without compounding. At level 20 the gains total 85.5% HP and 57% damage. Armor, magical resistance, critical chance, critical damage bonus, movement, reach, and timing stay fixed with level. Armor still derives physical resistance as 100 × armor / (100 + armor), with explicit resistance points afterward. Global defense and critical safety caps remain 75% resistance, 60% critical chance, and 200% critical damage bonus; ordinary authored profiles stay well below them. A 50% critical bonus means a 1.5× eligible hit before defenses.
 
 ## Deployment movement and attack timing
 

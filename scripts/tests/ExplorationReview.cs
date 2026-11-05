@@ -118,9 +118,10 @@ public partial class ExplorationReview : Node
             Fund(0);
             Check(!state.TryOpenAdventureTile(beyond,out var cost) && cost.Contains("1 food") && state.Food==0 && !state.IsAdventureTileOpened(beyond),"Without 1 food a frontier tile explains its cost and stays closed");
             Fund(1);
-            Check(GameData.Stages.All(stage => state.GetStageEntryFoodCost(stage.StageNumber) == 2)
+            Check(GameData.Stages.Where(stage => state.GetStageStars(stage.StageNumber) == 0).All(stage => state.GetStageEntryFoodCost(stage.StageNumber) == 2)
+                && GameData.Stages.Where(stage => state.GetStageStars(stage.StageNumber) > 0).All(stage => state.GetStageEntryFoodCost(stage.StageNumber) == GameState.CampaignReplayFoodCost)
                 && !state.TrySpendStageEntryFood(start.Site.Stage, out _) && state.Food == 1,
-                "Stages cost 2 food and cannot start with only 1 food");
+                "Stages not yet won cost 2 food, replays 6, and none starts with only 1 food");
             Check(state.TryOpenAdventureTile(beyond, out _) && state.Food == 0,
                 "Exactly 1 food opens a frontier tile and is charged once");
             Fund(100);

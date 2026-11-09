@@ -14,6 +14,7 @@ public partial class SettingsMenu : RoyalScreen
     private Control _layer;
     private string _status = "";
     private float _rowsScroll;
+    private readonly List<(RoyalLabel Label, Func<string> Value)> _infoValues = new();
     private bool _deletingAccount;
 
     public SettingsMenu() { PlateName = "settings"; }
@@ -35,11 +36,21 @@ public partial class SettingsMenu : RoyalScreen
         if (AppLifecycleService.Instance != null) AppLifecycleService.Instance.StateChanged -= OnAppLifecycleStateChanged;
     }
 
-    private void OnAppLifecycleStateChanged() { if (IsInsideTree()) Rebuild(); }
+    /// <summary>
+    /// Focus and pause changes only alter the text of info rows (App state), so those are refreshed in place. A
+    /// rebuild here freed the list under the player's finger whenever the window lost or regained focus mid-scroll.
+    /// </summary>
+    private void OnAppLifecycleStateChanged()
+    {
+        if (!IsInsideTree()) return;
+        foreach (var (label, value) in _infoValues)
+            if (GodotObject.IsInstanceValid(label)) label.Text = value();
+    }
 
     private void Rebuild()
     {
         if (_layer == null) return;
+        _infoValues.Clear();
         RoyalUiTools.Clear(_layer);
         var spec = Spec;
         _layer.AddChild(spec.Label("title", "Settings", 600));
@@ -244,6 +255,7 @@ public partial class SettingsMenu : RoyalScreen
                 value.Size = new Vector2(Local("row.music.value").End.X - value.Position.X, name.Size.Y);
                 value.Baseline = name.Baseline;
                 holder.AddChild(value);
+                _infoValues.Add((value, info.Value));
                 break;
             }
             case EditRow edit:

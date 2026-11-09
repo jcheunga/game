@@ -9,7 +9,7 @@ achievements). Between battles the player spends gold the way a focused player w
 and lives within the food supply.
 
 ```sh
-# Both profiles in parallel, with the pacing checks, then the zone-by-zone report (10-20 minutes):
+# Both profiles in parallel, with the pacing checks, then the zone-by-zone report (about an hour):
 scripts/tests/playthrough_check.sh
 
 # One run by hand:
@@ -20,8 +20,9 @@ python3 scripts/analysis/playthrough_report.py artifacts/playthrough/free.json [
 
 Options: `--profile=free|spender`, `--to-stage=N`, `--daily-minutes=60` (play time a day), `--budget=1000`
 (the spender's dollar limit), `--max-grind=300` (replays at one stage before the run gives up and reports a wall),
-`--out=name` (writes `artifacts/playthrough/<name>.json`), and the check bands `--expect-replays=a-b`,
-`--expect-battles=a-b`, `--expect-dollars=a-b`, `--expect-days=a-b`.
+`--out=name` (writes `artifacts/playthrough/<name>.json`), `--strength-file=path` (plays a candidate
+`CampaignPacing` table, 100 numbers as `campaign_fit.py` prints them, so one build can compare tables side by side),
+and the check bands `--expect-replays=a-b`, `--expect-battles=a-b`, `--expect-dollars=a-b`, `--expect-days=a-b`.
 
 ## The simulated player
 
@@ -40,6 +41,11 @@ Options: `--profile=free|spender`, `--to-stage=N`, `--daily-minutes=60` (play ti
 - **Losing:** two quick retries the first time, then a grind before every further try: replay the last beaten stage
   until the replays have bought about a level of training for the whole squad (or lifted a level cap when nothing
   under the caps is left), three to fifteen replays.
+  With troops at the last level (20) and nothing left to buy, grinding can't make the squad stronger, so a stuck
+  player tries another lineup instead: the next of the lineups drawn from the three newest melee troops, three newest
+  ranged and two newest supports, recruiting and training what it needs (`PLAYTHROUGH_LINEUP` lines). Without it,
+  a run that carried a weak squad into the last zones replayed it hundreds of times (one squad never passed 2% of
+  stage 100's gate in 23 tries); a person swaps.
 - **Food and time:** a battle costs its rations and takes its battle time plus 40 seconds of menus. Rations recharge
   2 every five minutes up to 24. A short supply is refilled with gold (three a day, when 600 gold is spare), or the
   player comes back when the store is full. A day holds `--daily-minutes` of play.
@@ -112,7 +118,9 @@ seed and purchase, so treat a run's totals as a sample (`playthrough_check.sh` c
 | Leaders just under s_lag, bosses 45%, training 40 + 8, wagon unchanged | 161–250 battles, 9–16 days | $9.99, 103 battles |
 | Leaders 40%, bosses 85%, training 60 + 12, wagon ×1.5 | 656 battles (419 losses), about 40 days | $48.93, 176 battles; stage 50 still took 24 losses at its caps |
 | Leaders 40%, bosses 75%, same prices, longer grinds between tries | 515 battles (234 losses), 30 days | $40.95, 132 battles |
-| The same, plus Dead Ahead's economy, the new waves and 6-ration replays, refitted (current) | 324 battles (85 losses), 24 days | $93.90, 184 battles |
+| The same, plus Dead Ahead's economy, the new waves and 6-ration replays, refitted | 324 battles (85 losses), 24 days | $93.90, 184 battles |
+| Stages 1–70 at the bosses' 75% (9 November, current) | 430–761 battles, 49–98 days | $78.91–$93.83, 154–155 battles |
+| Every stage at 75% | stopped at stage 79 after 300 replays | $73.94, 138 battles |
 
 The first was the earlier "kind of need to grind" pass; the user asked for much harder unless you pay. At 85% the
 bosses sat inside the fit's seed noise, so even a squad at its caps lost repeatedly (stage 50); 75% keeps them
@@ -128,6 +136,41 @@ replays.
   rations. The spender, which hardly grinds, never ran short.
 - The scripted player is weaker than a person in battle and plainer in the shop (no relic crafting, promotions or
   awakening). A person should grind less than these numbers.
+
+## As hard as possible (9 November 2026)
+
+Asked whether a free player found it very hard to finish, and shown the 81 replays at stage 67, the user said not to
+ease it but to make the campaign as hard as possible. The standing rule still holds: a free player who puts in the
+time finishes.
+
+- **Stages 1–70 take the zone bosses' share**: 75% of the way from s_lag to s_cap, where leaders had 40% and
+  mid-bosses 65% (`campaign_fit.py`, rebuilt from the 5 November fits, since no stage, troop or price has changed). The
+  mean s goes from 0.51 to 0.58; a leader gains about 0.13 (enemy health ×1.13 more). 75% is the ceiling: bosses at
+  85% beat squads trained to their caps again and again.
+- **Stages 71–100 keep their strength.** From zone 8 a grinding player's troops are at or near level 20, so extra
+  strength can't be ground through. At 75% there, squads at level 19–20 lost stage 79 15–19 times, stage 87 22 times
+  and stage 89 14 times in a row, and with lineup swaps the free player hit the 300-replay limit at stage 79: it
+  trained from level 12 to 19 over 23 tries, never reached the gate, and grinding stage 78 paid too little to go
+  faster.
+- **Tower and events.** `--tower-fit` refitted floors 1–70 on the harder stages (their own s fell 0.02 on average,
+  so a floor stays at the edge of what its reference player beats); floors 71–100 kept theirs. Four event stages on
+  harder campaign stages were eased with a margin: Midwinter Siege 1 (stage 34) to ×0.74 / ×0.84, Midwinter Siege 2
+  (stage 51) to ×0.92 / ×0.97, Harvest Moon Hunt 1 (stage 22) to ×0.98 / ×1.02, and Harvest Moon Hunt 3 (stage 57) to
+  ×0.55 / ×0.72.
+- **Lineup swaps** in the simulated player (see "Losing" above): before them one spender run sat at stage 100 for 300
+  replays with a squad that never got past 2% of the gate.
+
+| Run | Battles | Grind replays | Days at 1 h/day | Play hours | Money |
+| --- | --- | --- | --- | --- | --- |
+| Free, 5 November | 324 | 184 | 24 | 21 | $0 |
+| Free, three runs | 430–761 | 287–583 | 49–98 | 29–62 | $0 |
+| Spender, 5 November | 184 | 44 | 12 | 12 | $93.90 |
+| Spender, two runs | 154–155 | 15–16 | 10–11 | 10–11 | $78.91–$93.83 |
+
+The free player's walls are now the first boss (stage 10, about 40 replays), stages 19–21 (45–60), stage 66 (84–100 in
+every run) and the last zones, where a squad short of level 20 trains slowly on replays (stage 90: 221 replays in one
+run). Stage 67 passes. `playthrough_check.sh` now accepts 30–150 days for the free player (was 15–90), moved on
+purpose.
 
 ## Retuning
 

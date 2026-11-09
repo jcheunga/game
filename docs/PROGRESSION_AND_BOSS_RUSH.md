@@ -8,7 +8,7 @@ Implemented prototype · 11 October 2026
 - **Collection:** view and claim the 24 existing milestones across six categories. The core unit total is now 32, and utility collection includes all 30 spells plus 12 tactical cards. Retired legacy recruits are excluded from completion requirements so new saves can reach 100%. Claims persist and pay once.
 - **Wagon looks:** inspect the eight existing skin assets and select an unlocked appearance. These are cosmetic. Royal Guard now requires a campaign victory, rather than merely reaching the final stage; Bone Collector uses the attainable current Codex collection.
 
-**More → Activities → Boss rush** unlocks after the King's Road boss. It contains all 14 commanders in campaign order, with levels 2–20 and the same shallow enemy curve. The old 1.2×–5× health ladder is retired. Each round has one commander and two familiar escorts. Defeat the commander and authored escorts to advance; summoned bodies do not create another round requirement. Boss reinforcement paths use bounded escorts.
+**More → Activities → Boss rush** unlocks after the King's Road boss. It contains all 14 commanders in campaign order, with levels 2–20 and the same shallow enemy curve. The old 1.2×–5× health ladder is retired. Each round has one commander and two familiar escorts. From the second round, while the commander lives, packs of walkers, runners and brutes join it every 8 seconds until that round's reinforcements run out (see 9 November below). Defeat the commander and authored escorts to advance; summoned bodies and reinforcements do not create another round requirement. Boss reinforcement paths use bounded escorts.
 
 Between rounds the troops regroup, the wagon repairs fully, courage resets to 40, and mana returns to at least its starting amount. Boss rush costs no food. Cleared rounds award 75, 85, …, 205 Gold, banked when the run ends. Result submission pays once, records the best completed wave and completion time, and does not change campaign stars. Retry remains in boss-rush mode.
 
@@ -22,10 +22,36 @@ The mechanics review currently passes 724 checks, including all fourteen scripte
 
 Normal-speed gameplay checks are authoritative for encounter balance. Exploratory accelerated runs showed timing differences and are not used as proof of balance. Stage 95 clears at normal speed with three stars in 206.8 seconds after a matching encounter adjustment. The no-equipment normal-speed rush cleared 13 commanders; the final commander clears in a focused normal-speed check using earned relics and level-3 wagon upgrades. A continuous equipped run has not been claimed. Wider squad and physical-device playtesting remain necessary.
 
+**6 November 2026 — the final commander stays hard.** `--bossrush-gameplay` now plays the rush with the campaign's scripted player (courage packs collected, spells aimed, caravan spell fired) and the endgame squad the tower and events check against (every troop level 20, wagon tracks at their rank cap). That squad clears commanders 1–13 without the wagon taking damage. The Ashen Regent, whose rally call keeps adding walkers, falls in every fresh start (13 of 13), but at the end of a full run it fell in only 3 of 11. The difference was not traced: round-start troop and enemy stats, courage rate and cooldowns match a fresh start. The commander was left as it is on purpose, as the rush's real test. A full run passes when it clears the first thirteen and reaches the Ashen Regent (`BOSS_RUSH_FINAL` names the commander that held, if any); a run started there with `--rush-start=13` must win.
+
+With `--squad=stage:level` the rush plays with the squad a player has on reaching that stage. On 9 November squads from stages 30 (troop level 8), 50 (10) and 70 (14) all cleared commanders 1–12 without the wagon taking damage (rounds are a commander and two escorts, at most four foes) and all fell to the Dread Sovereign, whose summons put 9–12 foes on the field. A stage-100 squad at level 17 cleared all fourteen (lowest wagon health 33%). The rush is a cliff: twelve walkover rounds, then two hard ones.
+
+**9 November 2026 — reinforcements smooth the climb.** Each commander from the second to the twelfth now calls reinforcements while it lives: a pack (one troop, two from round 5, three from round 9) every 8 seconds until its round's allowance runs out. The allowances are 0, 1, 2, 3, 4, 3, 6, 5, 13, 10, 7, 15 for rounds 1–12. The last two commanders summon their own reinforcements and get none. Reinforcements drop no courage and leave when their commander's round ends. A squad that kills the commander quickly meets few of them; a squad that can't meets them all.
+
+The allowances are set per commander because the commanders are uneven. The ranged Harrow Tidemaster (3), the armoured Plague Monarch (6), the Bone Pontiff (8) and the Steppe Warlord (11) get fewer than their neighbours. Three other approaches were tried and rejected:
+
+- **One formula for every commander.** Rounds 3 and 6 became walls for every squad.
+- **Uncapped reinforcements.** Slow commanders snowballed, and round 3 beat even a stage-70 squad.
+- **Bigger opening packs.** Up to 12 walkers, runners and brutes at once, or packs drawn from each commander's own stage, barely touched the wagon. The exception was the Plague Monarch's shieldwalls, healers and splitters, which made round 6 a spike.
+
+Where each squad fell, two seeds each. The first seed ran before rounds 9 and 12 were raised from 10 and 12 to 13 and 15; no squad that reached those rounds took damage there either way.
+
+| Squad | First wagon damage | Fell at |
+|---|---|---|
+| Stage 30, troop level 8 | round 6 | rounds 10 and 11 |
+| Stage 70, troop level 14, the playthrough sim's deck (`--deck`) | round 6 | rounds 6 and 10 |
+| Stage 100, troop level 17 | round 11 | rounds 13 and 14 |
+| Endgame (level 20), plus a third seed | round 6 or 11 | round 14 in three runs; the fourth cleared all fourteen |
+
+Squads from stages 30, 50 and 70 perform alike in this sim, because troop base stats barely rise with later unlocks. The rush therefore can't separate them round by round. What it does separate is a mid-campaign squad from an endgame one. Before reinforcements, every one of these squads cleared rounds 1–12 untouched.
+
+The endgame squad still always reaches the Ashen Regent, so `--bossrush-gameplay` passes. A run started at the Regent (`--rush-start=13`) still wins.
+
 ```sh
 godot --headless --path . scenes/tests/ContentRevampSmoke.tscn -- --save-suffix=content-review-expansion
 godot --path . scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-expansion --expansion
 godot --headless --path . scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-rush --bossrush-gameplay
+godot --headless --path . scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-rush-final --bossrush-gameplay --rush-start=13
 ```
 
 ## Retreat polish — 12 October 2026
@@ -116,3 +142,9 @@ stages are built on campaign stages, so:
   fixed; others remain), so an exact fit fails some runs. `--tower-fit` refitted every floor (s from −0.15 to 0.13 on
   top of the tuned stage). Its search floor can go below −0.1 with `--tower-lowest`, used for the boss floors 20, 78
   and 90, which the reference player could not win at −0.1; the catalog check accepts floors down to s = −0.2.
+- 9 November 2026: campaign stages 1–70 got harder ([as hard as possible](PLAYTHROUGH_SIM.md#as-hard-as-possible-9-november-2026)),
+  so `--tower-fit` refitted floors 1–70 (their own s fell 0.02 on average; floors 71–100 sit on stages that kept
+  their strength), and `--event-fit` with `--events` runs eased four event stages with a margin: Midwinter
+  Siege 1 (stage 34) to ×0.74 / ×0.84, Midwinter Siege 2 (stage 51) to ×0.92 / ×0.97 and Harvest Moon Hunt 1
+  (stage 22) to ×0.98 / ×1.02. Harvest Moon Hunt 3 (stage 57), already at the fit's floor of ×0.60 / ×0.75, lost
+  one `--events` run in six and went to ×0.55 / ×0.72.

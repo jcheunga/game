@@ -117,8 +117,8 @@ public static class SeasonalEventCatalog
             "4488cc", "12-15", "01-05",
             new SeasonalEventStage[]
             {
-                new(34, 0.80f, 0.88f, new[] { "elite_vanguard" }, new SeasonalEventReward("gold", amount: 300)), // was 1.15/1.10; refit Nov 2026 on the tuned campaign stage, with a margin
-                new(51, 1.02f, 1.03f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 400)), // was 1.20/1.15; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(34, 0.74f, 0.84f, new[] { "elite_vanguard" }, new SeasonalEventReward("gold", amount: 300)), // was 1.15/1.10; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 34 got harder
+                new(51, 0.92f, 0.97f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 400)), // was 1.20/1.15; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 51 got harder
                 new(66, 0.60f, 0.75f, new[] { "cursed_ground" }, new SeasonalEventReward("food", amount: 8)), // was 1.25/1.20; refit Nov 2026 on the tuned campaign stage, with a margin
                 new(82, 0.66f, 0.79f, new[] { "elite_vanguard", "fortified_deploy" }, new SeasonalEventReward("sigils", amount: 2)), // was 1.35/1.25; refit Nov 2026 on the tuned campaign stage, with a margin
                 new(97, 0.70f, 0.82f, new[] { "cursed_ground", "rapid_assault" }, new SeasonalEventReward("relic", "relic_frostbound_crown")), // was 1.50/1.35; refit Nov 2026 on the tuned campaign stage, with a margin
@@ -134,9 +134,9 @@ public static class SeasonalEventCatalog
             "cc6622", "09-20", "10-10",
             new SeasonalEventStage[]
             {
-                new(22, 1.04f, 1.06f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 250)), // was 1.10/1.10; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(22, 0.98f, 1.02f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 250)), // was 1.10/1.10; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 22 got harder
                 new(42, 1.00f, 1.00f, new[] { "mirror_pressure" }, new SeasonalEventReward("food", amount: 6)), // was 1.18/1.15; eased Nov 2026 on the tuned campaign stage
-                new(57, 0.60f, 0.75f, new[] { "lich_graveyard" }, new SeasonalEventReward("gold", amount: 500)), // was 1.25/1.20; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(57, 0.55f, 0.72f, new[] { "lich_graveyard" }, new SeasonalEventReward("gold", amount: 500)), // was 1.25/1.20; refit Nov 2026 on the tuned campaign stage, with a margin; 9 Nov below the fit's floor (0.60/0.75) when stage 57 got harder and one --events run in six lost it
                 new(76, 1.08f, 1.10f, new[] { "tunnel_invasion" }, new SeasonalEventReward("sigils", amount: 2)), // was 1.30/1.25; refit Nov 2026 on the tuned campaign stage, with a margin
                 new(91, 0.76f, 0.87f, new[] { "mirror_pressure", "lich_graveyard" }, new SeasonalEventReward("relic", "relic_moonfire_talisman")), // was 1.40/1.30; refit Nov 2026 on the tuned campaign stage, with a margin
             },

@@ -28,6 +28,8 @@ public partial class CombatReviewSmoke
         public readonly List<object> StageRows = new();
         public double DailySeconds = 3600, BattleOverhead = 40, Budget = 1000;
         public int MaxGrindPerStage = 300;
+        // 0 carries the usual squad; above that, the alternative lineup a stuck player is trying (SimLineup).
+        public int Lineup, LineupSwaps;
     }
 
     private static readonly string[] SimWagonPriority =
@@ -56,12 +58,22 @@ public partial class CombatReviewSmoke
     /// <summary>
     /// --playthrough-sim [--profile=free|spender] [--to-stage=100] [--daily-minutes=60] [--budget=1000]
     /// [--max-grind=300] [--out=name] [--expect-replays=a-b] [--expect-battles=a-b] [--expect-dollars=a-b]
-    /// [--expect-days=a-b]: prints PLAYTHROUGH_BATTLE, PLAYTHROUGH_STAGE and PLAYTHROUGH_SUMMARY lines, writes
-    /// artifacts/playthrough/&lt;out&gt;.json for scripts/analysis/playthrough_report.py, and checks that the campaign
-    /// was finished and that each given total lies in its band.
+    /// [--expect-days=a-b] [--strength-file=path]: prints PLAYTHROUGH_BATTLE, PLAYTHROUGH_STAGE and PLAYTHROUGH_SUMMARY
+    /// lines, writes artifacts/playthrough/&lt;out&gt;.json for scripts/analysis/playthrough_report.py, and checks that
+    /// the campaign was finished and that each given total lies in its band. --strength-file plays a candidate
+    /// CampaignPacing table instead of the built one (100 numbers, as campaign_fit.py prints them), so one build can
+    /// compare tables side by side.
     /// </summary>
     private async Task SimulatePlaythrough()
     {
+        var strengthFile = SimArg("strength-file", null);
+        if (strengthFile != null)
+        {
+            var table = System.Text.RegularExpressions.Regex.Matches(System.IO.File.ReadAllText(strengthFile), @"-?\d+\.\d+")
+                .Select(m => float.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+            Check(table.Length == GameData.MaxStage, $"The strength file has a strength for each of the {GameData.MaxStage} stages ({table.Length})");
+            CampaignPacing.StrengthOverride = n => table[Math.Clamp(n, 1, table.Length) - 1];
+        }
         var sim = new PlaythroughSim
         {
             Profile = SimArg("profile", "free"),
@@ -97,6 +109,10 @@ public partial class CombatReviewSmoke
                 SimShop(sim, stage);
                 if (losses < 3) continue;
                 if (grind >= sim.MaxGrindPerStage) break;
+                // With troops at the last level and nothing left to buy, grinding can't make this squad any
+                // stronger, so a stuck player tries another lineup (recruiting and training what it needs) instead of
+                // replaying the same squad until it gets lucky.
+                if (state.UnitLevelCap >= state.MaxUnitLevel && !SimUpgradeOptions(state).Any()) SimNextLineup(sim, stage);
                 grind += await SimGrind(sim, stage);
             }
             if (!won)
@@ -107,10 +123,12 @@ public partial class CombatReviewSmoke
             }
             cleared = stage;
             sim.FirstClears++;
+            var lineup = sim.Lineup;
+            sim.Lineup = 0;
             SimOpenAtlas(sim, stage);
             var row = new
             {
-                stage, attempts, losses, grind, day = sim.Day, dayStart = startDay,
+                stage, attempts, losses, grind, lineup, day = sim.Day, dayStart = startDay,
                 playMinutes = Math.Round((sim.PlaySeconds - startPlay) / 60, 1),
                 totalHours = Math.Round(sim.PlaySeconds / 3600, 2),
                 level = state.PlayerLevel, unitCap = state.UnitLevelCap, wagonCap = state.WagonRankCap,
@@ -125,7 +143,7 @@ public partial class CombatReviewSmoke
         var summary = new
         {
             profile = sim.Profile, cleared, wall, target, battles = sim.Battles, wins = sim.Wins, losses = sim.Losses,
-            replays = sim.Replays, days = sim.Day + 1, playHours = Math.Round(sim.PlaySeconds / 3600, 2),
+            replays = sim.Replays, lineupSwaps = sim.LineupSwaps, days = sim.Day + 1, playHours = Math.Round(sim.PlaySeconds / 3600, 2),
             idleHours = Math.Round(sim.IdleSeconds / 3600, 2), foodBreaks = sim.FoodBreaks, refills = sim.RefillsBought,
             goldFromBattles = sim.GoldFromBattles, goldBought = sim.GoldBought, foodBought = sim.FoodBought,
             spent = new { units = sim.GoldSpentUnits, recruits = sim.GoldSpentRecruits, spells = sim.GoldSpentSpells, wagon = sim.GoldSpentWagon, food = sim.GoldSpentFood },
@@ -244,7 +262,8 @@ public partial class CombatReviewSmoke
         foreach (var unit in GameData.GetPlayerUnits().Where(u => u.UnlockStage <= stage && !state.IsUnitOwned(u.Id) && state.IsUnitAvailableForPurchase(u.Id))
                      .OrderByDescending(u => u.UnlockStage))
         {
-            if (!SimWantsUnit(state, unit)) continue;
+            if (sim.Lineup == 0 && !SimWantsUnit(state, unit)) continue;
+            if (sim.Lineup > 0 && !SimLineup(state, stage, sim.Lineup).Contains(unit.Id)) continue;
             var cost = state.GetUnitPurchaseCost(unit.Id);
             if (state.Gold < cost || !state.TryPurchaseUnit(unit.Id, out _)) continue;
             sim.GoldSpentRecruits += cost; bought++;
@@ -257,7 +276,7 @@ public partial class CombatReviewSmoke
             if (state.Gold < cost || !state.TryPurchaseSpell(id, out _)) continue;
             sim.GoldSpentSpells += cost; bought++;
         }
-        SimPickDeck(state);
+        SimPickDeck(state, sim.Lineup > 0 ? SimLineup(state, stage, sim.Lineup) : null);
         SimEquipRelics(state);
         while (true)
         {
@@ -302,12 +321,50 @@ public partial class CombatReviewSmoke
         return carried.Count < slots || carried.Any(u => SimScore(state, u) < SimScore(unit, 1));
     }
 
-    private static void SimPickDeck(GameState state)
+    /// <summary>
+    /// The alternative lineups a stuck player works through, from the three newest unlocked melee troops, three
+    /// newest ranged and two newest supports (owned or not): two, two and one of each, newest first. Lineup n (from 1)
+    /// is the n-th of these, wrapping round.
+    /// </summary>
+    private static string[] SimLineup(GameState state, int stage, int lineup)
+    {
+        string[] Newest(string role, int count) => GameData.GetPlayerUnits()
+            .Where(u => SimRole(u) == role && u.UnlockStage <= stage && (state.IsUnitOwned(u.Id) || state.IsUnitAvailableForPurchase(u.Id)))
+            .OrderByDescending(u => u.UnlockStage).ThenBy(u => u.Id, StringComparer.Ordinal).Take(count).Select(u => u.Id).ToArray();
+        static IEnumerable<string[]> Pairs(string[] ids) =>
+            ids.Length < 2 ? new[] { ids } : ids.SelectMany((a, i) => ids.Skip(i + 1).Select(b => new[] { a, b }));
+        var supports = Newest("support", 2);
+        var lineups = (from melee in Pairs(Newest("melee", 3))
+                       from ranged in Pairs(Newest("ranged", 3))
+                       from support in supports.Length == 0 ? new[] { Array.Empty<string>() } : supports.Select(s => new[] { s })
+                       select melee.Concat(ranged).Concat(support).ToArray())
+            .OrderByDescending(l => l.Sum(id => GameData.GetUnit(id).UnlockStage)).ThenBy(l => string.Join(",", l), StringComparer.Ordinal).ToArray();
+        return lineups.Length == 0 ? Array.Empty<string>() : lineups[(lineup - 1) % lineups.Length];
+    }
+
+    /// <summary>Moves a stuck player on to the next lineup that differs from the squad that just lost.</summary>
+    private void SimNextLineup(PlaythroughSim sim, int stage)
+    {
+        var state = GameState.Instance;
+        var lost = state.ActiveDeckUnitIds.ToHashSet();
+        for (var tries = 0; tries < 18; tries++)
+        {
+            sim.Lineup++;
+            SimShop(sim, stage);
+            if (!state.ActiveDeckUnitIds.ToHashSet().SetEquals(lost)) break;
+        }
+        sim.LineupSwaps++;
+        GD.Print($"PLAYTHROUGH_LINEUP: {{\"stage\":{stage},\"lineup\":{sim.Lineup},\"deck\":\"{string.Join(" ", state.ActiveDeckUnitIds.Select(id => id.Replace("player_", "")))}\"}}");
+    }
+
+    private static void SimPickDeck(GameState state, string[] lineup = null)
     {
         var owned = GameData.GetPlayerUnits().Where(u => state.IsUnitOwned(u.Id)).ToList();
-        var deck = new List<string>();
+        // A stuck player's chosen lineup goes in first (the troops of it they own); the usual picks fill the rest.
+        var deck = lineup?.Where(state.IsUnitOwned).ToList() ?? new List<string>();
         foreach (var (role, count) in new[] { ("melee", 2), ("ranged", 2), ("support", 1) })
-            deck.AddRange(owned.Where(u => SimRole(u) == role && !deck.Contains(u.Id)).OrderByDescending(u => SimScore(state, u)).Take(count).Select(u => u.Id));
+            deck.AddRange(owned.Where(u => SimRole(u) == role && !deck.Contains(u.Id)).OrderByDescending(u => SimScore(state, u))
+                .Take(count - deck.Count(id => SimRole(GameData.GetUnit(id)) == role)).Select(u => u.Id));
         foreach (var unit in owned.OrderByDescending(u => SimScore(state, u)))
             if (deck.Count < 5 && !deck.Contains(unit.Id)) deck.Add(unit.Id);
         var spell = SimSpellPlan.LastOrDefault(state.IsSpellOwned) ?? state.ActiveDeckSpellIds.FirstOrDefault();
@@ -460,6 +517,18 @@ public partial class CombatReviewSmoke
     /// </summary>
     private async Task<(bool Won, float Seconds, float Hull, float Gate)> SimPlay(BattleController battle)
     {
+        await SimDrive(battle, 480f);
+        var won = Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_enemyBaseHealth") <= 0f;
+        var hull = Read<float>(battle, "_playerBaseHealth") / Mathf.Max(1f, Read<float>(battle, "_playerBaseMaxHealth"));
+        var gate = 1f - Read<float>(battle, "_enemyBaseHealth") / Mathf.Max(1f, Read<float>(battle, "_enemyBaseMaxHealth"));
+        var seconds = Read<float>(battle, "_elapsed");
+        await CloseBattle(battle);
+        return (won, seconds, Mathf.Clamp(hull, 0f, 1f), Mathf.Clamp(gate, 0f, 1f));
+    }
+
+    /// <summary>Plays the battle as the scripted player until it ends or maxSeconds pass; leaves it open.</summary>
+    private async Task SimDrive(BattleController battle, float maxSeconds)
+    {
         var state = GameState.Instance;
         var units = Read<List<Unit>>(battle, "_units");
         var deck = Read<BattleDeckState>(battle, "_deck");
@@ -468,7 +537,7 @@ public partial class CombatReviewSmoke
         var seen = new Dictionary<CouragePickup, float>();
         var spells = state.ActiveDeckSpellIds.Select(GameData.GetSpell).ToArray();
         var caravanReady = typeof(BattleController).GetProperty("CaravanSpellReady", Hidden)!;
-        for (var tick = 0; !Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_elapsed") < 480f; tick++)
+        for (var tick = 0; !Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_elapsed") < maxSeconds; tick++)
         {
             if (tick % 15 == 0)
             {
@@ -510,11 +579,5 @@ public partial class CombatReviewSmoke
             battle._PhysicsProcess(1.0 / 60);
             if (tick % 600 == 0) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         }
-        var won = Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_enemyBaseHealth") <= 0f;
-        var hull = Read<float>(battle, "_playerBaseHealth") / Mathf.Max(1f, Read<float>(battle, "_playerBaseMaxHealth"));
-        var gate = 1f - Read<float>(battle, "_enemyBaseHealth") / Mathf.Max(1f, Read<float>(battle, "_enemyBaseMaxHealth"));
-        var seconds = Read<float>(battle, "_elapsed");
-        await CloseBattle(battle);
-        return (won, seconds, Mathf.Clamp(hull, 0f, 1f), Mathf.Clamp(gate, 0f, 1f));
     }
 }

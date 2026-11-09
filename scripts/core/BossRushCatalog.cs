@@ -50,6 +50,25 @@ public static class BossRushCatalog
 
 	public static int TotalWaves => Waves.Length;
 
+    /// <summary>Seconds between reinforcement packs while a commander lives.</summary>
+    public const float ReinforcementInterval = 8f;
+
+    /// <summary>How many walkers, runners and brutes may join each commander while it lives, a pack every
+    /// <see cref="ReinforcementInterval"/> seconds until they run out. A squad that kills the commander quickly meets few
+    /// of them; one that can't meets them all, so the rush climbs from round 6 instead of staying a walkover until the
+    /// last two. Set per commander because the commanders' own strength is uneven: the ranged Harrow Tidemaster (3), the
+    /// armoured Plague Monarch (6), the Bone Pontiff (8) and the Steppe Warlord (11) get fewer than their neighbours. The
+    /// last two summon their own reinforcements, which are the fight, and get none. Fitted in November 2026 with
+    /// --bossrush-gameplay --squad/--deck (docs/PROGRESSION_AND_BOSS_RUSH.md). Tried and rejected: one formula for every
+    /// commander (rounds 3 and 6 became walls), uncapped reinforcements (slow commanders snowballed), and bigger opening
+    /// crowds of escorts (troops cut down a single crowd however large).</summary>
+    private static readonly int[] ReinforcementBudgets = {0, 1, 2, 3, 4, 3, 6, 5, 13, 10, 7, 15, 0, 0};
+
+    public static int ReinforcementBudget(int index) => index >= 0 && index < ReinforcementBudgets.Length ? ReinforcementBudgets[index] : 0;
+
+    /// <summary>Troops per reinforcement pack: one, then a larger pack every fourth round.</summary>
+    public static int ReinforcementPack(int index) => 1 + index / 4;
+
 	public static int TotalRewardGold()
 	{
 		var total = 0;

@@ -36,6 +36,8 @@ public partial class ContentRevampSmoke
         try
         {
             Check(BossRushCatalog.TotalWaves==14 && BossRushCatalog.Waves.Select(w=>w.BossUnitId).Distinct().Count()==14 && BossRushCatalog.Waves.All(w=>w.HealthScale==1 && w.DamageScale==1),"Boss rush includes all 14 unique commanders without the old multiplier ladder");
+            Check(Enumerable.Range(0,BossRushCatalog.TotalWaves).Sum(BossRushCatalog.ReinforcementBudget)>0 && BossRushCatalog.ReinforcementBudget(0)==0
+                && BossRushCatalog.ReinforcementBudget(12)==0 && BossRushCatalog.ReinforcementBudget(13)==0,"Boss rush reinforcements start after the first commander and leave the two summoners to their own");
             Write(battle,"_enemyBaseHealth",0f);Call(battle,"CheckBattleEnd");
             Check(!Read<bool>(battle,"_battleEnded"),"Boss rush cannot end by damaging the scenery gate");
             var units=Read<System.Collections.Generic.List<Unit>>(battle,"_units");
@@ -50,6 +52,19 @@ public partial class ContentRevampSmoke
             {
                 Write(battle,"_elapsed",100f+i*10);Call(battle,"TickBossRush",.1f);
                 Check(units.Count(u=>u.Team==Team.Enemy && !u.IsDead && u.Definition.IsBoss)==1,$"Rush round {i+1} spawns exactly one commander");
+                if(i==6)
+                {
+                    // A reinforcement pack joins the living commander on its timer, as summoned bodies that drop no
+                    // courage and don't hold the round open once the commander and its escorts fall.
+                    Write(battle,"_elapsed",100f+i*10+BossRushCatalog.ReinforcementInterval);Call(battle,"TickBossRush",.1f);
+                    var pack=units.Where(u=>u.Team==Team.Enemy && !u.IsDead && u.IsSummoned).ToArray();
+                    Check(BossRushCatalog.ReinforcementBudget(i)>0 && pack.Length==Math.Min(BossRushCatalog.ReinforcementBudget(i),BossRushCatalog.ReinforcementPack(i)) && pack.All(u=>!u.CanDropCourage),
+                        $"Rush round {i+1} sends a reinforcement pack while its commander lives ({pack.Length} arrived)");
+                    foreach(var enemy in units.Where(u=>u.Team==Team.Enemy && !u.IsDead && !u.IsSummoned).ToArray())enemy.TakeDamage(enemy.MaxHealth*10,damageType:CombatDamageType.True);
+                    Write(battle,"_elapsed",100f+i*10);Call(battle,"CleanupDeadUnits");Call(battle,"TickBossRush",.1f); // back on the loop's clock
+                    Check(Read<int>(battle,"_rushCleared")==i+1 && !units.Any(u=>u.Team==Team.Enemy && !u.IsDead),"Reinforcements leave with their commander instead of holding the round open");
+                    continue;
+                }
                 foreach(var enemy in units.Where(u=>u.Team==Team.Enemy && !u.IsDead).ToArray())enemy.TakeDamage(enemy.MaxHealth*10,damageType:CombatDamageType.True);
                 Call(battle,"CleanupDeadUnits");Call(battle,"TickBossRush",.1f);
             }

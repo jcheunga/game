@@ -1,49 +1,104 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 
 public partial class CombatReviewSmoke
 {
+    /// <summary>
+    /// --bossrush-gameplay [--rush-start=n] [--seed-offset=n] [--squad=stage:level] [--deck=a,b,...] [--trace]: a whole
+    /// boss rush played at fixed 60 Hz steps by the campaign's scripted player (SimDrive: collects courage packs, keeps two troops in front, aims spells, fires
+    /// the caravan spell) with the endgame trained squad the tower and events check against (SeedTowerSquad at stage
+    /// 100: every troop at level 20, wagon tracks at their rank cap, the spell at level 3, the milestone relics). Until
+    /// November 2026 it used a loop that never collected courage or fired the caravan spell, with wagon rank 3 and
+    /// untrained spells, and lost at commander 12 of 14. Each commander's fall prints BOSS_RUSH_ROUND; --rush-start skips
+    /// to a later commander; --trace prints the field every five seconds and each round's opening state. --squad and
+    /// --deck play as a weaker player instead (the squad on reaching that stage, the troops it fields) and only measure
+    /// how far it gets; they fitted the per-commander reinforcements (BossRushCatalog.ReinforcementBudget).
+    ///
+    /// The final commander is meant to stay a real challenge (decided November 2026): a full run must clear the first
+    /// thirteen and reach the Ashen Regent, but may lose to it (it fell in 3 of 11 full runs before the reinforcements,
+    /// 1 of 3 after). A run started at a later commander must clear every remaining one; the Ashen Regent fresh fell in
+    /// 14 of 14 runs.
+    /// </summary>
     private async Task ReviewBossRushGameplay()
     {
-        var state=GameState.Instance;state.ResetProgress();state.SetShowHints(false);state.SetAnalyticsConsent(false);
-        var save=state.BuildSaveData();save.HighestUnlockedStage=100;save.Gold=100000;
-        save.OwnedPlayerUnitIds=GameData.PlayerRosterIds;save.UnitLevels=GameData.PlayerRosterIds.ToDictionary(id=>id,_=>20);
-        save.ActiveDeckUnitIds=new[]{"player_brawler","player_spear","player_defender","player_shooter","player_field_medic","player_coordinator"};
-        save.OwnedPlayerSpellIds=new[]{"spell_fireball","spell_heal","spell_frost_burst"};save.ActiveDeckSpellIds=save.OwnedPlayerSpellIds;
-        save.OwnedEquipmentIds=new[]{"relic_sharpened_edge","relic_war_brand","relic_guardian_shield","relic_crown_of_valor","relic_iron_pendant","relic_battle_drum"};
-        save.UnitEquipmentSlots=save.ActiveDeckUnitIds.Zip(save.OwnedEquipmentIds).ToDictionary(pair=>pair.First,pair=>pair.Second);
-        save.BaseUpgradeLevels=new[]{BaseUpgradeCatalog.HullPlatingId,BaseUpgradeCatalog.PantryId,BaseUpgradeCatalog.DispatchConsoleId,BaseUpgradeCatalog.SignalRelayId,BaseUpgradeCatalog.ProjectileWardId}.ToDictionary(id=>id,_=>3);
-        Invoke(state,"ApplySavedData",save);state.PrepareBossRush(out _);
-        var battle=GD.Load<PackedScene>("res://scenes/Battle.tscn").Instantiate<BattleController>();AddChild(battle);battle.SetPhysicsProcess(false);
-        Invoke(battle,"InitializeContent",4100UL);await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
-        var startArg=OS.GetCmdlineUserArgs().FirstOrDefault(a=>a.StartsWith("--rush-start="));
-        var startRound=startArg==null?0:Math.Clamp(int.Parse(startArg.Split('=')[1]),0,13);
-        if(startRound>0)Write(battle,"_rushCleared",startRound);
-        var units=Read<System.Collections.Generic.List<Unit>>(battle,"_units");var deck=Read<BattleDeckState>(battle,"_deck");var tick=0;
-        while(!Read<bool>(battle,"_battleEnded") && Read<float>(battle,"_elapsed")<2400)
+        var args = OS.GetCmdlineUserArgs();
+        // --squad=stage:level plays with the squad a player has on reaching that stage instead of the maxed one.
+        var squad = args.FirstOrDefault(a => a.StartsWith("--squad="))?.Split('=')[1].Split(':').Select(int.Parse).ToArray();
+        SeedTowerSquad(squad?[0] ?? GameData.MaxStage, squad?.ElementAtOrDefault(1) ?? 20);
+        var state = GameState.Instance;
+        // --deck=a,b,... swaps the squad's troops for these (ids without the player_ prefix), such as the deck the
+        // playthrough sim actually fielded at that stage.
+        var deck = args.FirstOrDefault(a => a.StartsWith("--deck="))?.Split('=')[1].Split(',').Select(id => "player_" + id).ToArray();
+        if (deck != null)
         {
-            if(tick++%30==0)
+            var current = state.ActiveDeckUnitIds.ToArray();
+            foreach (var (drop, add) in current.Except(deck).Zip(deck.Except(current)))
             {
-                var courage=Read<float>(battle,"_courage");var friends=units.Where(u=>u.Team==Team.Player && !u.IsDead).ToArray();
-                var front=friends.Count(u=>!u.UsesProjectile && u.Definition.SquadTag!=SquadSynergyCatalog.SupportTag);
-                var preferred=front<2?deck.Roster.Where(u=>!u.UsesProjectile && u.SquadTag!=SquadSynergyCatalog.SupportTag).OrderBy(u=>friends.Count(f=>f.DefinitionId==u.Id)).FirstOrDefault():
-                    !friends.Any(u=>u.DefinitionId=="player_field_medic")?GameData.GetUnit("player_field_medic"):
-                    !friends.Any(u=>u.DefinitionId=="player_coordinator")?GameData.GetUnit("player_coordinator"):
-                    deck.Roster.Where(u=>u.UsesProjectile).OrderBy(u=>friends.Count(f=>f.DefinitionId==u.Id)).FirstOrDefault();
-                var card=deck.Roster.OrderBy(u=>u==preferred?0:1).FirstOrDefault(u=>deck.CanDeploy(u,courage,false,out _));if(card!=null)Invoke(battle,"DeployPlayerUnit",card);
-                var hurt=friends.OrderBy(u=>u.HealthRatio).FirstOrDefault(u=>u.HealthRatio<.6f);
-                var foe=units.FirstOrDefault(u=>u.Team==Team.Enemy && !u.IsDead);
-                var spells=Read<BattleSpellState>(battle,"_spellDeck");var mana=Read<float>(battle,"_mana");
-                var spell=hurt!=null?GameData.GetSpell("spell_heal"):foe!=null?GameData.GetSpell("spell_fireball"):null;
-                if(spell!=null && mana>=spell.ManaCost && spells.GetCooldownRemaining(spell.Id)<=0)Invoke(battle,"TryCastSpellAt",spell,hurt?.Position??foe.Position);
+                state.ToggleDeckUnit(drop, out _);
+                Check(state.ToggleDeckUnit(add, out var why), $"The boss-rush squad takes {add} ({why})");
             }
-            battle._PhysicsProcess(1.0/60);await ToSignal(GetTree(),SceneTree.SignalName.PhysicsFrame);
+            GD.Print($"BOSS_RUSH_DECK: {string.Join(", ", state.ActiveDeckUnitIds)}");
         }
-        GD.Print($"BOSS_RUSH_SAMPLE: rounds={Read<int>(battle,"_rushCleared")},seconds={Read<float>(battle,"_elapsed"):0.0},hull={Read<float>(battle,"_playerBaseHealth"):0.0},ended={Read<bool>(battle,"_battleEnded")}");
-        Check(Read<bool>(battle,"_battleEnded") && Read<int>(battle,"_rushCleared")==14,
-            startRound==0?"An endgame melee squad can complete a real boss-rush run":"An endgame melee squad can clear the selected late boss-rush encounter");
+        state.SetShowHints(false);
+        state.SetAnalyticsConsent(false);
+        state.PrepareBossRush(out _);
+        var battle = GD.Load<PackedScene>("res://scenes/Battle.tscn").Instantiate<BattleController>();
+        AddChild(battle);
+        battle.SetPhysicsProcess(false);
+        var seedArg = args.FirstOrDefault(a => a.StartsWith("--seed-offset="));
+        var seed = 4100UL + (seedArg == null ? 0UL : ulong.Parse(seedArg.Split('=')[1]));
+        Read<RandomNumberGenerator>(battle, "_rng").Seed = seed;
+        Invoke(battle, "InitializeContent", seed);
+        Invoke(battle, "InitializeCourageDrops", seed);
+        await LiveUiReview.StopAudio(this);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        var startArg = args.FirstOrDefault(a => a.StartsWith("--rush-start="));
+        var startRound = startArg == null ? 0 : Math.Clamp(int.Parse(startArg.Split('=')[1]), 0, BossRushCatalog.TotalWaves - 1);
+        if (startRound > 0) Write(battle, "_rushCleared", startRound);
+        var trace = args.Contains("--trace");
+        var units = Read<List<Unit>>(battle, "_units");
+        var battleDeck = Read<BattleDeckState>(battle, "_deck");
+        IEnumerable<Unit> Alive(Team team) => units.Where(u => u.Team == team && !u.IsDead);
+        string Stats(Unit u) => $"{u.DefinitionId}:{u.MaxHealth:0}hp/{u.AttackDamage:0.0}dmg/{u.AttackCooldown:0.00}s/{u.Speed:0}";
+        var described = -1;
+        // Played in five-second spans so each commander's fall is logged as it happens.
+        for (var round = startRound; !Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_elapsed") < 2400f;)
+        {
+            await SimDrive(battle, Read<float>(battle, "_elapsed") + 5f);
+            var current = Read<int>(battle, "_rushCleared");
+            if (trace)
+            {
+                var boss = Alive(Team.Enemy).FirstOrDefault(u => u.Definition.IsBoss);
+                GD.Print($"BOSS_RUSH_TRACE: t={Read<float>(battle, "_elapsed"):0} round={current + 1} hull={Read<float>(battle, "_playerBaseHealth"):0} " +
+                    $"boss={(boss == null ? "-" : $"{boss.Health:0}/{boss.MaxHealth:0} x{boss.Position.X:0}")} foes={Alive(Team.Enemy).Count()} " +
+                    $"troops={Alive(Team.Player).Count()} courage={Read<float>(battle, "_courage"):0} mana={Read<float>(battle, "_mana"):0}");
+                if (boss != null && described != current)
+                {
+                    described = current;
+                    GD.Print($"BOSS_RUSH_STATE: round={current + 1} courage/s={Read<float>(battle, "_courageGainPerSecond"):0.00} " +
+                        $"cooldowns=[{string.Join(" ", battleDeck.Roster.Select(u => $"{u.Id}:{battleDeck.GetCooldownRemaining(u.Id):0.0}"))}] " +
+                        $"troops=[{string.Join(" ", Alive(Team.Player).Select(Stats))}] foes=[{string.Join(" ", Alive(Team.Enemy).Select(Stats))}]");
+                }
+            }
+            if (current == round) continue;
+            GD.Print($"BOSS_RUSH_ROUND: {round + 1}/{BossRushCatalog.TotalWaves} {BossRushCatalog.Waves[round].BossName} cleared at {Read<float>(battle, "_elapsed"):0}s");
+            round = current;
+        }
+        var cleared = Read<int>(battle, "_rushCleared");
+        var ended = Read<bool>(battle, "_battleEnded");
+        GD.Print($"BOSS_RUSH_SAMPLE: rounds={cleared},seconds={Read<float>(battle, "_elapsed"):0.0}," +
+            $"hull={Read<float>(battle, "_playerBaseHealth"):0.0},ended={ended}");
+        if (startRound == 0 || squad != null || deck != null)
+            GD.Print(cleared == BossRushCatalog.TotalWaves ? $"BOSS_RUSH_FINAL: all {cleared} commanders fell"
+                : $"BOSS_RUSH_FINAL: {BossRushCatalog.Waves[cleared].BossName} (commander {cleared + 1}) held");
+        // A chosen squad or deck is a measurement (how far that player gets), not a pass/fail check.
+        if (squad == null && deck == null)
+            Check(ended && cleared >= BossRushCatalog.TotalWaves - (startRound == 0 ? 1 : 0), startRound == 0
+                ? $"An endgame squad clears the first {BossRushCatalog.TotalWaves - 1} boss-rush commanders and reaches the final one in a full run"
+                : "An endgame squad can clear the selected late boss-rush encounters");
         await CloseBattle(battle);
     }
 }

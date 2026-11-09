@@ -51,6 +51,7 @@ public partial class UiReviewSmoke
         }
         if (Want("extras")) await ReviewScrollReachExtras();
         if (Want("ProfileMenu")) { await Open(SceneRouter.ProfileScene); await ProbeTapInScroll(); }
+        if (Want("SettingsMenu")) await ProbeSettingsFocusChange();
         GD.Print($"SCROLL_REACH_RESULT: {_failures} failures");
         QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
@@ -271,6 +272,45 @@ public partial class UiReviewSmoke
             Check(presses == 1 && scroll.ScrollVertical > 0, $"A drag from a button scrolls its list without pressing it ({presses} presses, scrolled {scroll.ScrollVertical})");
         }
         finally { Input.EmulateTouchFromMouse = emulate; button.QueueFree(); }
+    }
+
+    /// <summary>
+    /// The window losing and regaining focus while Settings is open must not rebuild its list: it used to, which freed
+    /// the list mid-drag (this driver failed on the Online and Gameplay tabs whenever focus moved during a run). On the
+    /// home map's Settings and on the full Settings screen the Online list stays put at its scroll position; the full
+    /// screen's App state row (the home map's has none) updates its text in place.
+    /// </summary>
+    private async Task ProbeSettingsFocusChange()
+    {
+        foreach (var fullScreen in new[] { false, true })
+        {
+            var where = fullScreen ? "the Settings screen" : "the home map's Settings";
+            // From the home map Settings opens over it; from other screens it is a scene of its own.
+            if (fullScreen) { GetTree().ChangeSceneToFile(SceneRouter.SettingsScene); await Wait(.8); }
+            else await Open(SceneRouter.SettingsScene);
+            await PressTab("Online");
+            var root = LiveUiReview.ActiveRoot(GetTree());
+            var scroll = Walk(root).OfType<ScrollContainer>().First(s => s.IsVisibleInTree());
+            var bar = scroll.GetVScrollBar();
+            scroll.ScrollVertical = Mathf.Max(1, (int)(bar.MaxValue - bar.Page) / 2);
+            await Frames(2);
+            var position = scroll.ScrollVertical;
+            bool Kept() => GodotObject.IsInstanceValid(scroll) && scroll.IsInsideTree() && scroll.ScrollVertical == position;
+            string AppState() => Walk(root).OfType<RoyalLabel>().Select(l => l.Text).FirstOrDefault(t => t.StartsWith("App lifecycle:")) ?? "";
+            string StateLine() => AppState().Split('\n').ElementAtOrDefault(1) ?? "no App state row";
+            var lifecycle = AppLifecycleService.Instance;
+            try
+            {
+                lifecycle._Notification((int)NotificationApplicationFocusOut);
+                await Frames(2);
+                Check(Kept(), $"{where} keeps its list and scroll position when the window loses focus");
+                if (fullScreen) Check(AppState().Contains("State: focus lost"), $"{where} shows the lost focus in its App state row ({StateLine()})");
+            }
+            finally { lifecycle._Notification((int)NotificationApplicationFocusIn); }
+            await Frames(2);
+            Check(Kept(), $"{where} keeps its list and scroll position when the window regains focus");
+            if (fullScreen) Check(AppState().Contains("State: foreground"), $"{where} shows the restored focus in its App state row ({StateLine()})");
+        }
     }
 
     /// <summary>A finger drag upward, as phones deliver it (emulated mouse events with touch scrolling on).</summary>

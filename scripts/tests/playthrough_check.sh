@@ -1,7 +1,7 @@
 #!/bin/sh
 # Plays the whole campaign twice from a new save, stage 1 to 100, with CombatReviewSmoke --playthrough-sim: once as a
 # player who never pays (grinds replays when a stage is too hard) and once as a spender (buys gold packs instead of
-# grinding, food packs instead of waiting). Both runs go in parallel (about 45 minutes) and each checks that it
+# grinding, food packs instead of waiting). Both runs go in parallel (about an hour) and each checks that it
 # finished the campaign and stayed inside the pacing bands below. Prints the zone-by-zone report at the end.
 #
 # The bands are the designed pacing (docs/PLAYTHROUGH_SIM.md): the campaign is much harder to finish without paying,
@@ -11,7 +11,7 @@ set -u
 cd "$(dirname "$0")/../.."
 export PATH="/usr/local/share/dotnet:$PATH"
 FREE_REPLAYS=${FREE_REPLAYS:-150-1000}
-FREE_DAYS=${FREE_DAYS:-15-90}
+FREE_DAYS=${FREE_DAYS:-30-150}
 SPENDER_DOLLARS=${SPENDER_DOLLARS:-20-150}
 work=$(mktemp -d "${TMPDIR:-/tmp}/crownroad-playthrough.XXXXXX")
 run() {

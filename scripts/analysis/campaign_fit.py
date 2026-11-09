@@ -33,10 +33,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PACING = ROOT / "scripts/core/CampaignPacing.cs"
 STAGES = 100
-LEADER_SHARE = 0.4
+# Stages before FINAL_CAP_FROM all take the zone bosses' share since 9 November 2026 (the user asked for as hard as
+# possible while a free player can still finish). It was 0.4 for leaders and 0.65 for mid-bosses. Above 0.75 the target sits inside the
+# fit's seed noise: bosses at 0.85 beat squads trained to their caps again and again (docs/PLAYTHROUGH_SIM.md).
+LEADER_SHARE = 0.75
 LEADER_OFFSET = 0.0
-MIDBOSS_SHARE = 0.65
+MIDBOSS_SHARE = 0.75
 BOSS_SHARE = 0.75
+# From zone 8 a grinding player's troops are at or near the last level (20), so grinding can't lift the squad any
+# further (on earlier stages it can: replays raise the player level, and with it the troop cap), and a share in the
+# fit's seed noise is a coin toss for a maxed squad. Those stages keep the earlier shares: at 0.75, squads at level
+# 19-20 lost stage 79 15-19 times, stage 87 22 times and stage 89 14 times in a row, and the free player (swapping
+# lineups) hit the 300-replay limit at stage 79.
+FINAL_CAP_FROM = 71
+FINAL_CAP_SHARES = {"leader": 0.4, "midboss": 0.65, "boss": 0.75}
 RAMP_FROM, RAMP_TO = 3, 20
 LOWEST = -0.5
 OUTLIER = 0.6
@@ -84,7 +94,9 @@ def main():
             lag = cap = (lag + cap) / 2
         slot = (stage - 1) % 10 + 1
         boss = stage in BOSS_STAGES
-        share = BOSS_SHARE if boss and slot == 10 else MIDBOSS_SHARE if boss else LEADER_SHARE
+        kind = "boss" if boss and slot == 10 else "midboss" if boss else "leader"
+        final_cap = stage >= FINAL_CAP_FROM
+        share = FINAL_CAP_SHARES[kind] if final_cap else {"boss": BOSS_SHARE, "midboss": MIDBOSS_SHARE, "leader": LEADER_SHARE}[kind]
         ramp = min(1.0, max(0.0, (stage - RAMP_FROM) / (RAMP_TO - RAMP_FROM)))
         target = lag + share * ramp * (cap - lag) + (LEADER_OFFSET * ramp if slot not in (5, 10) else 0.0)
         if not boss:

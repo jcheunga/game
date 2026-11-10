@@ -54,9 +54,11 @@ OUTLIER = 0.6
 _UNITS = {u["Id"]: u for u in json.loads((ROOT / "data/units.json").read_text())["Units"]}
 BOSS_STAGES = {s["StageNumber"] for s in json.loads((ROOT / "data/stages.json").read_text())["Stages"]
                if any(_UNITS[e["UnitId"]].get("IsBoss") for w in s["Waves"] for e in w["Entries"])}
-# Stage: strength cap from a playthrough that found a cliff there. Empty since the waves were redesigned on
-# 2026-11-05 (the old caps, for stages 13, 25, 30, 80, 85 and 100, were measured on the old waves).
-PLAYTEST = {}
+# Stage: strength cap from a playthrough that found a cliff there. The caps measured on the old waves (stages 13,
+# 25, 30, 80, 85 and 100) went when the waves were redesigned on 2026-11-05. Stage 2 fitted 0.688 between
+# neighbours at 0.188: the playthrough's new player (two level-1 troops) lost it three times and replayed stage 1
+# eleven times, and so did the spender. At 0.188 it is won first try; 0.35 still lost once.
+PLAYTEST = {2: 0.188}
 # Leaders and mid-bosses stop at this strength (enemy health ×3.25): fits above it mostly hit the search ceiling, and
 # the playthrough found cliffs up there (a squad fitted to win loses every time a little past it).
 MAX_STRENGTH = 2.25

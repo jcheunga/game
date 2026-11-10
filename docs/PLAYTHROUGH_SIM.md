@@ -172,6 +172,16 @@ every run) and the last zones, where a squad short of level 20 trains slowly on 
 run). Stage 67 passes. `playthrough_check.sh` now accepts 30–150 days for the free player (was 15–90), moved on
 purpose.
 
+## Stage 2 (10 November 2026)
+
+Stage 2 had fitted 0.688 between stages 1 and 3 at 0.188. In the 9 November check runs the new player (two level-1
+troops) lost it three times and replayed stage 1 eleven times before passing, and the spender lost it three times
+too: a wall on the second battle of the game. `campaign_fit.py` now caps it (`PLAYTEST = {2: 0.188}`). At 0.188 both
+profiles win it first try; 0.35 still lost once. The grind it used to force moves to the first boss, where it
+belongs: stage 10 is back to about 40 replays for the free player (it was 6 in the run that had already ground
+stage 1). Tower floor 2 is built on stage 2 and refitted to the same value it had (0.010, the original curve); no
+event stage uses stage 2.
+
 ## Retuning
 
 After changing stages, troops, prices or the level curve:

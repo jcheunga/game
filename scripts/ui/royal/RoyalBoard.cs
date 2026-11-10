@@ -35,6 +35,8 @@ public abstract partial class RoyalBoard : RoyalScreen
     public static readonly Color Green = new("9fd49a");
 
     protected Control Live { get; private set; }
+    /// <summary>Composes kit pieces into <see cref="Live"/>.</summary>
+    protected RoyalPage Page { get; private set; }
     /// <summary>The canvas corners the board's painted props and banner cover, which live content keeps clear of.</summary>
     public Rect2[] PaintedCorners => new[] { Board.Props, Board.Notch };
     protected Geometry Board { get; }
@@ -55,6 +57,7 @@ public abstract partial class RoyalBoard : RoyalScreen
     protected override void Build()
     {
         Live = Layer("Live");
+        Page = new RoyalPage(Live);
         Refresh();
     }
 
@@ -97,130 +100,46 @@ public abstract partial class RoyalBoard : RoyalScreen
         return Place(text, new Rect2(rect.Position.X + 54, rect.Position.Y, width - 62, rect.Size.Y));
     }
 
-    // ---- Surfaces -------------------------------------------------------------------------------------------
+    // ---- Composition (RoyalPage draws every piece into the live layer) ---------------------------------------
 
-    protected Panel Frame(string slice, Rect2 rect, float margin, bool center = true)
-    {
-        var panel = RoyalKit.Frame(slice, rect, margin, center);
-        Live.AddChild(panel);
-        return panel;
-    }
+    protected Panel Frame(string slice, Rect2 rect, float margin, bool center = true) => Page.Frame(slice, rect, margin, center);
 
     /// <summary>A dark, gold-rimmed section with an engraved heading; returns the room below the heading.</summary>
-    protected Rect2 Section(Rect2 rect, string heading = null, string glyph = null, string aside = null, bool warm = false)
-    {
-        Frame(warm ? "ach-card-ready" : "ach-card", rect, 14);
-        if (heading == null) return rect.Grow(-14);
-        var x = rect.Position.X + 20;
-        if (glyph != null)
-        {
-            Image(glyph, new Rect2(x, rect.Position.Y + 14, 28, 28));
-            x += 38;
-        }
-        Place(RoyalText.Caps(heading, 18, Engraved, 700), new Rect2(x, rect.Position.Y + 12, rect.End.X - x - 20, 32));
-        if (aside != null) Place(RoyalText.Serif(aside, 18, Soft, 600), new Rect2(rect.Position.X + 20, rect.Position.Y + 12, rect.Size.X - 40, 32), HorizontalAlignment.Right);
-        Rule(new Rect2(rect.Position.X + 18, rect.Position.Y + 48, rect.Size.X - 36, 1));
-        return new Rect2(rect.Position.X + 16, rect.Position.Y + 58, rect.Size.X - 32, rect.Size.Y - 72);
-    }
+    protected Rect2 Section(Rect2 rect, string heading = null, string glyph = null, string aside = null, bool warm = false) => Page.Section(rect, heading, glyph, aside, warm);
 
     /// <summary>A hairline gold rule with a diamond at its centre.</summary>
-    protected void Rule(Rect2 line)
-    {
-        Live.AddChild(new ColorRect { Color = new Color(.93f, .77f, .45f, .32f), Position = line.Position, Size = new Vector2(line.Size.X, 1), MouseFilter = MouseFilterEnum.Ignore });
-        Image("result-diamond", new Rect2(line.GetCenter().X - 7, line.Position.Y - 7, 14, 15));
-    }
+    protected void Rule(Rect2 line) => Page.Rule(line);
 
     /// <summary>A painted picture in a gold rim, cropped to fill its window.</summary>
-    protected TextureRect Picture(Rect2 rect, Texture2D art, bool dim = false, bool rim = true)
-    {
-        var picture = new TextureRect { Texture = art, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
-            ClipContents = true, Position = rect.Position + new Vector2(3, 3), Size = rect.Size - new Vector2(6, 6), MouseFilter = MouseFilterEnum.Ignore,
-            TextureFilter = TextureFilterEnum.LinearWithMipmaps, SelfModulate = dim ? new Color(.46f, .46f, .5f) : Colors.White };
-        Live.AddChild(picture);
-        if (rim) Frame("hub-card", rect, 10, false);
-        return picture;
-    }
+    protected TextureRect Picture(Rect2 rect, Texture2D art, bool dim = false, bool rim = true) => Page.Picture(rect, art, dim, rim);
 
     /// <summary>A shaded band across the foot of a picture, for its caption.</summary>
-    protected void Shade(Rect2 rect)
-    {
-        Live.AddChild(new TextureRect { Texture = ShadeTexture, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
-            Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore });
-    }
-
-    private static Texture2D _shade;
-    private static Texture2D ShadeTexture => _shade ??= new GradientTexture2D
-    {
-        Gradient = new Gradient { Colors = new[] { new Color(0, 0, 0, 0), new Color(.02f, .02f, .03f, .86f) }, Offsets = new[] { 0f, 1f } },
-        FillFrom = new Vector2(0, 0), FillTo = new Vector2(0, 1), Width = 4, Height = 64
-    };
+    protected void Shade(Rect2 rect) => Page.Shade(rect);
 
     /// <summary>The parchment name plaque that sits on a picture's top-left corner (Endless route names).</summary>
-    protected void Plaque(Vector2 at, string text, int size = 26, float height = 44)
-    {
-        var label = RoyalText.Serif(text.Replace("'", "’"), size, Ink, 700);
-        label.ShadowOffset = Vector2.Zero;
-        var width = Mathf.Ceil(label.TextWidth(label.FontSize)) + 48;
-        var rect = new Rect2(at, new Vector2(width, height));
-        Live.AddChild(new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore }
-            .With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("endless-plaque", 14, 8, 40, 8))));
-        Place(label, new Rect2(rect.Position.X + 22, rect.Position.Y, width - 30, height));
-    }
+    protected void Plaque(Vector2 at, string text, int size = 26, float height = 44) => Page.Plaque(at, text, size, height);
 
     /// <summary>A gold track filled to <paramref name="fraction"/>.</summary>
-    protected void Meter(Rect2 rect, float fraction)
-    {
-        Frame("ach-track", rect, Mathf.Min(8, rect.Size.Y / 2));
-        fraction = Mathf.Clamp(fraction, 0, 1);
-        if (fraction <= 0) return;
-        var fill = new Rect2(rect.Position + new Vector2(3, 3), new Vector2(Mathf.Max(rect.Size.Y - 6, (rect.Size.X - 6) * fraction), rect.Size.Y - 6));
-        Frame("ach-fill-gold", fill, Mathf.Min(6, fill.Size.Y / 2));
-    }
+    protected void Meter(Rect2 rect, float fraction) => Page.Meter(rect, fraction);
 
-    // ---- Text -----------------------------------------------------------------------------------------------
-
-    protected T Place<T>(T label, Rect2 rect, HorizontalAlignment align = HorizontalAlignment.Left) where T : RoyalLabel
-    {
-        label.Align = align;
-        label.Position = rect.Position; label.Size = rect.Size;
-        Live.AddChild(label);
-        return label;
-    }
+    protected T Place<T>(T label, Rect2 rect, HorizontalAlignment align = HorizontalAlignment.Left) where T : RoyalLabel => Page.Place(label, rect, align);
 
     protected RoyalLabel Caps(string text, Rect2 rect, int size = 18, Color? ink = null, HorizontalAlignment align = HorizontalAlignment.Left, int weight = 700)
-        => Place(RoyalText.Caps(text, size, ink ?? Engraved, weight), rect, align);
+        => Page.Caps(text, rect, size, ink, align, weight);
 
     protected RoyalLabel Serif(string text, Rect2 rect, int size = 20, Color? ink = null, HorizontalAlignment align = HorizontalAlignment.Left, int weight = 600)
-        => Place(RoyalText.Serif(text, size, ink ?? RoyalText.Cream, weight), rect, align);
+        => Page.Serif(text, rect, size, ink, align, weight);
 
     /// <summary>A large engraved gold heading ("Your Warband").</summary>
-    protected RoyalLabel Heading(string text, Rect2 rect, int size = 28, HorizontalAlignment align = HorizontalAlignment.Left)
-        => Place(RoyalText.Title(text, size), rect, align);
+    protected RoyalLabel Heading(string text, Rect2 rect, int size = 28, HorizontalAlignment align = HorizontalAlignment.Left) => Page.Heading(text, rect, size, align);
 
     /// <summary>Wrapping book text fitted to a number of lines.</summary>
     protected Label Paragraph(string text, Rect2 rect, int lines, int size = 18, Color? ink = null, HorizontalAlignment align = HorizontalAlignment.Left)
-    {
-        var label = RoyalText.Paragraph(text, size, ink ?? Soft, 500, align);
-        RoyalText.Place(Live, label, rect);
-        RoyalText.FitLines(label, lines);
-        return label;
-    }
+        => Page.Paragraph(text, rect, lines, size, ink, align);
 
-    protected TextureRect Image(string name, Rect2 rect, Color? tint = null)
-    {
-        var image = RoyalKit.Image(name, rect, tint);
-        Live.AddChild(image);
-        return image;
-    }
+    protected TextureRect Image(string name, Rect2 rect, Color? tint = null) => Page.Image(name, rect, tint);
 
-    protected TextureRect Image(Texture2D texture, Rect2 rect, Color? tint = null)
-    {
-        var image = new TextureRect { Texture = texture, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore, SelfModulate = tint ?? Colors.White,
-            TextureFilter = TextureFilterEnum.LinearWithMipmaps };
-        Live.AddChild(image);
-        return image;
-    }
+    protected TextureRect Image(Texture2D texture, Rect2 rect, Color? tint = null) => Page.Image(texture, rect, tint);
 
     // ---- Controls -------------------------------------------------------------------------------------------
 
@@ -229,11 +148,7 @@ public abstract partial class RoyalBoard : RoyalScreen
     /// <summary>An action button on a kit surface: icon and engraved caption centred, an optional price after a rule.</summary>
     protected RoyalButton Action(Rect2 rect, string caption, string glyph, Action run, Kind kind = Kind.Navy, bool enabled = true,
         string hint = null, string price = null, Texture2D priceIcon = null, int size = 18, string name = null)
-    {
-        var button = ActionButton(rect, caption, glyph, run, kind, enabled, hint, price, priceIcon, size, name);
-        Live.AddChild(button);
-        return button;
-    }
+        => Page.Action(rect, caption, glyph, run, kind, enabled, hint, price, priceIcon, size, name);
 
     /// <summary>The same action button for screens that are not boards; the caller adds it.</summary>
     public static RoyalButton ActionButton(Rect2 rect, string caption, string glyph, Action run, Kind kind = Kind.Navy, bool enabled = true,
@@ -263,49 +178,13 @@ public abstract partial class RoyalBoard : RoyalScreen
 
     /// <summary>A tappable card on a kit surface, lit while selected.</summary>
     protected RoyalButton Card(Rect2 rect, string name, Action press, bool selected = false, string slice = "ach-card", string selectedSlice = "ach-card-ready", bool enabled = true)
-    {
-        var card = RoyalButton.Over(rect, name, press, 8);
-        card.SetStates(RoyalKit.Slice(selected ? selectedSlice : slice, 14), 8);
-        card.Disabled = !enabled;
-        card.MouseFilter = MouseFilterEnum.Pass;
-        Live.AddChild(card);
-        return card;
-    }
+        => Page.Card(rect, name, press, selected, slice, selectedSlice, enabled);
 
     /// <summary>A page tab: navy at rest, lit gold when selected, with an optional emblem before its caption.</summary>
-    protected RoyalButton Tab(Rect2 rect, string caption, bool selected, Action select, string glyph = null)
-    {
-        var tab = Card(rect, caption, select, selected, "ach-tab", "ach-tab-selected");
-        // Reviews find and name a screen's pages by their tabs' text.
-        tab.Text = caption;
-        tab.MarkTab(selected);
-        var label = RoyalText.Caps(caption, 17, selected ? new Color("fff2cf") : new Color("cfc8c0"), 700);
-        var width = label.TextWidth(label.FontSize) + 4;
-        var lead = glyph == null ? 0 : 36;
-        var x = rect.GetCenter().X - (lead + width) / 2;
-        if (glyph != null) Image(glyph, new Rect2(x, rect.Position.Y + (rect.Size.Y - 32) / 2, 30, 32));
-        Place(label, new Rect2(x + lead, rect.Position.Y, width, rect.Size.Y));
-        return tab;
-    }
+    protected RoyalButton Tab(Rect2 rect, string caption, bool selected, Action select, string glyph = null) => Page.Tab(rect, caption, selected, select, glyph);
 
     /// <summary>Previous and next chevrons at the ends of a row, with page diamonds centred between them.</summary>
-    protected void Pager(Rect2 row, int page, int pages, Action<int> turn, string noun = "page", bool dots = true)
-    {
-        if (pages <= 1) return;
-        for (var side = -1; side <= 1; side += 2)
-        {
-            var step = side;
-            var rect = new Rect2(side < 0 ? row.Position.X : row.End.X - 30, row.GetCenter().Y - 20, 30, 40);
-            var pager = RoyalButton.Over(rect, side < 0 ? $"Previous {noun}" : $"Next {noun}", () => turn((page + step + pages) % pages), 6);
-            pager.SetStates(RoyalKit.Slice("chevron-button", 8), 6);
-            pager.SetGlyph(RoyalKit.Texture(side < 0 ? "icon-chevron-left" : "icon-chevron-right"), new Rect2(8, 9, 14, 22));
-            Live.AddChild(pager);
-        }
-        if (!dots) return;
-        var left = row.GetCenter().X - pages * 9 + 1;
-        for (var i = 0; i < pages; i++)
-            Image(i == page ? "route-dot-on" : "pip-off", new Rect2(left + i * 18, row.GetCenter().Y - 8, 16, 16));
-    }
+    protected void Pager(Rect2 row, int page, int pages, Action<int> turn, string noun = "page", bool dots = true) => Page.Pager(row, page, pages, turn, noun, dots);
 
     /// <summary>The painted picture for a reward type ("gold", "food", "essence", a relic id...).</summary>
     public static Texture2D RewardArt(string type, string itemId = "")

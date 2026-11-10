@@ -103,8 +103,8 @@ public partial class LanRaceMenu : RoyalBoard
         var units = state.GetSelectedAsyncChallengeDeckUnits();
         var spells = state.GetSelectedAsyncChallengeDeckSpells();
         var cell = 46f;
-        Caps(state.HasSelectedAsyncChallengeLockedDeck ? "Locked" : "Squad", new Rect2(rect.Position.X + 4, y, 70, cell), 16, Soft);
-        var x = rect.Position.X + 78;
+        Caps(state.HasSelectedAsyncChallengeLockedDeck ? "Locked" : "Squad", new Rect2(rect.Position.X + 4, y, 88, cell), 16, Soft);
+        var x = rect.Position.X + 96;
         foreach (var unit in units.Take(6))
         {
             var slot = new Rect2(x, y, cell, cell);
@@ -138,7 +138,29 @@ public partial class LanRaceMenu : RoyalBoard
     {
         var service = Service;
         var hosting = service?.IsHosting == true;
-        var room = Section(rect, "Room", "emblem-friends", hosting && !string.IsNullOrWhiteSpace(snapshot?.JoinAddressSummary) ? $"Share {snapshot.JoinAddressSummary}" : null);
+        var sharing = hosting && !string.IsNullOrWhiteSpace(snapshot?.JoinAddressSummary);
+        var room = Section(rect, "Room", "emblem-friends", sharing ? "Share this address" : null);
+        if (sharing)
+        {
+            // A host joins no one, so the address row shows where runners join instead.
+            var share = new Rect2(room.Position.X, room.Position.Y, room.Size.X, 44);
+            Frame("season-locked", share, 10).With(p => { p.TooltipText = "Runners join at this address"; p.MouseFilter = MouseFilterEnum.Pass; });
+            Serif(snapshot.JoinAddressSummary, new Rect2(share.Position.X + 14, share.Position.Y, share.Size.X - 28, share.Size.Y), 21, weight: 700);
+        }
+        else AddressRow(room, service);
+        var y = room.Position.Y + 54;
+        var width = (room.Size.X - 16) / 3;
+        Action(new Rect2(room.Position.X, y, width, 42), hosting ? "Rehost" : "Host", null, HostBoard, Kind.Navy,
+            !(hosting && service.RoundLocked), "Host the armed board for the room", size: 15, name: hosting ? "Rehost board" : "Host board");
+        Action(new Rect2(room.Position.X + width + 8, y, width, 42), "Send", null, RefreshHostedBoard, Kind.Navy,
+            hosting && !service.RoundLocked, "Send the armed board to every runner", size: 15, name: "Broadcast update");
+        Action(new Rect2(room.Position.X + 2 * (width + 8), y, width, 42), "Close", null, () => { Service?.CloseRoom(); _message = ""; Refresh(); }, Kind.Slate,
+            service?.HasRoom == true, "Close the room", size: 15, name: "Close room");
+    }
+
+    /// <summary>The host address field and Join.</summary>
+    private void AddressRow(Rect2 room, LanChallengeService service)
+    {
         var field = new Rect2(room.Position.X, room.Position.Y, room.Size.X - 132, 44);
         _addressEdit = new LineEdit { Position = field.Position, Size = field.Size, PlaceholderText = "Host address, e.g. 192.168.0.12", Text = _address, AccessibilityName = "Host address" };
         var box = RoyalKit.Slice("season-locked", 10);
@@ -154,14 +176,6 @@ public partial class LanRaceMenu : RoyalBoard
         Live.AddChild(_addressEdit);
         Action(new Rect2(room.End.X - 120, room.Position.Y, 120, 44), "Join", "icon-people-gold", JoinHost, Kind.Navy,
             service == null || !service.HasRoom || service.IsClient, "Join the host at this address", size: 16, name: "Join host");
-        var y = room.Position.Y + 54;
-        var width = (room.Size.X - 16) / 3;
-        Action(new Rect2(room.Position.X, y, width, 42), hosting ? "Rehost" : "Host", null, HostBoard, Kind.Navy,
-            !(hosting && service.RoundLocked), "Host the armed board for the room", size: 15, name: hosting ? "Rehost board" : "Host board");
-        Action(new Rect2(room.Position.X + width + 8, y, width, 42), "Send", null, RefreshHostedBoard, Kind.Navy,
-            hosting && !service.RoundLocked, "Send the armed board to every runner", size: 15, name: "Broadcast update");
-        Action(new Rect2(room.Position.X + 2 * (width + 8), y, width, 42), "Close", null, () => { Service?.CloseRoom(); _message = ""; Refresh(); }, Kind.Slate,
-            service?.HasRoom == true, "Close the room", size: 15, name: "Close room");
     }
 
     private void Runners(Rect2 rect, MultiplayerRoomSnapshot snapshot)

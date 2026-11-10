@@ -13,7 +13,7 @@ public partial class MultiplayerMenu
     private static string[] BoardNames => new[] { LaunchFeatures.InternetRooms ? "Rooms" : "Records", "Daily", "Featured", "Saved", "Squad" };
     private Control _royalLayer;
     private RoyalButton _royalStart;
-    private RoyalLabel _routeLabel, _routeStage, _mutatorLabel;
+    private RoyalLabel _routeLabel, _routeStage, _stageNumber, _mutatorLabel;
     private Control _skulls;
     private TextureRect _briefArt;
     private int _board;
@@ -36,18 +36,29 @@ public partial class MultiplayerMenu
         _royalLayer.AddChild(RoyalButton.Over(spec.Rect("close"), "Close panel", CloseRoyal, 6));
         BuildBoardTabs(spec);
 
-        // Briefing: the stage and mutator selectors sit invisibly over their painted labels.
+        // Briefing: the stage and mutator selectors sit invisibly over their labels. The battlefield is narrower than
+        // the concept's so a long zone or stage name ("Blackwater Procession") reads at the phone floor; the stage
+        // number sits on the picture's foot.
+        var art = new Rect2(spec.Rect("brief.art").Position, new Vector2(210, spec.Rect("brief.art").Size.Y));
         _briefArt = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true,
-            Position = spec.Rect("brief.art").Position, Size = spec.Rect("brief.art").Size, MouseFilter = MouseFilterEnum.Ignore };
+            Position = art.Position, Size = art.Size, MouseFilter = MouseFilterEnum.Ignore };
         _royalLayer.AddChild(_briefArt);
-        _royalLayer.AddChild(RoyalKit.Image("icon-map-small", spec.Rect("brief.map.icon")));
-        _routeLabel = spec.Label("brief.route", "", 170);
-        _routeLabel.Position -= new Vector2(0, 7);
+        new RoyalPage(_royalLayer).Shade(new Rect2(art.Position.X, art.End.Y - 32, art.Size.X, 32));
+        _stageNumber = RoyalText.Caps("", 17, new Color("f2e6cc"), 700);
+        _stageNumber.Position = new Vector2(art.Position.X + 10, art.End.Y - 28); _stageNumber.Size = new Vector2(art.Size.X - 20, 26);
+        _royalLayer.AddChild(_stageNumber);
+        var mapIcon = spec.Rect("brief.map.icon");
+        mapIcon.Position = new Vector2(art.End.X + 12, mapIcon.Position.Y);
+        _royalLayer.AddChild(RoyalKit.Image("icon-map-small", mapIcon));
+        var routeX = mapIcon.End.X + 14;
+        var routeWidth = 590 - routeX;
+        _routeLabel = spec.Label("brief.route", "", routeWidth);
+        _routeLabel.Position = new Vector2(routeX, _routeLabel.Position.Y - 7);
         _royalLayer.AddChild(_routeLabel);
         _routeStage = RoyalText.Serif("", 15, new Color("d9cfb8"), 500);
-        _routeStage.Position = new Vector2(spec.Number("brief.route", "pen_x", 408), 240); _routeStage.Size = new Vector2(160, 24);
+        _routeStage.Position = new Vector2(routeX, 240); _routeStage.Size = new Vector2(routeWidth, 24);
         _royalLayer.AddChild(_routeStage);
-        Overlay(_stageSelector, new Rect2(352, 200, 214, 62), "Challenge stage");
+        Overlay(_stageSelector, new Rect2(art.End.X + 6, 200, 590 - art.End.X - 6, 62), "Challenge stage");
         _royalLayer.AddChild(RoyalKit.Image("icon-skull-red", spec.Rect("brief.modifier.icon")));
         _mutatorLabel = spec.Label("brief.modifier", "", 140);
         _royalLayer.AddChild(_mutatorLabel);
@@ -75,15 +86,8 @@ public partial class MultiplayerMenu
         load.SetCaption(loadLabel, new Rect2(loadLabel.Position, loadLabel.Size));
         _royalLayer.AddChild(load);
 
-        // Board pages fill the rooms area.
-        var board = new Rect2(48, 287, 1188, 323);
-        for (var i = 0; i < _boardPages.Length; i++)
-        {
-            _boardPages[i] = RealmUi.Scroll(this);
-            var scroll = _boardPages[i].GetParent<ScrollContainer>();
-            scroll.Position = board.Position; scroll.Size = board.Size;
-            _boardPages[i].AddThemeConstantOverride("separation", 8);
-        }
+        // Board pages fill the rooms area (MultiplayerMenu.Pages.cs).
+        BuildPageLayer();
         SelectBoard(0);
 
         Footer(spec, "back", "icon-back-chevron", "Back", CloseRoyal);
@@ -148,7 +152,7 @@ public partial class MultiplayerMenu
     private void SelectBoard(int index)
     {
         _board = index;
-        for (var i = 0; i < _boardPages.Length; i++) _boardPages[i].GetParent<ScrollContainer>().Visible = i == index;
+        ComposePage();
         var names = BoardNames;
         for (var i = 0; i < BoardKeys.Length; i++)
             if (_royalLayer.GetNodeOrNull<RoyalButton>("BoardTab" + names[i]) is { } tab)
@@ -217,7 +221,8 @@ public partial class MultiplayerMenu
         if (_royalLayer == null) return;
         var stage = GameData.GetStage(Mathf.Clamp(_selectedStage, 1, GameState.Instance.MaxStage));
         _routeLabel.Text = stage.MapName.Replace("'", "’");
-        _routeStage.Text = $"Stage {stage.StageNumber} · {stage.StageName}";
+        _routeStage.Text = stage.StageName.Replace("'", "’");
+        _stageNumber.Text = $"Stage {stage.StageNumber}";
         var mission = $"res://assets/ui/royal/missions/{RouteCatalog.Normalize(stage.MapId)}.png";
         _briefArt.Texture = ResourceLoader.Exists(mission) ? RoyalArt.Load(mission) : null;
         var mutator = AsyncChallengeCatalog.GetMutator(_selectedMutatorId);

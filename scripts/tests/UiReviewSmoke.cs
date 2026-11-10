@@ -63,6 +63,8 @@ public partial class UiReviewSmoke : Node
             { await ReviewExpansion(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--boards"))
             { await ReviewBoards(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--challenges"))
+            { await ReviewChallenges(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--guides"))
             { await ReviewGuides(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--account"))

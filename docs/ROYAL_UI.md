@@ -44,6 +44,12 @@ claim and claimed buttons with an optional price), `Pager`, `RewardArt` and head
 canvas; long lists page instead of scrolling. `Refresh` rebuilds the live layer; `Notify` shows a result on the
 screen's notice line and keeps it through a refresh.
 
+The pieces themselves live in `royal/RoyalPage.cs`, which composes into any canvas-sized layer; `RoyalBoard`
+forwards to one over its live layer. Screens on a concept plate of their own use it for content the concept never
+drew: Multiplayer Challenges composes its five pages with it (`MultiplayerMenu.Pages.cs`: the loaded code's best
+and medal ladder beside its runs, today's board and leaders, featured and saved board cards three to a page, and
+the squad's cards). Reviewed with `UiReviewSmoke --challenges [--window=844x390]`.
+
 The art behind them, all Codex-painted and installed by `art/royal/boards.py` (`boards`, `emblems`, `sheets`,
 `scenes`, `kit`):
 - header emblems in the forge anvil's gold (`kit/emblem-<name>`, two 3 x 3 sheets);
@@ -94,7 +100,7 @@ the caption would sit high. The UI review's `ROYAL_BUTTON_STRETCHED` audit fails
 | Codex | menu 05 | `CodexMenu.cs` |
 | Settings | menu 06 | `SettingsMenu.cs` (every former setting is a row) |
 | Endless survival | menu 07 | `EndlessMenu.cs` |
-| Multiplayer challenges | menu 08 | `MultiplayerMenu.Royal.cs` (code, LAN and records in the code menu) |
+| Multiplayer challenges | menu 08 | `MultiplayerMenu.Royal.cs` (code, LAN and records in the code menu); pages in `MultiplayerMenu.Pages.cs`, rooms in `MultiplayerMenu.Rooms.cs` |
 | Relic forge | menu 09 | `ForgeMenu.cs` |
 | Season rewards | menu 10 | `SeasonPassMenu.cs` |
 | Prepare for battle | ui 09 | `LoadoutMenu.cs` |

@@ -191,7 +191,8 @@ public partial class LanChallengeService : Node
 		_loadedPeers.Clear();
 		_loadedPeers[Multiplayer.GetUniqueId()] = false;
 		ResetRoomRaceProgress(false);
-		SessionStatus = $"Hosting {challenge.Code} on port {RoomPort}. Share IP {BuildJoinAddressSummary()}.";
+		// The LAN board shows the address to share beside the room controls.
+		SessionStatus = $"Hosting {challenge.Code}.";
 		message = SessionStatus;
 		NotifyStateChanged();
 		return true;

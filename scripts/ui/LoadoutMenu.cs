@@ -107,7 +107,7 @@ public partial class LoadoutMenu : RoyalScreen
             card.AddChild(figure);
             var icon = spec.Rect(key + ".icon");
             card.AddChild(RoyalKit.Image("prep-class-sword", new Rect2(icon.Position - rect.Position, icon.Size)));
-            card.AddChild(RoyalKit.Image(ShopIcon(unit), new Rect2(icon.Position - rect.Position + new Vector2(7, 7), icon.Size - new Vector2(14, 14))));
+            card.AddChild(RoyalKit.Image(UnitClassIcon.For(unit), new Rect2(icon.Position - rect.Position + new Vector2(7, 7), icon.Size - new Vector2(14, 14))));
             // A name like "Greatswordsman" can't fit the card at a size a phone reads, so the card shows the unit's
             // level as Endless's warband cards do; the figure shows who it is and the name stays in the hint.
             var label = spec.Label(key + ".name", $"Lv {state.GetUnitLevel(unit.Id)}", rect.Size.X - 8);
@@ -178,14 +178,6 @@ public partial class LoadoutMenu : RoyalScreen
         _deployButton = deploy;
         layer.AddChild(deploy);
     }
-
-    private static string ShopIcon(UnitDefinition unit) => unit.Id switch
-    {
-        "player_shooter" or "player_ranger" or "player_marksman" or "player_ballista" => "class-ranged",
-        "player_defender" or "player_lantern_guard" or "player_banner" => "class-shield",
-        _ when unit.UsesProjectile => "class-ranged",
-        _ => "class-melee"
-    };
 
     /// <summary>The battlefield the stage is fought on, from its zone's backdrop; the concept gatehouse otherwise.</summary>
     private Texture2D MissionPicture()

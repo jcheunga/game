@@ -98,14 +98,20 @@ public partial class MultiplayerMenu
                 case 3: RenewOnlineRoomSeat(); break;
                 case 4: ResetOnlineRoomRound(); break;
                 default:
-                    _selectedRoomReportReasonId = OnlineRoomReportReasonCatalog.NormalizeId(reasons[(int)id - 100].Id);
-                    SubmitOnlineRoomReport();
+                    // A report can't be taken back, and its menu items sit beside the room's everyday tools.
+                    var reason = reasons[(int)id - 100];
+                    MedievalUi.ShowConfirmation(this, "Report this room?", $"Send a report for: {reason.Title}.", "Send report", () =>
+                    {
+                        _selectedRoomReportReasonId = OnlineRoomReportReasonCatalog.NormalizeId(reason.Id);
+                        SubmitOnlineRoomReport();
+                    }, "Cancel");
                     break;
             }
         };
         AddChild(menu);
         menu.Theme = MedievalUiTheme();
-        menu.Popup(new Rect2I((Vector2I)(bar.GetGlobalTransformWithCanvas() * new Vector2(1110, 82)), Vector2I.Zero));
+        // Screen coordinates: a popup is its own window wherever subwindows aren't embedded.
+        menu.Popup(new Rect2I((Vector2I)(bar.GetScreenTransform() * new Vector2(1110, 82)), Vector2I.Zero));
         menu.PopupHide += menu.QueueFree;
     }
 }

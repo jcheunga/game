@@ -181,7 +181,7 @@ public partial class MultiplayerMenu
     {
         var menu = new PopupMenu();
         menu.AddItem("Roll a new code", 0); menu.AddItem("Copy code", 1); menu.AddItem("Copy share link", 2);
-        menu.AddSeparator(); menu.AddItem("Challenge briefing", 3); menu.AddItem("Records & replay", 4);
+        menu.AddSeparator(); menu.AddItem("Challenge briefing", 3); menu.AddItem("Records & replay", 4); menu.AddItem("Board standings", 7);
         menu.AddSeparator(); menu.AddItem("Sync results", 5); menu.AddItem("LAN race", 6);
         menu.SetItemDisabled(menu.GetItemIndex(5), GameState.Instance.PendingChallengeSubmissionCount <= 0 || ChallengeSyncService.Instance == null);
         menu.IdPressed += id =>
@@ -197,13 +197,17 @@ public partial class MultiplayerMenu
                 case 3: RealmUi.Details(this, "Challenge briefing", _summaryLabel.Text + "\n\n" + _rulesLabel.Text); break;
                 case 4: RealmUi.Details(this, "Records & replay", _recordLabel.Text + "\n\n" + _historyLabel.Text + "\n\n" + _tapeLabel.Text); break;
                 case 5: FlushOutbox(); break;
+                case 7:
+                    RealmUi.Details(this, "Board standings", ChallengeLeaderboardService.Instance?.BuildSnapshotSummary(GameState.Instance.GetSelectedAsyncChallenge().Code, 5)
+                        ?? "Remote leaderboard service unavailable.");
+                    break;
                 case 6: SceneRouter.Instance.GoToLanRace(); break;
             }
             RefreshUi();
         };
         AddChild(menu);
         menu.Theme = MedievalUiTheme();
-        menu.Popup(new Rect2I((Vector2I)(GetGlobalTransformWithCanvas() * MpSpec.Rect("brief.code").Position + new Vector2(0, 58)), Vector2I.Zero));
+        menu.Popup(new Rect2I((Vector2I)(GetScreenTransform() * (MpSpec.Rect("brief.code").Position + new Vector2(0, 58))), Vector2I.Zero));
         menu.PopupHide += menu.QueueFree;
     }
 

@@ -30,6 +30,31 @@ public partial class MultiplayerMenu
         BuildRoomsList();
     }
 
+    private bool _pageRefreshQueued;
+
+    /// <summary>A refresh's recompose. Recomposing frees every button on the page, so while a finger is down on one
+    /// (a room auto-refresh can land mid-press) it waits for the release instead of dropping the tap.</summary>
+    private void RefreshPage()
+    {
+        if (!PageButtonHeld(_pageLayer) && !PageButtonHeld(_roomsList)) { ComposePage(); return; }
+        if (_pageRefreshQueued) return;
+        _pageRefreshQueued = true;
+        GetTree().CreateTimer(.1).Timeout += () =>
+        {
+            _pageRefreshQueued = false;
+            if (IsInstanceValid(this) && IsInsideTree()) RefreshPage();
+        };
+    }
+
+    private static bool PageButtonHeld(Node node)
+    {
+        if (node == null) return false;
+        if (node is BaseButton { ToggleMode: false } button && button.IsPressed()) return true;
+        foreach (var child in node.GetChildren())
+            if (PageButtonHeld(child)) return true;
+        return false;
+    }
+
     /// <summary>Recomposes the selected page from the current state.</summary>
     private void ComposePage()
     {
@@ -156,7 +181,7 @@ public partial class MultiplayerMenu
         var today = DateTimeOffset.Now.Date;
         if (played.Date == today) return $"Today {played:HH:mm}";
         if (played.Date == today.AddDays(-1)) return $"Yesterday {played:HH:mm}";
-        return played.ToString("MMM d");
+        return played.ToString(played.Year == today.Year ? "MMM d" : "MMM d yyyy");
     }
 
     /// <summary>A quiet empty state: the challenges painting, a heading and one line.</summary>
@@ -210,14 +235,20 @@ public partial class MultiplayerMenu
             EmptyNote(room, "No scores yet", "Be the first to post a score on today's board.");
             return;
         }
-        var pitch = room.Size.Y / 5;
-        for (var i = 0; i < Math.Min(5, entries.Count); i++)
+        // Five rows fit. A player ranked below fifth takes the last row with their own rank, so their score shows.
+        const int rows = 5;
+        var ranks = Enumerable.Range(0, Math.Min(rows, entries.Count)).ToList();
+        var mine = entries.FindIndex(entry => entry.Player == LeaderboardTag.You);
+        if (mine >= rows) ranks[rows - 1] = mine;
+        var pitch = room.Size.Y / rows;
+        for (var i = 0; i < ranks.Count; i++)
         {
-            var entry = entries[i];
+            var rank = ranks[i];
+            var entry = entries[rank];
             var row = new Rect2(room.Position.X, room.Position.Y + i * pitch, room.Size.X, pitch - 4);
-            var you = entry.Player == "You";
+            var you = entry.Player == LeaderboardTag.You;
             if (you) _page.Frame("mp-tab-selected", row, 10);
-            _page.Caps($"#{i + 1}", new Rect2(row.Position.X + 12, row.Position.Y, 70, row.Size.Y), 18, i == 0 ? Gold : RoyalBoard.Engraved);
+            _page.Caps($"#{rank + 1}", new Rect2(row.Position.X + 12, row.Position.Y, 70, row.Size.Y), 18, rank == 0 ? Gold : RoyalBoard.Engraved);
             _page.Serif(entry.Player, new Rect2(row.Position.X + 90, row.Position.Y, row.Size.X - 260, row.Size.Y), 22, weight: 700);
             _page.Serif(entry.Score.ToString("N0"), new Rect2(row.Position.X, row.Position.Y, row.Size.X - 14, row.Size.Y), 22, Gold, HorizontalAlignment.Right, 700);
         }
@@ -449,7 +480,7 @@ public partial class MultiplayerMenu
         _page.Caps($"Lv {state.GetUnitLevel(unit.Id)}", new Rect2(rect.Position.X + 14, rect.Position.Y + 8, 80, 30), 18);
         var medallion = new Rect2(rect.GetCenter().X - 21, rect.End.Y - 54 - 24, 42, 42);
         _page.Image("prep-class-sword", medallion);
-        _page.Image(ClassIcon(unit), medallion.Grow(-8));
+        _page.Image(UnitClassIcon.For(unit), medallion.Grow(-8));
         _page.Serif(unit.DisplayName, new Rect2(rect.Position.X + 8, rect.End.Y - 38, rect.Size.X - 16, 32), 22, align: HorizontalAlignment.Center, weight: 700);
         Stats(statsRow, ("stat-courage", unit.Cost.ToString(), "Courage to deploy"), ("stat-health", Mathf.RoundToInt(stats.MaxHealth).ToString("N0"), "Health"),
             ("stat-damage", stats.AttackDamage.ToString("0.#"), "Damage"));
@@ -496,12 +527,4 @@ public partial class MultiplayerMenu
             _page.Place(label, new Rect2(x + 26, row.Position.Y, width, row.Size.Y));
         }
     }
-
-    private static string ClassIcon(UnitDefinition unit) => unit.Id switch
-    {
-        "player_shooter" or "player_ranger" or "player_marksman" or "player_ballista" => "class-ranged",
-        "player_defender" or "player_lantern_guard" or "player_banner" => "class-shield",
-        _ when unit.UsesProjectile => "class-ranged",
-        _ => "class-melee"
-    };
 }

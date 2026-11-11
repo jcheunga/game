@@ -103,8 +103,6 @@ def main():
         target = lag + share * ramp * (cap - lag) + (LEADER_OFFSET * ramp if slot not in (5, 10) else 0.0)
         if not boss:
             target = min(target, MAX_STRENGTH)
-        if stage in PLAYTEST:
-            target = min(target, PLAYTEST[stage])
         strengths.append(round(target, 3))
         report.append(f"{stage:3d} slot {slot:2d}  lag {lag:6.3f}{' est' if stage in estimated else '    '}  cap {cap:6.3f}  "
                       f"gap {cap - lag:6.3f}  -> {target:6.3f}")
@@ -117,6 +115,12 @@ def main():
             if strengths[i] > median + OUTLIER:
                 report[i] += f"  (outlier, capped at {median + OUTLIER:.3f})"
                 strengths[i] = round(median + OUTLIER, 3)
+    # Playtest caps go on last, so a capped stage doesn't pull its zone's median down and drag its neighbours with
+    # it (capping stage 2 first would have cut stages 6, 7 and 9 from 1.288 to 1.059).
+    for stage, limit in PLAYTEST.items():
+        if strengths[stage - 1] > limit:
+            report[stage - 1] += f"  (playtest cap {limit:.3f})"
+            strengths[stage - 1] = round(limit, 3)
     rows = ["\t\t" + ", ".join(f"{s:.3f}f".replace("-0.000f", "0.000f") for s in strengths[i:i + 10]) + ","
             for i in range(0, STAGES, 10)]
     table = "\n".join(row.replace("\t\t", "        ") for row in rows)

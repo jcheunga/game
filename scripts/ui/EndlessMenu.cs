@@ -159,7 +159,7 @@ public partial class EndlessMenu : RoyalScreen
             var figure = new UnitFigure { Position = Part(".figure").Position, Size = Part(".figure").Size };
             figure.SetUnit(unit);
             _layer.AddChild(figure);
-            _layer.AddChild(RoyalKit.Image(UnitClassIcon(unit), Part(".class")));
+            _layer.AddChild(RoyalKit.Image(UnitClassIcon.For(unit), Part(".class")));
             var level = spec.Label("unit.1.level", $"Lv {state.GetUnitLevel(unit.Id)}", 60);
             level.Position += rect.Position - origin;
             _layer.AddChild(level);
@@ -210,13 +210,6 @@ public partial class EndlessMenu : RoyalScreen
         button.Arrange(spec.Label($"button.{key}.label", text, rect.Size.X), RoyalKit.Texture(icon), spec.Rect($"button.{key}.icon").Size, gap: 10);
         _layer.AddChild(button);
     }
-
-    private static string UnitClassIcon(UnitDefinition unit) => unit.Id switch
-    {
-        "player_shooter" or "player_ranger" or "player_marksman" or "player_ballista" => "class-ranged",
-        "player_defender" or "player_lantern_guard" or "player_banner" => "class-shield",
-        _ => "class-melee"
-    };
 
     private static string RunHistoryText()
     {

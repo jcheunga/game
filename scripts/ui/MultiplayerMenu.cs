@@ -147,7 +147,7 @@ public partial class MultiplayerMenu : Control
             $"{AsyncChallengeCatalog.BuildScoringGuide(challenge)}\n\n" +
             $"{AsyncChallengeCatalog.BuildTargetSummary(challenge)}";
 
-        ComposePage();
+        RefreshPage();
 
         var canStart = GameState.Instance.CanStartAsyncChallenge(out var readinessMessage);
         var startButtonText = canStart ? $"Start {challenge.Code}" : "Challenge not ready";

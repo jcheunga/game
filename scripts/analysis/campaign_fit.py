@@ -116,7 +116,9 @@ def main():
                 report[i] += f"  (outlier, capped at {median + OUTLIER:.3f})"
                 strengths[i] = round(median + OUTLIER, 3)
     # Playtest caps go on last, so a capped stage doesn't pull its zone's median down and drag its neighbours with
-    # it (capping stage 2 first would have cut stages 6, 7 and 9 from 1.288 to 1.059).
+    # it (capping stage 2 first would have cut stages 6, 7 and 9 from 1.288 to 1.059). The median above therefore
+    # still counts a capped stage at its fitted strength: zone 1's ceiling of 1.288 is stage 2's fit of 0.688 + 0.6,
+    # and a refit that moves stage 2's fit moves stages 6, 7 and 9 with it. Check the first row after a refit.
     for stage, limit in PLAYTEST.items():
         if strengths[stage - 1] > limit:
             report[stage - 1] += f"  (playtest cap {limit:.3f})"

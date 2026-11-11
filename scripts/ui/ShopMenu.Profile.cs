@@ -87,7 +87,7 @@ public partial class ShopMenu
     private void BuildUnitProfile(RoyalSpec spec, UnitDefinition unit, Entry entry)
     {
         var state = _state;
-        _body.AddChild(RoyalKit.Image(ClassIcon(unit), spec.Rect("detail.icon")));
+        _body.AddChild(RoyalKit.Image(UnitClassIcon.For(unit), spec.Rect("detail.icon")));
         _body.AddChild(spec.Label("detail.name", unit.DisplayName, 440));
         var level = entry.Owned ? entry.Level : 0;
         if (spec.Has("detail.level.value") && entry.Owned)

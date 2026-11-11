@@ -1,5 +1,5 @@
 /// <summary>The class medallion drawn on a unit's card: ranged, shield or melee. One mapping for every screen that
-/// shows squad cards (battle prep, Endless, Multiplayer Challenges).</summary>
+/// shows units (the armory, battle prep, Endless, Multiplayer Challenges).</summary>
 public static class UnitClassIcon
 {
     public static string For(UnitDefinition unit) => unit.Id switch

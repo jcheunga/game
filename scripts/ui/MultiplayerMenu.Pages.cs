@@ -14,6 +14,8 @@ public partial class MultiplayerMenu
     /// <summary>The plate's board, inside its painted rim.</summary>
     private static readonly Rect2 PageArea = new(58, 296, 1164, 302);
     private const int CardsPerPage = 3, RunsPerPage = 4;
+    /// <summary>How many scores the server's daily leaderboard returns (LIMIT in server/Endpoints.cs DailyLeaderboard).</summary>
+    private const int DailyBoardSize = 20;
 
     private static readonly Color Gold = new("f6e2ad");
     private static readonly Color Loss = new("e2907f");
@@ -37,7 +39,8 @@ public partial class MultiplayerMenu
     private void RefreshPage()
     {
         if (!PageButtonHeld(_pageLayer) && !PageButtonHeld(_roomsList)) { ComposePage(); return; }
-        if (_pageRefreshQueued) return;
+        // A late service callback can refresh a menu that has already left the tree; its page is about to be freed.
+        if (_pageRefreshQueued || !IsInsideTree()) return;
         _pageRefreshQueued = true;
         GetTree().CreateTimer(.1).Timeout += () =>
         {
@@ -236,11 +239,23 @@ public partial class MultiplayerMenu
             return;
         }
         // Five rows fit. A player ranked below fifth takes the last row with their own rank, so their score shows.
+        // The server sends the day's best DailyBoardSize scores; a player who has finished today's board and isn't
+        // among them takes the last row as "20+", since their rank and score aren't in the reply.
         const int rows = 5;
         var ranks = Enumerable.Range(0, Math.Min(rows, entries.Count)).ToList();
         var mine = entries.FindIndex(entry => entry.Player == LeaderboardTag.You);
         if (mine >= rows) ranks[rows - 1] = mine;
+        var unranked = mine < 0 && completed && entries.Count >= DailyBoardSize;
+        if (unranked) ranks.RemoveAt(rows - 1);
         var pitch = room.Size.Y / rows;
+        if (unranked)
+        {
+            var last = new Rect2(room.Position.X, room.Position.Y + (rows - 1) * pitch, room.Size.X, pitch - 4);
+            _page.Frame("mp-tab-selected", last, 10);
+            _page.Caps($"{DailyBoardSize}+", new Rect2(last.Position.X + 12, last.Position.Y, 70, last.Size.Y), 18, RoyalBoard.Engraved);
+            _page.Serif(LeaderboardTag.You, new Rect2(last.Position.X + 90, last.Position.Y, last.Size.X - 260, last.Size.Y), 22, weight: 700);
+            _page.Serif($"Outside the top {DailyBoardSize}", new Rect2(last.Position.X, last.Position.Y, last.Size.X - 14, last.Size.Y), 20, RoyalBoard.Soft, HorizontalAlignment.Right);
+        }
         for (var i = 0; i < ranks.Count; i++)
         {
             var rank = ranks[i];

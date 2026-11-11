@@ -74,7 +74,7 @@ public partial class ShopMenu
             var id = unit.Id;
             if (!_removing) cell.Pressed += () => { _equipUnit = id; _equipSlot = 1; Refresh(); };
             cell.AddChild(Picture(false, unit.Id, new Rect2(6, 6, Cell - 12, Cell - 9), false));
-            AddCornerTab(cell, chosen, ClassIcon(unit));
+            AddCornerTab(cell, chosen, UnitClassIcon.For(unit));
             grid.AddChild(cell);
         }
         _body.AddChild(new RoyalScrollHint { Position = new Vector2(allyView.End.X - 4, allyView.Position.Y + 6), Size = new Vector2(3, allyView.Size.Y - 12), Scroll = allyScroll });

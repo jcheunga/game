@@ -45,9 +45,6 @@ public partial class ShopMenu
         else BuildUnitProfile(spec, GameData.GetUnit(selected.Id), selected);
     }
 
-    private static string ClassIcon(UnitDefinition unit) => unit.UsesProjectile ? "class-ranged" :
-        unit.Armor >= 25 || unit.SquadTag == SquadSynergyCatalog.SupportTag ? "class-shield" : "class-melee";
-
     private static string SpellIcon(SpellDefinition spell) => "spellicon-" + spell.Id.Replace("spell_", "");
 
     private static Texture2D SpellArt(SpellDefinition spell) => RoyalArt.Item(spell.Id) is { } art ? art : UiArtLoader.TryLoadSpellIcon(spell);
@@ -120,7 +117,7 @@ public partial class ShopMenu
             var art = spec.Rect(key + ".art", new Rect2(rect.Position + new Vector2(rect.Size.X * .3f, 4), new Vector2(rect.Size.X * .5f, rect.Size.Y - 10)));
             if (!spells) art = new Rect2(new Vector2(rect.Position.X + rect.Size.X * .25f, rect.Position.Y + 3), new Vector2(rect.Size.X * .56f, rect.Size.Y - 8));
             _body.AddChild(Picture(spells, entry.Id, art, !entry.Owned));
-            var icon = spells ? SpellIcon(GameData.GetSpell(entry.Id)) : ClassIcon(GameData.GetUnit(entry.Id));
+            var icon = spells ? SpellIcon(GameData.GetSpell(entry.Id)) : UnitClassIcon.For(GameData.GetUnit(entry.Id));
             _body.AddChild(RoyalKit.Image(icon, Relative(spec, ".class", "slot.1", rect, new Rect2(9, 63, 24, 27))));
             var level = spec.Label("slot.1.level", $"Lv {entry.Level}", 70);
             level.Position += rect.Position - spec.Rect("slot.1").Position;
@@ -204,7 +201,7 @@ public partial class ShopMenu
         var id = entry.Id;
         button.Pressed += () => { _selectedId = id; Refresh(); };
         button.AddChild(Picture(spells, entry.Id, spells ? new Rect2(10, 10, rect.Size.X - 20, rect.Size.Y - 20) : new Rect2(6, 6, rect.Size.X - 12, rect.Size.Y - 9), !entry.Owned));
-        AddCornerTab(button, selected, spells ? SpellIcon(GameData.GetSpell(entry.Id)) : ClassIcon(GameData.GetUnit(entry.Id)));
+        AddCornerTab(button, selected, spells ? SpellIcon(GameData.GetSpell(entry.Id)) : UnitClassIcon.For(GameData.GetUnit(entry.Id)));
         if (spells && spec.Has("grid.0.0.level"))
         {
             // The level and its pips keep the concept's distance from the cell's foot and sides in the larger cell.

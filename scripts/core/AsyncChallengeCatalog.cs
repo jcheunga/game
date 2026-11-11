@@ -251,7 +251,7 @@ public static class AsyncChallengeCatalog
         new(
             TunnelerAmbushId,
             "TUN",
-            "Tunneler Ambush",
+            "Tunnel Ambush",
             "Tunnelers burrow behind your lines more frequently. Guard your rear.",
             1.04f,
             1.05f,

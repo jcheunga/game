@@ -60,7 +60,8 @@ public partial class MultiplayerMenu
         _royalLayer.AddChild(_routeStage);
         Overlay(_stageSelector, new Rect2(art.End.X + 6, 200, 590 - art.End.X - 6, 62), "Challenge stage");
         _royalLayer.AddChild(RoyalKit.Image("icon-skull-red", spec.Rect("brief.modifier.icon")));
-        _mutatorLabel = spec.Label("brief.modifier", "", 140);
+        // Room up to the code field (x 823); the longest title, "Tunnel Ambush", needs about 148 px at the phone text floor.
+        _mutatorLabel = spec.Label("brief.modifier", "", 152);
         _royalLayer.AddChild(_mutatorLabel);
         _skulls = new Control { Position = spec.Rect("brief.difficulty").Position, Size = new Vector2(90, 20), MouseFilter = MouseFilterEnum.Ignore };
         _royalLayer.AddChild(_skulls);

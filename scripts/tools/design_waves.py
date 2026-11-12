@@ -123,6 +123,107 @@ RECIPES = {
 }
 LEADER_RECIPES = ['vanguard', 'swarm', 'raiders', 'shieldwall', 'siege', 'necro', 'ambush', 'elite', 'march']
 
+# The light foes that fill the ranks in each zone (0 = King's Road), two of them a stage. There are only five true
+# rank-fillers, so without this Grave Rats and Risen marched through half the campaign; light fast foes stand in beside
+# them. Every other foe is cast for CAST_ZONES zones from the one it debuts in, so a zone is known by its own foes and
+# the last few arrivals, not by everything met so far.
+ZONE_FODDER = [
+    ['enemy_walker', 'enemy_grave_rat'], ['enemy_walker', 'enemy_splitter', 'enemy_grave_rat'],
+    ['enemy_grave_rat', 'enemy_runner', 'enemy_splitter'], ['enemy_plague_leech', 'enemy_splitter', 'enemy_runner'],
+    ['enemy_plague_leech', 'enemy_tunneler', 'enemy_grave_rat'], ['enemy_splitter', 'enemy_walker', 'enemy_plague_leech'],
+    ['enemy_bog_spore', 'enemy_plague_leech', 'enemy_tunneler'], ['enemy_runner', 'enemy_grave_rat', 'enemy_bog_spore'],
+    ['enemy_bog_spore', 'enemy_plague_leech', 'enemy_grave_rat'], ['enemy_walker', 'enemy_splitter', 'enemy_bog_spore'],
+]
+CAST_ZONES = 4
+
+# One rule a zone (after the first), on its third, seventh and ninth stages: (modifier, value, briefing sentence).
+# The modifiers are StageModifiers' (scripts/core/StageModifiers.cs); the campaign strength is fitted with them on.
+ZONE_RULES = {
+    1: ('swarm_density', 2, 'More foes hold the field at once.'),
+    2: ('cursed_ground', 2.5, 'A burning strip scorches troops in it.'),
+    3: ('drained_courage', .8, 'Plague air: courage builds slower.'),
+    4: ('mirror_pressure', .15, 'Foes turn part of each blow back.'),
+    5: ('lich_graveyard', .25, 'One fallen foe in four rises again.'),
+    6: ('strained_caravan', .8, 'The bogged wagon has a weaker hull.'),
+    7: ('rapid_assault', .82, 'Waves come sooner.'),
+    8: ('reinforced_barricade', 1.3, 'The enemy gate is tougher.'),
+    9: ('elite_vanguard', 1.18, "Every foe is tougher and hits harder."),
+}
+RULE_SLOTS = (3, 7, 9)
+# The stage after a zone boss is a breather with a rule in the player's favour, a different one each zone.
+BREATHERS = [('surging_courage', 1.25, 'Courage builds faster here.'),
+             ('fortified_deploy', .6, 'Fresh troops shrug off blows briefly.'),
+             ('armored_convoy', 1.25, 'The refitted wagon has a tougher hull.')]
+
+# Each commander fights its own way. waves: role lists (the string 'boss' places the commander), labels, then
+# optional gaps between waves, spawn interval and the briefing text ({boss} is its name).
+CLASSIC = dict(waves=[[('fodder', 2), ('fast', 1)], [('tank', 1), ('ranged', 1), ('fodder', 1)],
+                      [('support', 1), ('tank', 1), ('fodder', 2)], ['boss', ('tank', 1), ('ranged', 1)]],
+               labels=['Skirmishers', 'Honor guard', 'Bodyguard', '{boss} takes the field'],
+               text='{boss} commands this field. Thin the escort first, then bring everything to bear.')
+BOSS_PLANS = {
+    'enemy_boss': CLASSIC,
+    'enemy_boss_docks': dict(
+        waves=[[('fodder', 4)], ['boss', ('fodder', 3), ('ranged', 1)], [('fast', 2), ('fodder', 3)], [('fodder', 4), ('tank', 1)]],
+        labels=['First tide', '{boss} rides the tide', 'Second tide', 'Flood tide'], gap=11, interval=.5,
+        text='{boss} comes in early behind the first tide, and the tides keep coming. Cut through to it fast.'),
+    'enemy_boss_tidemaster': dict(
+        waves=[[('ranged', 2), ('tank', 1)], [('ranged', 2), ('fodder', 2)], [('tank', 2), ('support', 1)], ['boss', ('ranged', 2)]],
+        labels=['Harpoon line', 'Second volley', 'Boarding party', '{boss} takes aim'], gap=14, interval=.9,
+        text='{boss} fights from behind a harpoon line. Close the distance or out-range it.'),
+    'enemy_boss_forge': dict(
+        waves=[['boss', ('tank', 2)], [('ranged', 2)], [('fast', 2), ('fodder', 2)], [('tank', 1), ('support', 1), ('ranged', 1)]],
+        labels=['{boss} leads the line', 'Forge crews', 'Hounds loosed', 'Reserve shift'], gap=15, interval=1.0,
+        text='{boss} marches at the head of its shield line from the first moment. Its reserves follow behind.'),
+    'enemy_boss_ward': dict(
+        waves=[[('fodder', 5)], [('fodder', 4), ('fast', 2)], ['boss', ('support', 1), ('fodder', 3)], [('fodder', 5), ('tank', 1)]],
+        labels=['Plague swarm', 'Carriers', '{boss} among the swarm', 'Last carriers'], gap=10, interval=.45,
+        text='{boss} hides in a swarm of the infected. Clear the swarm with area spells to reach it.'),
+    'enemy_boss_plague_monarch': dict(
+        waves=[[('tank', 1), ('ranged', 1), ('fodder', 2)], [('support', 2), ('tank', 1)], [('fast', 3), ('ranged', 1)],
+               ['boss', ('tank', 2), ('support', 1)], [('fodder', 4), ('fast', 2)]],
+        labels=['Outer court', 'Physicians', 'Runners', '{boss} holds court', 'Last rites'], gap=13, interval=.8,
+        text='{boss} arrives with its whole court, and a last wave follows it. Keep a reserve for the rites.'),
+    'enemy_boss_pass': dict(
+        waves=[['boss', ('fast', 3)], [('fast', 3), ('ranged', 1)], [('tank', 1), ('fast', 2)], [('fast', 4)]],
+        labels=['{boss} rides the raid', 'Second raid', 'Hill clans', 'Wolfpack'], gap=11, interval=.6,
+        text='{boss} leads the first raid itself. Have a screen in front of the wagon before it lands.'),
+    'enemy_boss_basilica': dict(
+        waves=[[('fodder', 3), ('summoner', 1)], [('fodder', 3), ('ranged', 1)], [('summoner', 1), ('tank', 1), ('fodder', 2)],
+               [('fodder', 3), ('support', 1)], ['boss', ('summoner', 1), ('tank', 1)]],
+        labels=['Procession', 'Censer bearers', 'Choir', 'Relic guard', '{boss} closes the procession'], gap=10, interval=.7,
+        text='A long procession with {boss} at its end. Cut down the summoners in each column as it passes.'),
+    'enemy_boss_reliquary': dict(
+        waves=[[('artillery', 1), ('tank', 1)], [('ranged', 2), ('fodder', 2)], ['boss', ('artillery', 1), ('tank', 1)],
+               [('fodder', 4), ('fast', 2)]],
+        labels=['Engines set', 'Archers', '{boss} behind the engines', 'The raised'], gap=14, interval=.9,
+        text='{boss} shelters behind its engines and raises the fallen. Break the engines before it arrives.'),
+    'enemy_boss_mire': dict(
+        waves=[['boss'], [('fast', 3)], [('fodder', 4), ('ranged', 1)], [('tank', 1), ('support', 1), ('fast', 2)],
+               [('fodder', 4), ('fast', 2)]],
+        labels=['{boss} sets out', 'Eels', 'Spore drift', 'Mire guard', 'What follows'], gap=12, interval=.6,
+        text='{boss} sets out at once and is a long time coming. Kill what runs ahead of it before it arrives.'),
+    'enemy_boss_steppe': dict(
+        waves=[[('fast', 2)], [('fast', 2), ('ranged', 1)], ['boss', ('fast', 2)], [('support', 1), ('fast', 1)]],
+        labels=['Outriders', 'Horse archers', '{boss} charges', 'Banner guard'], gap=10, interval=.5,
+        text='A cavalry charge with {boss} in the third wave. Hold a firm line: nothing here walks.'),
+    'enemy_boss_verge': dict(
+        waves=[[('fodder', 1)], [('fodder', 2)], ['boss', ('fast', 3), ('ranged', 2), ('tank', 1)], [('fast', 3), ('ranged', 1)]],
+        labels=['Quiet wood', 'Lights in the trees', '{boss} springs the trap', 'Closing jaws'], gaps=[0, 12, 20, 16], interval=.45,
+        text='The wood is quiet until {boss} springs its trap. Save courage for the surge.'),
+    'enemy_boss_citadel': dict(
+        waves=[[('tank', 1)], [('tank', 1), ('ranged', 1)], [('tank', 2), ('support', 1)], ['boss', ('tank', 2)]],
+        labels=['Picked guard', 'Champions', 'Heavy guard', '{boss} and its cadre'], gap=16, interval=1.2,
+        text='{boss} fields only veterans. Focus your fire on one at a time and guard your damage dealers.'),
+    'enemy_boss_ashen_regent': dict(
+        waves=[[('fodder', 2), ('fast', 1)], [('tank', 1), ('ranged', 1)], [('artillery', 1), ('fodder', 2)],
+               [('support', 1), ('fast', 2)], [('tank', 1), ('ranged', 1)], ['boss', ('tank', 1), ('fast', 1)],
+               [('fodder', 3), ('fast', 1)]],
+        labels=['Vanguard', 'Shield and bow', 'Engines', 'Outriders', 'Iron advance', '{boss} takes the field',
+                "The Regent's last host"], gap=12, interval=.7,
+        text='The whole host of the crown, {boss} among it, and a last host after. Pace everything you have.'),
+}
+
 
 def entries(ids):
     return [{'UnitId': uid, 'Count': ids.count(uid)} for uid in dict.fromkeys(ids)]
@@ -155,9 +256,14 @@ def main():
             # A stage casts one foe per role (two light ones) the first time the role comes up, and every wave draws
             # on that cast, so a stage is known by a handful of foes rather than a grab-bag of everything met so far.
             if role not in cast:
-                pool = [uid for uid in ROLES[role] if uid in known] or [uid for uid in ROLES['fodder'] if uid in known]
+                everyone = [uid for uid in ROLES[role] if uid in known]
+                if role == 'fodder':
+                    pool = [uid for uid in ZONE_FODDER[zone] if uid in known] or everyone[-2:]
+                else:
+                    pool = [uid for uid in everyone if zone - (debut[uid] - 1) // 10 < CAST_ZONES] or everyone[-2:] \
+                        or [uid for uid in ZONE_FODDER[zone] if uid in known]
                 # This zone's own foes and the newest arrivals are cast most often.
-                weights = [(3 if uid in regional else 1) * (1 + debut[uid] / 50) for uid in pool]
+                weights = [(4 if uid in regional else 1) * (1 + debut[uid] / 50) for uid in pool]
                 chosen = []
                 for _ in range(min(len(pool), 2 if role in ('fodder', 'fast', 'ranged') else 1)):
                     choice = rng.choices(pool, weights)[0]
@@ -192,14 +298,14 @@ def main():
                 recipe = usable[(slot - 1) % len(usable)]
             waves = []
             if recipe == 'commander':
-                plan = [[('fodder', 2), ('fast', 1)], [('tank', 1), ('ranged', 1), ('fodder', 1)],
-                        [('support', 1), ('tank', 1), ('fodder', 2)], [('tank', 1), ('ranged', 1)]]
-                labels = ['Skirmishers', 'Honor guard', 'Bodyguard', f'{names[boss]} takes the field']
-                for i, roles in enumerate(plan):
-                    ids = [pick(role) for role, base in roles for _ in range(count(base, role))]
-                    if i == len(plan) - 1: ids.append(boss)
-                    waves.append(dict(ids=ids, label=labels[i], gap=13, interval=.8))
-                text = f'{names[boss]} commands this field. Thin the escort first, then bring everything to bear.'
+                plan = BOSS_PLANS.get(boss, CLASSIC)
+                for i, roles in enumerate(plan['waves']):
+                    ids = [boss] if 'boss' in roles else []
+                    ids += [pick(role) for role, base in (r for r in roles if r != 'boss') for _ in range(count(base, role))]
+                    gap = plan['gaps'][i] if 'gaps' in plan else plan.get('gap', 13)
+                    waves.append(dict(ids=ids, label=plan['labels'][i].format(boss=names[boss]), gap=gap,
+                                      interval=plan.get('interval', .8)))
+                text = plan['text'].format(boss=names[boss])
             else:
                 r = RECIPES[recipe]
                 for i, roles in enumerate(r['waves']):
@@ -229,10 +335,24 @@ def main():
                         'SpawnXRatio': 1, 'AdvanceTriggerXRatio': -1 if i == 0 else round(min(.82, .2 + i * .14), 2),
                         'Entries': entries(w['ids'])})
         stage['Waves'] = out
+        # The zone's rule on three of its leaders, and a breather after each zone boss.
+        rule = None
+        if zone in ZONE_RULES and slot in RULE_SLOTS and boss is None:
+            rule = ZONE_RULES[zone]
+        elif zone > 0 and slot == 1:
+            rule = BREATHERS[(zone - 1) % len(BREATHERS)]
+        stage['Modifiers'] = [{'Type': rule[0], 'Value': rule[1]}] if rule else []
+        if rule:
+            # The rule takes the place of the recipe's second sentence (the briefing has room for about 120 letters).
+            text = text.replace(' Break the gate before the Reckoning.', '')
+            head = text[:text.index('. ', text.index(': ') if text.startswith('First sighting') else 0) + 1]
+            if text.startswith('First sighting'): head = text[:text.index('. ', len(head) + 1) + 1] if '. ' in text[len(head) + 1:] else text
+            text = (head if len(text) + len(rule[2]) > 118 else text) + ' ' + rule[2]
         if n > 1: stage['Description'] = text
         total = sum(e['Count'] for w in out for e in w['Entries'])
         summary.append(f"{n:3} {recipe:10} waves {len(out)} foes {total:3} kinds {len({e['UnitId'] for w in out for e in w['Entries']}):2}"
-                       f"{'  new: ' + ', '.join(names[u] for u in newcomers) if newcomers else ''}")
+                       f"{'  new: ' + ', '.join(names[u] for u in newcomers) if newcomers else ''}"
+                       f"{'  rule: ' + rule[0] if rule else ''}")
     for uid, u in units.items():
         if u.get('Side') == 'Enemy' and not u.get('IsBoss'):
             u['CampaignDebutStage'] = debut.get(uid, 101)

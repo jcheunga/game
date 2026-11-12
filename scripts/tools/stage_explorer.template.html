@@ -1,0 +1,439 @@
+<title>Crownroad Stage Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: a campaign ledger. One strength strip across all 100 stages on top, then each zone as a list of stage
+   rows (facts on the left, the waves marching left to right), then the enemy roster. */
+:root {
+  --bg: #eef0f3; --panel: #f8f9fb; --line: #d3d8e0; --fg: #1c222b; --muted: #5d6877; --accent: #b4431f;
+  --wall: #c0362c; --twin: #7a5a12; --chip: #e2e6ec;
+  --r-vanguard: #3f6fa3; --r-swarm: #6f8f1f; --r-raiders: #c9701d; --r-shield: #6b7385; --r-siege: #a8472f;
+  --r-necromancy: #7a4fb3; --r-ambush: #1f8f82; --r-elite: #a8860f; --r-march: #4a7f49; --r-commander: #b81f55;
+  --r-opening: #8b9299;
+  --display: "Grenze Gotisch", Georgia, serif; --body: Inter, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14181e; --panel: #1b2028; --line: #323a46; --fg: #e6e9ee; --muted: #98a2b0; --accent: #f08a5d;
+  --wall: #ff7a6b; --twin: #e0b84a; --chip: #2a313c;
+  --r-vanguard: #6fa3dc; --r-swarm: #a9c94f; --r-raiders: #f0a04b; --r-shield: #a0a8ba; --r-siege: #e07a5f;
+  --r-necromancy: #b08ae6; --r-ambush: #4fc9bb; --r-elite: #e0c040; --r-march: #7fbf7d; --r-commander: #f0608f;
+  --r-opening: #a8afb6; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14181e; --panel: #1b2028; --line: #323a46; --fg: #e6e9ee; --muted: #98a2b0; --accent: #f08a5d;
+  --wall: #ff7a6b; --twin: #e0b84a; --chip: #2a313c;
+  --r-vanguard: #6fa3dc; --r-swarm: #a9c94f; --r-raiders: #f0a04b; --r-shield: #a0a8ba; --r-siege: #e07a5f;
+  --r-necromancy: #b08ae6; --r-ambush: #4fc9bb; --r-elite: #e0c040; --r-march: #7fbf7d; --r-commander: #f0608f;
+  --r-opening: #a8afb6; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 14px/1.45 var(--body); padding-block: 24px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1 { font: 700 40px/1 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 700 26px/1.1 var(--display); margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--muted); }
+.facts b { color: var(--fg); font-weight: 600; }
+.scroll { overflow-x: auto; }
+section { display: flex; flex-direction: column; gap: 12px; }
+
+/* strength strip */
+#strip { min-width: 920px; display: block; width: 100%; height: auto; }
+#strip text { font: 10px var(--body); fill: var(--muted); }
+#strip .axis { stroke: var(--line); stroke-width: 1; }
+#strip .zero { stroke: var(--muted); stroke-width: 1; }
+#strip rect.bar { cursor: pointer; }
+#strip rect.bar:hover { opacity: .7; }
+#strip .grind { fill: var(--wall); }
+#strip .dim { opacity: .18; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: inherit; color: inherit; }
+.pill { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 3px 10px 3px 8px;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.pill i { width: 10px; height: 10px; border-radius: 2px; background: var(--c); display: inline-block; }
+.pill[aria-pressed="true"] { border-color: var(--fg); background: var(--chip); font-weight: 600; }
+.pill:focus-visible, .chip:focus-visible, .enemy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#count { margin-left: auto; }
+
+/* stage rows */
+.zone > h2 { padding-top: 8px; border-top: 2px solid var(--fg); display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.zone > h2 small { font: 13px var(--body); color: var(--muted); }
+.stage { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--line);
+  scroll-margin-top: 12px; }
+.stage.flash { background: var(--chip); }
+.meta { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.meta h3 { margin: 0; font: 600 15px/1.25 var(--body); }
+.meta h3 span { font: 700 20px/1 var(--display); color: var(--accent); margin-right: 6px; }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--c); }
+.tag i { width: 9px; height: 9px; border-radius: 2px; background: var(--c); }
+.kv { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--muted); }
+.kv b { color: var(--fg); font-weight: 600; }
+.flag { font-size: 12px; font-weight: 600; }
+.flag.wall { color: var(--wall); }
+.flag.twin { color: var(--twin); }
+.flag a { color: inherit; }
+.desc { font-size: 12px; color: var(--muted); }
+.waves { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; min-width: 0; }
+.wave { flex: 0 0 auto; display: flex; flex-direction: column; gap: 5px; padding-left: 10px; border-left: 1px solid var(--line); }
+.wave:first-child { border-left: 0; padding-left: 0; }
+.wave.late { border-left: 2px dashed var(--muted); }
+.wave header { flex-direction: row; gap: 6px; align-items: baseline; font-size: 12px; white-space: nowrap; }
+.wave header b { font-weight: 600; }
+.chips { display: flex; gap: 4px; }
+.chip { position: relative; width: 40px; height: 40px; border-radius: 6px; border: 0; padding: 0; background: var(--chip);
+  cursor: pointer; overflow: visible; }
+.chip img { width: 40px; height: 40px; border-radius: 6px; display: block; }
+.chip.boss { box-shadow: 0 0 0 2px var(--r-commander); }
+.chip.new { box-shadow: 0 0 0 2px var(--accent); }
+.chip.hit { box-shadow: 0 0 0 2px var(--fg); }
+.chip em { position: absolute; right: -3px; bottom: -3px; font: 600 10px/1 var(--body); font-style: normal; padding: 2px 3px;
+  border-radius: 4px; background: var(--fg); color: var(--bg); }
+
+/* roster */
+#roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.enemy { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 10px; text-align: left; padding: 8px; border: 1px solid var(--line);
+  background: var(--panel); border-radius: 8px; cursor: pointer; }
+.enemy[aria-pressed="true"] { border-color: var(--fg); }
+.enemy img { width: 44px; height: 44px; border-radius: 6px; grid-row: span 2; background: var(--chip); }
+.enemy b { font-weight: 600; }
+.enemy small { color: var(--muted); font-size: 12px; }
+.presence { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(100, 1fr); gap: 0; height: 8px; background: var(--chip); border-radius: 2px; overflow: hidden; }
+.presence i.on { background: var(--accent); }
+/* editing */
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 13px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.flag.edited { color: var(--accent); }
+.note { font-size: 12px; border-left: 2px solid var(--accent); padding-left: 8px; white-space: pre-wrap; }
+.stage.editing { background: var(--panel); padding: 12px; border: 1px solid var(--accent); border-radius: 8px; }
+.fld { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); min-width: 0; }
+input, select, textarea { font: 13px var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; min-width: 0; }
+textarea { min-height: 64px; resize: vertical; }
+.wave.edit { gap: 6px; }
+.wave.edit input.lbl { width: 150px; }
+.wave.edit input.sm { width: 64px; }
+.echip { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.step { display: flex; align-items: center; gap: 2px; font-size: 12px; }
+.step button { width: 20px; height: 20px; padding: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 4px; cursor: pointer; line-height: 1; }
+.step span { min-width: 16px; text-align: center; }
+#save-status { font-size: 13px; }
+#save-status.err { color: var(--wall); }
+@media (max-width: 720px) {
+  h1 { font-size: 32px; }
+  .stage { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  #count { margin-left: 0; width: 100%; }
+}
+</style>
+<main>
+  <header>
+    <h1>Crownroad Stage Explorer</h1>
+    <p class="muted">Every campaign stage: the waves it sends, how hard its enemies are scaled, which other stage it most resembles, and where a free player in the playthrough sim had to grind. Edit a stage here and the change is saved for Claude to apply to the game.</p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <section>
+    <h2>Strength by stage</h2>
+    <p class="muted">Bar height is the stage's fitted strength <span class="num">s</span> (enemy health ×(1 + s), damage ×(1 + s/2)), coloured by wave recipe. Red dots below are grind replays the free sim needed before it won. Select a bar to jump to the stage.</p>
+    <div class="scroll"><svg id="strip" role="img" aria-label="Enemy strength for stages 1 to 100"></svg></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section>
+    <div class="filters">
+      <button class="pill" id="f-walls" aria-pressed="false">Grind walls only</button>
+      <button class="pill" id="f-twins" aria-pressed="false">Look-alikes only</button>
+      <button class="pill" id="f-edited" aria-pressed="false">Edited only</button>
+      <button class="pill" id="f-enemy" hidden></button>
+      <span class="muted num" id="count"></span>
+    </div>
+    <p class="muted" id="save-status">Connecting to the shared edit store…</p>
+    <div id="zones"></div>
+  </section>
+
+  <section>
+    <h2>Enemy roster</h2>
+    <p class="muted">Every foe the campaign fields, in order of first appearance. The bar shows which of the 100 stages include it. Select one to show only its stages.</p>
+    <div id="roster"></div>
+  </section>
+</main>
+<script>
+const DATA = /*DATA*/null;
+const RECIPE_VAR = { "Vanguard": "vanguard", "Swarm": "swarm", "Raiders": "raiders", "Shield line": "shield", "Siege": "siege",
+  "Necromancy": "necromancy", "Ambush": "ambush", "Elite": "elite", "Long march": "march", "Commander": "commander", "Opening": "opening", "Other": "opening" };
+const ASKS = { "Vanguard": "Balanced host; hold the front", "Swarm": "Many light bodies on short gaps", "Raiders": "Fast foes diving for the wagon",
+  "Shield line": "Armored fronts with casters behind", "Siege": "Artillery and sappers aimed at the wagon", "Necromancy": "Summoners and death-spawners",
+  "Ambush": "Two light waves, then a surge", "Elite": "Few, tough veterans", "Long march": "Seven columns, steady pressure",
+  "Commander": "The boss and its escort", "Opening": "The first three teaching stages" };
+const color = r => `var(--r-${RECIPE_VAR[r] || "opening"})`;
+const el = (tag, attrs = {}, ...kids) => {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) if (k === "text") node.textContent = v; else if (k === "html") node.innerHTML = v; else node.setAttribute(k, v);
+  node.append(...kids.filter(Boolean));
+  return node;
+};
+const time = t => `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, "0")}`;
+const TWIN = 0.9;
+const state = { recipe: null, enemy: null, walls: false, twins: false, edited: false };
+const BASE = DATA.stages, enemies = DATA.enemies;
+// Saved edits by stage number (documents of the page's shared store, collection "edits"), and the stage being edited.
+let db = null, edits = {}, draft = null, stages = BASE;
+const num = (v, lo, hi, fallback) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : fallback; };
+// A saved edit comes from the shared store, so every field is checked before it is drawn.
+function cleanWaves(list) {
+  return (Array.isArray(list) ? list : []).slice(0, 12).map(w => ({
+    i: Number.isInteger(w.i) ? w.i : -1, label: String(w.label ?? "").slice(0, 60), t: num(w.t, 0, 600, 0), gap: num(w.gap, 0.1, 5, 0.8),
+    e: (Array.isArray(w.e) ? w.e : []).filter(x => x && enemies[x.id]).slice(0, 12).map(x => ({ id: x.id, c: Math.round(num(x.c, 1, 40, 1)) })),
+  }));
+}
+function effective(b) {
+  const ed = edits[b.n];
+  if (!ed) return b;
+  const waves = cleanWaves(ed.waves).map(w => ({ ...w, e: w.e.map(x => [x.id, x.c]) }));
+  const s = num(ed.s, -0.5, 3, b.s);
+  let bodies = 0, hp = 0;
+  for (const w of waves) for (const [id, c] of w.e) { bodies += c; hp += enemies[id].hp * c; }
+  const changes = [];
+  if (s !== b.s) changes.push(`strength ${b.s.toFixed(3)} → ${s.toFixed(3)}`);
+  if (JSON.stringify(waves.map(w => [w.label, w.t, w.gap, w.e])) !== JSON.stringify(b.waves.map(w => [w.label, w.t, w.gap, w.e]))) changes.push(`waves (${b.bodies} → ${bodies} bodies)`);
+  const name = String(ed.name || b.name).slice(0, 60);
+  if (name !== b.name) changes.push("name");
+  return { ...b, name, s, waves, bodies, health: Math.round(hp * (1 + s)), twinAlike: 0, edited: true, changes, note: String(ed.note ?? "").slice(0, 2000) };
+}
+function rebuild() { stages = BASE.map(effective); }
+const has = (s, id) => s.waves.some(w => w.e.some(e => e[0] === id));
+const shown = s => (!state.recipe || s.recipe === state.recipe) && (!state.enemy || has(s, state.enemy)) && (!state.walls || s.grind > 0) && (!state.twins || s.twinAlike >= TWIN) && (!state.edited || s.edited);
+
+// facts
+{
+  const uses = Object.keys(enemies).map(id => [id, stages.filter(s => has(s, id)).length]).sort((a, b) => b[1] - a[1]);
+  const once = uses.filter(u => u[1] <= 2 && !enemies[u[0]].boss).length;
+  const facts = [
+    [stages.length, "stages"], [Object.keys(enemies).length, "enemy types fielded"],
+    [`${enemies[uses[0][0]].name} (${uses[0][1]} stages)`, "most used"], [once, "foes in two stages or fewer"],
+    [stages.filter(s => s.twinAlike >= TWIN).length, "stages with a near-identical host elsewhere"],
+    [stages.filter(s => s.grind > 0).length, `grind walls in ${DATA.simRuns} free sim runs`],
+  ];
+  document.getElementById("facts").append(...facts.map(([v, label]) => el("span", {}, el("b", { class: "num", text: v }), " " + label)));
+}
+
+// strength strip
+function drawStrip() {
+  const svg = document.getElementById("strip"), NS = "http://www.w3.org/2000/svg";
+  const W = 1040, H = 250, L = 34, top = 14, zeroY = 170, unit = 72, bw = (W - L - 6) / 100;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.replaceChildren();
+  const add = (tag, attrs, text) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (text != null) n.textContent = text; svg.append(n); return n; };
+  for (const v of [2, 1, 0]) {
+    const y = zeroY - v * unit;
+    add("line", { x1: L, x2: W - 6, y1: y, y2: y, class: v ? "axis" : "zero" });
+    add("text", { x: L - 6, y: y + 3, "text-anchor": "end" }, v ? `+${v}.0` : "0");
+  }
+  add("text", { x: L - 6, y: zeroY + 0.4 * unit + 3, "text-anchor": "end" }, "−0.4");
+  stages.forEach((s, i) => {
+    const x = L + i * bw, h = Math.abs(s.s) * unit, y = s.s >= 0 ? zeroY - h : zeroY;
+    const bar = add("rect", { x: x + 1, y, width: bw - 2, height: Math.max(h, 1.5), class: "bar" + (shown(s) ? "" : " dim"), tabindex: 0, role: "link",
+      "aria-label": `Stage ${s.n} ${s.name}, strength ${s.s}` });
+    bar.style.fill = color(s.recipe);
+    add("title", {}, "").textContent = "";
+    bar.append(Object.assign(document.createElementNS(NS, "title"), { textContent: `${s.n} · ${s.name} · ${s.recipe} · s ${s.s}${s.grind ? ` · ${s.grind} grind replays` : ""}` }));
+    const go = () => jump(s.n);
+    bar.addEventListener("click", go);
+    bar.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+    if (s.boss) add("text", { x: x + bw / 2, y: (s.s >= 0 ? y : zeroY) - 3, "text-anchor": "middle" }, "♛");
+    if (s.grind) add("circle", { cx: x + bw / 2, cy: 216, r: Math.min(9, 1.5 + Math.sqrt(s.grind) * 0.62), class: "grind" + (shown(s) ? "" : " dim") });
+    if (i % 10 === 0) {
+      if (i) add("line", { x1: x, x2: x, y1: top, y2: H - 14, class: "axis" });
+      add("text", { x: x + 3, y: H - 2 }, `${s.n}  ${s.zone}`);
+    }
+  });
+  add("text", { x: L - 6, y: 219, "text-anchor": "end" }, "grind");
+}
+
+function jump(n) {
+  const row = document.getElementById("stage-" + n);
+  if (!row || row.hidden) { Object.assign(state, { recipe: null, enemy: null, walls: false, twins: false, edited: false }); render(); }
+  const target = document.getElementById("stage-" + n);
+  target.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  target.classList.add("flash");
+  setTimeout(() => target.classList.remove("flash"), 1400);
+}
+
+function chip(id, count, stage) {
+  const e = enemies[id];
+  const b = el("button", { class: "chip" + (e.boss ? " boss" : stage.debut === id ? " new" : "") + (state.enemy === id ? " hit" : ""),
+    title: `${e.name} ×${count}${stage.debut === id ? " · first appearance" : ""}`, "aria-label": `${e.name} times ${count}` });
+  if (e.img) b.append(el("img", { src: e.img, alt: "", loading: "lazy" }));
+  if (count > 1) b.append(el("em", { class: "num", text: "×" + count }));
+  b.addEventListener("click", () => { state.enemy = state.enemy === id ? null : id; render(); });
+  return b;
+}
+
+function startEdit(n) {
+  const s = stages.find(x => x.n === n);
+  draft = { n, name: s.name, s: s.s, note: s.note || "", waves: s.waves.map((w, i) => ({ i: s.edited ? w.i : i, label: w.label, t: w.t, gap: w.gap, e: w.e.map(([id, c]) => ({ id, c })) })) };
+  render();
+}
+function status(text, err) { const n = document.getElementById("save-status"); n.textContent = text; n.classList.toggle("err", !!err); }
+async function saveDraft() {
+  const d = draft, waves = cleanWaves(d.waves).filter(w => w.e.length).sort((a, b) => a.t - b.t);
+  if (!waves.length) return status(`Stage ${d.n} needs at least one wave with an enemy in it.`, true);
+  const doc = { stage: d.n, name: String(d.name).trim().slice(0, 60), s: Math.round(num(d.s, -0.5, 3, 0) * 1000) / 1000, note: String(d.note).slice(0, 2000), waves, at: new Date().toISOString() };
+  status(`Saving stage ${d.n}…`);
+  try {
+    await db.doc("edits/stage-" + d.n).set(doc);
+    edits[d.n] = doc; draft = null; rebuild(); render();
+    status(`Stage ${d.n} saved. ${Object.keys(edits).length} edited stage${Object.keys(edits).length === 1 ? "" : "s"} waiting for Claude to apply.`);
+  } catch (e) { status(`Stage ${d.n} was not saved: ${e?.message || e?.code || "the store refused the write"}. Your changes are still in the editor.`, true); }
+}
+async function restore(n) {
+  status(`Restoring stage ${n}…`);
+  try {
+    await db.doc("edits/stage-" + n).delete();
+    delete edits[n]; draft = null; rebuild(); render();
+    status(`Stage ${n} is back to the shipped version.`);
+  } catch (e) { status(`Stage ${n} was not restored: ${e?.message || e?.code || "the store refused"}.`, true); }
+}
+function editorRow(s) {
+  const d = draft;
+  const field = (label, input, on) => { input.addEventListener("input", () => on(input.value)); return el("label", { class: "fld" }, el("span", { text: label }), input); };
+  const button = (text, cls, fn) => { const b = el("button", { class: "btn " + cls, type: "button", text }); b.addEventListener("click", fn); return b; };
+  const meta = el("div", { class: "meta" },
+    el("h3", {}, el("span", { class: "num", text: s.n }), "Editing"),
+    field("Stage name", el("input", { id: `e-name-${s.n}`, value: d.name, maxlength: 60 }), v => d.name = v),
+    field("Strength s (enemy health ×(1 + s))", el("input", { id: `e-s-${s.n}`, type: "number", step: "0.05", min: "-0.5", max: "3", value: d.s }), v => d.s = v),
+    field("Note for Claude: what should this stage feel like?", Object.assign(el("textarea", { id: `e-note-${s.n}`, maxlength: 2000 }), { value: d.note }), v => d.note = v),
+    el("div", { class: "row" }, button("Save", "primary", saveDraft), button("Cancel", "", () => { draft = null; render(); }),
+      edits[s.n] ? button("Restore shipped stage", "", () => restore(s.n)) : null));
+  const options = Object.entries(enemies).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  const waves = el("div", { class: "waves" }, ...d.waves.map((w, wi) => {
+    const pick = el("select", { id: `e-add-${s.n}-${wi}`, "aria-label": "Add an enemy to this wave" }, el("option", { value: "", text: "Add enemy…" }),
+      ...options.map(([id, e]) => el("option", { value: id, text: e.name + (e.boss ? " ♛" : "") })));
+    pick.addEventListener("change", () => { if (!pick.value) return; const hit = w.e.find(x => x.id === pick.value); if (hit) hit.c++; else w.e.push({ id: pick.value, c: 1 }); render(); });
+    return el("div", { class: "wave edit" },
+      el("div", { class: "row" },
+        field("Wave name", el("input", { class: "lbl", id: `e-label-${s.n}-${wi}`, value: w.label, maxlength: 60 }), v => w.label = v),
+        field("Starts (s)", el("input", { class: "sm", id: `e-t-${s.n}-${wi}`, type: "number", min: "0", max: "600", step: "1", value: w.t }), v => w.t = v),
+        field("Spawn gap (s)", el("input", { class: "sm", id: `e-gap-${s.n}-${wi}`, type: "number", min: "0.1", max: "5", step: "0.05", value: w.gap }), v => w.gap = v)),
+      el("div", { class: "chips" }, ...w.e.map((x, xi) => {
+        const e = enemies[x.id];
+        const minus = el("button", { type: "button", "aria-label": `One fewer ${e.name}`, text: "−" }), plus = el("button", { type: "button", "aria-label": `One more ${e.name}`, text: "+" });
+        minus.addEventListener("click", () => { if (--x.c <= 0) w.e.splice(xi, 1); render(); });
+        plus.addEventListener("click", () => { if (x.c < 40) x.c++; render(); });
+        return el("div", { class: "echip", title: e.name }, el("span", { class: "chip" + (e.boss ? " boss" : "") }, e.img ? el("img", { src: e.img, alt: e.name }) : null),
+          el("div", { class: "step num" }, minus, el("span", { text: x.c }), plus));
+      })),
+      el("div", { class: "row" }, pick, button("Remove wave", "", () => { d.waves.splice(wi, 1); render(); })));
+  }), el("div", { class: "wave edit" }, button("Add wave", "", () => {
+    const last = d.waves[d.waves.length - 1];
+    d.waves.push({ i: -1, label: "New wave", t: last ? Number(last.t) + 13 : 3, gap: last ? last.gap : 0.8, e: [] });
+    render();
+  })));
+  return el("div", { class: "stage editing", id: "stage-" + s.n }, meta, waves);
+}
+
+function stageRow(s) {
+  if (draft && draft.n === s.n) return editorRow(s);
+  const edit = db ? el("button", { class: "btn", type: "button", text: s.edited ? "Edit again" : "Edit" }) : null;
+  if (edit) { edit.disabled = !!draft; edit.addEventListener("click", () => startEdit(s.n)); }
+  const meta = el("div", { class: "meta" },
+    el("h3", {}, el("span", { class: "num", text: s.n }), s.name),
+    el("span", { class: "tag", style: `--c:${color(s.recipe)}` }, el("i"), s.recipe),
+    el("div", { class: "kv num", html: `<span>strength <b>${s.s > 0 ? "+" : ""}${s.s.toFixed(3)}</b></span><span>enemy level <b>${s.level}</b></span><span><b>${s.bodies}</b> bodies</span><span>host health <b>${s.health.toLocaleString("en")}</b></span>` }),
+    s.edited ? el("span", { class: "flag edited num", text: "Edited, not in the game yet" + (s.changes.length ? ": " + s.changes.join(", ") : "") }) : null,
+    s.edited && s.note ? el("span", { class: "note", text: s.note }) : null,
+    s.grind ? el("span", { class: "flag wall num", text: `Sim wall: ${s.tries} tries, ${s.grind} grind replays` }) : null,
+    s.twinAlike >= TWIN ? el("span", { class: "flag twin num", html: `${Math.round(s.twinAlike * 100)}% the same host as <a href="#stage-${s.twin}" data-jump="${s.twin}">stage ${s.twin}</a>` }) : null,
+    s.rule ? el("span", { class: "kv", html: "<span>rule <b></b></span>" }) : null,
+    s.debut && enemies[s.debut] ? el("span", { class: "kv", html: `<span>introduces <b>${enemies[s.debut].name}</b></span>` }) : null,
+    el("span", { class: "desc", text: s.desc }),
+    edit ? el("div", { class: "row" }, edit) : null);
+  if (s.rule) meta.querySelector(".kv b:empty").textContent = s.rule;
+  const waves = el("div", { class: "waves" }, ...s.waves.map((w, i) => el("div", { class: "wave" + (i && w.t - s.waves[i - 1].t > 30 ? " late" : "") },
+    el("header", {}, el("b", { text: w.label }), el("span", { class: "muted num", text: time(w.t) })),
+    el("div", { class: "chips" }, ...w.e.map(([id, c]) => chip(id, c, s))))));
+  return el("div", { class: "stage", id: "stage-" + s.n }, meta, waves);
+}
+
+function render() {
+  const zones = document.getElementById("zones");
+  zones.replaceChildren();
+  let count = 0;
+  for (let z = 0; z < stages.length; z += 10) {
+    const rows = stages.slice(z, z + 10).filter(shown);
+    if (!rows.length) continue;
+    count += rows.length;
+    const all = stages.slice(z, z + 10), mean = all.reduce((a, s) => a + s.s, 0) / all.length;
+    const cast = new Set(all.flatMap(s => s.waves.flatMap(w => w.e.map(e => e[0]))));
+    zones.append(el("div", { class: "zone", id: "zone-" + (z / 10 + 1) },
+      el("h2", {}, all[0].zone, el("small", { class: "num", text: `stages ${z + 1}–${z + 10} · mean strength ${mean.toFixed(2)} · ${cast.size} enemy types` })),
+      ...rows.map(stageRow)));
+  }
+  document.getElementById("count").textContent = `${count} of ${stages.length} stages shown`;
+  for (const b of document.querySelectorAll("#legend .pill")) b.setAttribute("aria-pressed", String(b.dataset.recipe === state.recipe));
+  document.getElementById("f-walls").setAttribute("aria-pressed", String(state.walls));
+  document.getElementById("f-twins").setAttribute("aria-pressed", String(state.twins));
+  document.getElementById("f-edited").setAttribute("aria-pressed", String(state.edited));
+  const fe = document.getElementById("f-enemy");
+  fe.hidden = !state.enemy;
+  if (state.enemy) { fe.textContent = `${enemies[state.enemy].name} ✕`; fe.setAttribute("aria-pressed", "true"); }
+  for (const b of document.querySelectorAll("#roster .enemy")) b.setAttribute("aria-pressed", String(b.dataset.id === state.enemy));
+  drawStrip();
+}
+
+// legend and roster (built once)
+{
+  const legend = document.getElementById("legend");
+  for (const r of [...new Set(stages.map(s => s.recipe))]) {
+    const n = stages.filter(s => s.recipe === r).length;
+    const b = el("button", { class: "pill", style: `--c:${color(r)}`, title: ASKS[r] || "", "aria-pressed": "false", "data-recipe": r }, el("i"), `${r} · ${n}`);
+    b.addEventListener("click", () => { state.recipe = state.recipe === r ? null : r; render(); });
+    legend.append(b);
+  }
+  const roster = document.getElementById("roster");
+  for (const [id, e] of Object.entries(enemies)) {
+    const inStages = stages.filter(s => has(s, id));
+    const total = inStages.reduce((a, s) => a + s.waves.reduce((x, w) => x + w.e.filter(v => v[0] === id).reduce((y, v) => y + v[1], 0), 0), 0);
+    const strip = el("span", { class: "presence" }, ...stages.map(s => el("i", has(s, id) ? { class: "on" } : {})));
+    const b = el("button", { class: "enemy", "data-id": id, "aria-pressed": "false", title: [e.desc, e.weak].filter(Boolean).join(" ") },
+      e.img ? el("img", { src: e.img, alt: "", loading: "lazy" }) : el("span"),
+      el("b", { text: e.name + (e.boss ? " ♛" : "") }),
+      el("small", { class: "num", text: `from stage ${inStages[0].n} · ${inStages.length} stage${inStages.length === 1 ? "" : "s"} · ${total} bodies · ${Math.round(e.hp)} hp${e.ranged ? " · ranged" : ""}` }),
+      strip);
+    b.addEventListener("click", () => { state.enemy = state.enemy === id ? null : id; render(); document.getElementById("zones").scrollIntoView({ block: "start" }); });
+    roster.append(b);
+  }
+  document.getElementById("f-walls").addEventListener("click", () => { state.walls = !state.walls; render(); });
+  document.getElementById("f-twins").addEventListener("click", () => { state.twins = !state.twins; render(); });
+  document.getElementById("f-enemy").addEventListener("click", () => { state.enemy = null; render(); });
+  document.getElementById("f-edited").addEventListener("click", () => { state.edited = !state.edited; render(); });
+  document.getElementById("zones").addEventListener("click", e => {
+    const a = e.target.closest("a[data-jump]");
+    if (a) { e.preventDefault(); jump(Number(a.dataset.jump)); }
+  });
+}
+render();
+
+// The shared edit store. The page works as a read-only explorer without it.
+(async () => {
+  const store = await (window.claude?.use ? window.claude.use("db") : null);
+  if (!store) return status("Editing is not available in this view. Open the page signed in to claude.ai to edit stages.");
+  db = store;
+  const timer = setTimeout(() => status("The edit store is slow to answer; saved edits may not be showing yet."), 10000);
+  db.collection("edits").onSnapshot(snap => {
+    clearTimeout(timer);
+    edits = {};
+    for (const doc of snap.docs) { const data = doc.data(), n = Number(data?.stage); if (n >= 1 && n <= BASE.length) edits[n] = data; }
+    rebuild();
+    // A change from someone else must not rebuild the row being typed in.
+    if (!draft) render();
+    const count = Object.keys(edits).length;
+    if (!document.getElementById("save-status").classList.contains("err") && !draft)
+      status(count ? `${count} edited stage${count === 1 ? "" : "s"} saved and waiting for Claude to apply. Use Edit on any stage to change it.` : "No edits yet. Use Edit on any stage; saved changes wait here for Claude to apply.");
+  }, e => { clearTimeout(timer); status(`The edit store could not be read: ${e?.message || e?.code}.`, true); });
+  render();
+})();
+</script>

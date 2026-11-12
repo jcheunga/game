@@ -75,5 +75,7 @@ public partial class BossRushMenu : RoyalBoard
             else Notify(message);
         }, Kind.Gold, ready, locked ? "Defeat the King's Road boss to unlock boss rush" : ready ? "Start the rush with your warband" : "Choose a warband first", size: 20);
         NoticeAt(new Rect2(right.Position.X, right.End.Y - 36, right.Size.X, 30));
+        // A phone has no hover, so the reason the start button is greyed out is written on the board.
+        if (!ready) Notify(locked ? "Win stage 10 to unlock boss rush." : "Choose a warband to start the rush.");
     }
 }

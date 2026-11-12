@@ -58,6 +58,18 @@ public partial class UiReviewSmoke
 
         // A fresh caravan: empty slots, no guild, no friends, nothing claimed.
         foreach (var path in screens) await Look(await Show(path), System.IO.Path.GetFileNameWithoutExtension(path) + "-fresh");
+        // The hub on day one: most activities are locked, and each locked card says when it opens.
+        foreach (var tab in new[] { "Adventure", "Caravan", "Community" })
+        {
+            menu.CloseHomeModal(); menu.OpenHomeDestination("more"); await Wait(.35);
+            var hub = Walk(menu).OfType<CaravanHub>().Single();
+            var button = Walk(hub).OfType<RoyalButton>().FirstOrDefault(b => b.IsVisibleInTree() && (b.Text == tab || b.AccessibilityName == tab));
+            if (button != null) { await TapModal(button); await Wait(.3); }
+            await Capture("hub-fresh-" + tab); AuditText("Boards / hub " + tab);
+        }
+        var lockedCards = Walk(menu).OfType<CaravanHub>().SelectMany(h => Walk(h).OfType<RoyalButton>()).Count(b => b.Disabled);
+        Check(lockedCards > 0, "A new player's hub has locked activities");
+        menu.CloseHomeModal();
 
         // A caravan in the middle of the campaign.
         var fixture = state.BuildSaveData();

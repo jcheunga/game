@@ -58,7 +58,13 @@ public partial class CaravanHub : RoyalScreen
         }
     }
 
-    private readonly record struct Activity(string Title, string Art, string Icon, Action Open, string Locked = null);
+    private readonly record struct Activity(string Title, string Art, string Icon, Action Open, string Locked = null, string Badge = null);
+
+    // Activities open a few at a time as the campaign goes on, so a new player isn't handed seventeen doors on the
+    // first day. A locked card says when it opens (a phone has no hover for the tooltip).
+    private static Activity Gated(int stage, string title, string art, string icon, Action open) =>
+        GameState.Instance.HighestUnlockedStage > stage ? new(title, art, icon, open)
+            : new(title, art, icon, open, $"Win stage {stage} to unlock {title.ToLowerInvariant()}", $"After stage {stage}");
 
     private IEnumerable<Activity> Activities()
     {
@@ -67,20 +73,19 @@ public partial class CaravanHub : RoyalScreen
         switch (_section)
         {
             case 0:
-                yield return new("Endless", "activity-endless", "hubicon-endless", router.GoToEndless);
-                yield return new("Tower", "activity-tower", "hubicon-tower", router.GoToTower);
-                yield return new("Bounties", "activity-bounties", "hubicon-bounties", router.GoToBounty);
-                yield return new("Boss rush", "activity-bossrush", "hubicon-bossrush", router.GoToBossRush,
-                    state.HighestUnlockedStage<=10?"Defeat the King's Road boss to unlock boss rush":null);
-                yield return new("Weekly raid", "activity-weeklyraid", "hubicon-weeklyraid", router.GoToRaid,
-                    state.HighestUnlockedStage <= CampaignPacing.StagesPerZone ? "Defeat the King's Road boss to unlock raids" : null);
-                yield return new("Event", "activity-event", "hubicon-event", router.GoToEvent, state.GetActiveEvent() == null ? $"Next event {SeasonalEventCatalog.GetNextEvent(DateTime.UtcNow).Start:d MMM}" : null);
+                yield return Gated(5, "Endless", "activity-endless", "hubicon-endless", router.GoToEndless);
+                yield return Gated(10, "Tower", "activity-tower", "hubicon-tower", router.GoToTower);
+                yield return Gated(3, "Bounties", "activity-bounties", "hubicon-bounties", router.GoToBounty);
+                yield return Gated(10, "Boss rush", "activity-bossrush", "hubicon-bossrush", router.GoToBossRush);
+                yield return Gated(10, "Weekly raid", "activity-weeklyraid", "hubicon-weeklyraid", router.GoToRaid);
+                var nextEvent = state.GetActiveEvent() == null ? $"Next event {SeasonalEventCatalog.GetNextEvent(DateTime.UtcNow).Start:d MMM}" : null;
+                yield return new("Event", "activity-event", "hubicon-event", router.GoToEvent, nextEvent, nextEvent);
                 break;
             case 1:
-                yield return new("Expeditions", "activity-expeditions", "hubicon-bounties", router.GoToExpeditions);
-                yield return new("Forge", "activity-forge", "icon-hammers", router.GoToForge);
+                yield return Gated(8, "Expeditions", "activity-expeditions", "hubicon-bounties", router.GoToExpeditions);
+                yield return Gated(5, "Forge", "activity-forge", "icon-hammers", router.GoToForge);
                 yield return new("Daily gifts", "activity-gifts", "hubicon-event", router.GoToLoginCalendar);
-                yield return new("Season", "activity-season", "relicicon-crown", router.GoToSeasonPass);
+                yield return Gated(5, "Season", "activity-season", "relicicon-crown", router.GoToSeasonPass);
                 yield return new("Codex", "activity-codex", "tab-adviser", router.GoToCodex);
                 yield return new("Progression", "activity-progression", "result-star", router.GoToProgression);
                 yield return new("Store", "activity-store", "relicicon-talisman", router.GoToCashShop);
@@ -89,12 +94,13 @@ public partial class CaravanHub : RoyalScreen
                         "Restart campaign progression for prestige rewards.", "Prestige", () => { GameState.Instance.TryPrestige(out _); SceneRouter.Instance.ReloadHome(); }));
                 break;
             default:
-                yield return new("Warband guild", "activity-guild", "hubtab-community", router.GoToGuild);
+                yield return Gated(10, "Warband guild", "activity-guild", "hubtab-community", router.GoToGuild);
                 yield return new("Friends", "activity-friends", "icon-profile", router.GoToFriends);
-                yield return new("Challenges", "activity-challenges", "hubicon-weeklyraid", router.GoToMultiplayer);
+                yield return Gated(6, "Challenges", "activity-challenges", "hubicon-weeklyraid", router.GoToMultiplayer);
                 yield return new("Arena", "activity-arena", "hubicon-endless", router.GoToArena,
-                    state.HighestUnlockedStage < ArenaCatalog.MinRequiredStage ? $"Win stage {ArenaCatalog.MinRequiredStage - 1} or higher to unlock the arena" : null);
-                yield return new("Rankings", "activity-rankings", "relicicon-crown", router.GoToLeaderboard);
+                    state.HighestUnlockedStage < ArenaCatalog.MinRequiredStage ? $"Win stage {ArenaCatalog.MinRequiredStage - 1} or higher to unlock the arena" : null,
+                    $"After stage {ArenaCatalog.MinRequiredStage - 1}");
+                yield return Gated(5, "Rankings", "activity-rankings", "relicicon-crown", router.GoToLeaderboard);
                 break;
         }
     }
@@ -180,17 +186,21 @@ public partial class CaravanHub : RoyalScreen
         title.Position = new Vector2(78, bar.Position.Y + 37 - title.Baseline);
         card.AddChild(title);
         card.AddChild(RoyalKit.Image("hub-chevron", new Rect2(w - 36, bar.Position.Y + 10, 19, 33), locked ? new Color(.6f, .6f, .6f) : null));
-        if (activity.Locked == "In development")
+        var badgeText = activity.Locked == "In development" ? activity.Locked : locked ? activity.Badge : null;
+        if (badgeText != null)
         {
             var badge = spec.Rect("card.bossrush.badge");
             var at = new Rect2(badge.Position - spec.Rect("card.bossrush").Position, badge.Size);
-            var origin = spec.Rect("card.bossrush").Position;
+            // The concept's badge was measured on a three-across card; on narrower cards it is centred instead.
+            var slide = (w - at.Size.X) / 2 - at.Position.X;
+            at.Position += new Vector2(slide, 0);
+            var origin = spec.Rect("card.bossrush").Position - new Vector2(slide, 0);
             var plate = new Panel { Position = at.Position, Size = at.Size, MouseFilter = MouseFilterEnum.Ignore };
             plate.AddThemeStyleboxOverride("panel", RoyalKit.Slice("hub-badge", 10));
             card.AddChild(plate);
             var icon = spec.Rect("card.bossrush.badge.icon");
-            card.AddChild(RoyalKit.Image("icon-tools", new Rect2(icon.Position - origin, icon.Size)));
-            var label = spec.Label("card.bossrush.badge.label", "In development", 180);
+            card.AddChild(RoyalKit.Image(badgeText == "In development" ? "icon-tools" : "icon-lock-small", new Rect2(icon.Position - origin, icon.Size)));
+            var label = spec.Label("card.bossrush.badge.label", badgeText, 180);
             label.Position -= origin;
             card.AddChild(label);
         }

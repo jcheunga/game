@@ -48,6 +48,12 @@ BOSS_SHARE = 0.75
 FINAL_CAP_FROM = 71
 FINAL_CAP_SHARES = {"leader": 0.4, "midboss": 0.65, "boss": 0.75}
 RAMP_FROM, RAMP_TO = 3, 20
+# Each zone climbs (12 November 2026): the three leaders after a zone boss take 70%, 80% and 90% of the leader share,
+# so a zone opens with a breather and reaches full strength by its fourth stage. Before FINAL_CAP_FROM the share can't
+# go above 0.75 (see above), so this eases those three stages rather than moving strength later. From FINAL_CAP_FROM
+# the leaders' 0.4 becomes a climb from 0.28 on the zone's first stage to 0.52 on its ninth, the same on average.
+ZONE_OPENING = {1: 0.7, 2: 0.8, 3: 0.9}
+FINAL_CLIMB = (0.28, 0.52)
 LOWEST = -0.5
 OUTLIER = 0.6
 # Stages that field a boss (slot 10 in every zone, slot 5 where the zone has a mid-boss).
@@ -58,7 +64,11 @@ BOSS_STAGES = {s["StageNumber"] for s in json.loads((ROOT / "data/stages.json").
 # 25, 30, 80, 85 and 100) went when the waves were redesigned on 2026-11-05. Stage 2 fitted 0.688 between
 # neighbours at 0.188: the playthrough's new player (two level-1 troops) lost it three times and replayed stage 1
 # eleven times, and so did the spender. At 0.188 it is won first try; 0.35 still lost once.
-PLAYTEST = {2: 0.188}
+# Stages 1 and 3 fitted 0.406 and 0.25 on 12 November (they were 0.188, with the same waves: two seeds of noise); the
+# opening three stay at the strength the playthrough's new player is known to win first try.
+# Stage 85's cliff in the 12 November playthroughs was not a strength problem: Shades (stealth, wagon damage) had
+# been cast as zone 9 rank-fillers and broke the wagon in 45 seconds. They were taken out of the fodder instead.
+PLAYTEST = {1: 0.188, 2: 0.188, 3: 0.188}
 # Leaders and mid-bosses stop at this strength (enemy health ×3.25): fits above it mostly hit the search ceiling, and
 # the playthrough found cliffs up there (a squad fitted to win loses every time a little past it).
 MAX_STRENGTH = 2.25
@@ -99,6 +109,8 @@ def main():
         kind = "boss" if boss and slot == 10 else "midboss" if boss else "leader"
         final_cap = stage >= FINAL_CAP_FROM
         share = FINAL_CAP_SHARES[kind] if final_cap else {"boss": BOSS_SHARE, "midboss": MIDBOSS_SHARE, "leader": LEADER_SHARE}[kind]
+        if kind == "leader":
+            share = FINAL_CLIMB[0] + (FINAL_CLIMB[1] - FINAL_CLIMB[0]) * (slot - 1) / 8 if final_cap else share * ZONE_OPENING.get(slot, 1.0)
         ramp = min(1.0, max(0.0, (stage - RAMP_FROM) / (RAMP_TO - RAMP_FROM)))
         target = lag + share * ramp * (cap - lag) + (LEADER_OFFSET * ramp if slot not in (5, 10) else 0.0)
         if not boss:

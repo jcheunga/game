@@ -6360,7 +6360,7 @@ public partial class BattleController : Node2D
 				GameState.Instance.ApplyArenaResult(false, GameState.Instance.SelectedArenaOpponent.ArenaRating);
 			}
 			if (IsCampaignMode) GameState.Instance.ApplyDefeat(_stage);
-			PresentResult(false, "Defeat");
+			PresentResult(false, "Defeat", IsCampaignMode ? DefeatProgress() : "");
 			SetStatus("The war wagon was overrun. Regroup.");
 		}
 
@@ -6476,6 +6476,27 @@ public partial class BattleController : Node2D
 		}
 		_battleEnded = true;
 		SceneRouter.Instance.GoToMap();
+	}
+
+	// The most damage done to each stage's gate in a lost battle since the game started, so a defeat can say whether
+	// this try came closer than the last.
+	private static readonly System.Collections.Generic.Dictionary<int, float> ClosestDefeat = new();
+
+	/// <summary>What a lost campaign battle achieved: how far the enemy gate was broken and how many foes fell.</summary>
+	private string DefeatProgress()
+	{
+		var broken = _enemyBaseMaxHealth > 0f ? Mathf.Clamp(1f - _enemyBaseHealth / _enemyBaseMaxHealth, 0f, 1f) : 0f;
+		var closer = ClosestDefeat.TryGetValue(_stage, out var best) && broken > best + .005f;
+		if (!ClosestDefeat.ContainsKey(_stage) || broken > best) ClosestDefeat[_stage] = broken;
+		var gate = broken < .005f ? "The enemy gate stands untouched" : $"Enemy gate {Mathf.RoundToInt(broken * 100f)}% broken";
+		return $"{gate} · {_enemyDefeats} foes slain{(closer ? " · your closest yet" : "")}";
+	}
+
+	/// <summary>After a campaign win, the stage to march on to: the next one in the same zone, once it is open.</summary>
+	private int NextCampaignStage()
+	{
+		var next = _stage + 1;
+		return IsCampaignMode && CampaignPacing.Zone(next) == CampaignPacing.Zone(_stage) && next <= GameState.Instance.HighestUnlockedStage ? next : 0;
 	}
 
 	private void HandleEndPanelPrimaryAction()

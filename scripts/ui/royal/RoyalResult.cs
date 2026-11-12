@@ -15,6 +15,7 @@ public partial class RoyalResult : Control
     public int Stars;
     public IReadOnlyList<BattleReward> Rewards = Array.Empty<BattleReward>();
     public string LeaveText = MapNavigation.Caption, RetryText = "Restart";
+    public string RetryIcon = "icon-restart";
     public int RetryFoodCost;
     public Action Leave, Retry;
     /// <summary>When set, the gold tile offers to pay the win's gold again for a rewarded ad; returns whether it did.</summary>
@@ -158,7 +159,7 @@ public partial class RoyalResult : Control
         RetryButton = RoyalButton.Over(spec.Rect("button.restart"), RetryText, () => Retry?.Invoke(), 8);
         var retry = RoyalText.Caps(RetryText, ActionSize, new Color("fff1d0"), 700);
         var cost = RetryFoodCost > 0 ? RoyalText.Caps($"{RetryFoodCost} food", 18, new Color("f3d48a"), 700) : null;
-        RetryButton.Arrange(retry, RoyalKit.Texture("icon-restart"), new Vector2(28, 28), cost, RoyalKit.Texture("icon-wheat"), new Vector2(38, 32));
+        RetryButton.Arrange(retry, RoyalKit.Texture(RetryIcon), new Vector2(28, 28), cost, RoyalKit.Texture("icon-wheat"), new Vector2(38, 32));
         canvas.AddChild(RetryButton);
     }
 

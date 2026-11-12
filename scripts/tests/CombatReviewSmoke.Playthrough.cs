@@ -30,6 +30,8 @@ public partial class CombatReviewSmoke
         public int MaxGrindPerStage = 300;
         // 0 carries the usual squad; above that, the alternative lineup a stuck player is trying (SimLineup).
         public int Lineup, LineupSwaps;
+        // The stage the last grind ended on (0 = none yet for this wall): the next grind starts there.
+        public int FarmStage;
     }
 
     private static readonly string[] SimWagonPriority =
@@ -125,6 +127,7 @@ public partial class CombatReviewSmoke
             sim.FirstClears++;
             var lineup = sim.Lineup;
             sim.Lineup = 0;
+            sim.FarmStage = 0;
             SimOpenAtlas(sim, stage);
             var row = new
             {
@@ -189,7 +192,9 @@ public partial class CombatReviewSmoke
         var step = SimUpgradeOptions(state).Select(o => o.Cost).OrderBy(c => c).Take(5).Sum();
         var spentAtStart = SimSpent(sim);
         var replays = 0;
-        var farm = stage - 1;
+        // A player goes back to the stage they last farmed, not to the newest one every time: starting each grind at
+        // stage - 1 lost twice at every stage on the way down again (a run stuck at 95 lost 270 of 300 replays).
+        var farm = sim.FarmStage > 0 ? Math.Min(sim.FarmStage, stage - 1) : stage - 1;
         var farmLosses = 0;
         bool Done() => step > 0 ? SimSpent(sim) - spentAtStart >= step : (state.UnitLevelCap, state.WagonRankCap) != capBefore;
         while (farm >= 1 && replays < 15 && !(replays >= 3 && Done()))
@@ -198,6 +203,7 @@ public partial class CombatReviewSmoke
             replays++;
             sim.Replays++;
             if (!won && ++farmLosses >= 2) { farm--; farmLosses = 0; }
+            sim.FarmStage = Math.Max(farm, 1);
             SimShop(sim, stage);
         }
         return replays;

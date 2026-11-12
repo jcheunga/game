@@ -101,6 +101,17 @@ public partial class BattleController
             RetryFoodCost = IsCampaignMode ? GameState.Instance.GetStageEntryFoodCost(_stage) : 0,
             Leave = HandleEndPanelSecondaryAction, Retry = HandleEndPanelPrimaryAction
         };
+        // After a campaign win the right-hand button marches on: it opens the map on the next stage of the zone (the
+        // map still does the travelling and collects the tile). A zone's last stage and replays of the newest stage
+        // keep Restart.
+        var next = won ? NextCampaignStage() : 0;
+        if (next > 0 && GameState.Instance.CanVisitAdventureSite(AdventureMapCatalog.Leader(next).Id))
+        {
+            _royalResult.RetryText = "March on";
+            _royalResult.RetryIcon = "icon-arrow-right";
+            _royalResult.RetryFoodCost = 0;
+            _royalResult.Retry = () => { if (!_battleEnded) return; GameState.Instance.SetSelectedStage(next); SceneRouter.Instance.GoToMap(); };
+        }
         var gold = rewards.Where(reward => reward.Kind == "gold").Sum(reward => reward.Amount);
         if (won && IsCampaignMode && gold > 0 && RewardedAds.Ready && GameState.Instance.AdRewardsLeftToday(GameState.AdDoubleGold) > 0)
             _royalResult.DoubleGold = async () => await RewardedAds.ShowAsync() && GameState.Instance.TryClaimAdReward(GameState.AdDoubleGold, gold, out _);

@@ -32,12 +32,34 @@ boss stages (slot 10, and slot 5 where a zone has a mid-boss) are commanders.
 | Ambush | Quiet road, Stragglers, Ambush!, Closing jaws | Two light waves, then a large mixed surge |
 | Elite | Picked men, Champions, Heavy guard, Elite cadre | Few, tough veterans; focus fire |
 | Long march | Seven columns nine seconds apart | Steady pressure; pace the courage |
-| Commander | Skirmishers, Honor guard, Bodyguard, "‹Boss› takes the field" | The boss and its escort |
+| Commander | A different fight for each boss (below) | The boss and its escort |
 
 Each stage first casts its foes: one per role (two of the light, fast and ranged roles), weighted towards the zone's
 own regional foes and the newest arrivals. Every wave draws on that cast, so a stage is known by four to ten foes
 rather than everything met so far. Counts grow with the zone: about 10–20 foes a stage in the first zone, 30–50 in
 the last.
+
+**Zone casts (12 November 2026).** Until then Grave Rats were in 49 stages and Risen in 46: the campaign has only
+five light rank-fillers and every recipe leans on them. Now each zone has its own two or three (`ZONE_FODDER`, with
+light fast foes standing in: Ghouls in Emberforge and the Steppe, Tunnelers in Thornwall and the Mire), and every other foe is cast only for four zones from the one it debuts in (`CAST_ZONES`). The most-used
+foe is now in 39 stages. A stand-in must not be a wagon-killer: Shades as Gloamwood fodder broke the wagon in 45
+seconds on stage 85 and were taken out the same day.
+
+**Commanders.** Each of the 14 boss stages has its own plan (`BOSS_PLANS`): the Grave Lord keeps the classic escort
+and arrives last; the Tidecaller comes in second behind a swarm while the tides keep coming; the Harrow Tidemaster
+stands behind a harpoon line; the Iron Warden leads from the first wave; the Plague Archon hides in a swarm; the
+Plague Monarch brings its court and a last wave after it; the Thornwall Chieftain rides the first raid; the Bone
+Pontiff closes a long procession; the Reliquary Tyrant shelters behind engines; the Mire Behemoth sets out alone at
+the start and the rest overtake it; the Steppe Warlord charges in the third wave of cavalry; the Gloamwood Witch
+springs an ambush; the Dread Sovereign fields only veterans; the Ashen Regent brings seven waves and a last host.
+
+**Zone rules.** From the second zone, a zone's third, seventh and ninth stages carry its rule, a stage modifier
+(`ZONE_RULES`): more foes at once in Saltwake, a burning strip in Emberforge, slower courage in the Ashen Ward,
+reflected damage in Thornwall, rising dead in the Basilica, a weaker wagon hull in the Mire, faster waves on the
+Steppe, a tougher gate in Gloamwood, stronger foes in the Citadel. The stage after each zone boss is a breather with
+a rule in the player's favour (faster courage, protected fresh troops or a tougher hull, in turn). The briefing's
+last sentence names the rule. The strength fit runs with the rules on, so they change how a stage plays, not how
+hard it is overall.
 
 **The Reckoning.** From stage 4, a leader's last wave is a large mixed surge 110 seconds in (plus five a zone). Waves
 come in order and wait for a crowded field, so it arrives only for a defence that hasn't broken the gate by then,

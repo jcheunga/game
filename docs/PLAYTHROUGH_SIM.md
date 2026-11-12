@@ -40,7 +40,9 @@ and the check bands `--expect-replays=a-b`, `--expect-battles=a-b`, `--expect-do
   commander. A person plays better; treat the results as a floor.
 - **Losing:** two quick retries the first time, then a grind before every further try: replay the last beaten stage
   until the replays have bought about a level of training for the whole squad (or lifted a level cap when nothing
-  under the caps is left), three to fifteen replays.
+  under the caps is left), three to fifteen replays. Two losses at the farmed stage move the farm one stage back, and
+  the next grind for the same wall starts where the last one ended (until 12 November 2026 every grind started again
+  at the last beaten stage, and a run stuck at stage 95 lost 270 of 300 replays walking back down each time).
   With troops at the last level (20) and nothing left to buy, grinding can't make the squad stronger, so a stuck
   player tries another lineup instead: the next of the lineups drawn from the three newest melee troops, three newest
   ranged and two newest supports, recruiting and training what it needs (`PLAYTHROUGH_LINEUP` lines). Without it,
@@ -181,6 +183,32 @@ profiles win it first try; 0.35 still lost once. The grind it used to force move
 belongs: stage 10 is back to about 40 replays for the free player (it was 6 in the run that had already ground
 stage 1). Tower floor 2 is built on stage 2 and refitted to the same value it had (0.010, the original curve); no
 event stage uses stage 2.
+
+## The fun pass (12 November 2026)
+
+The waves were redesigned for variety (docs/CAMPAIGN_WAVES.md: zone casts, one fight per commander, zone rules,
+breather stages), so every stage was refitted. What changed in the fit and what the playthroughs showed:
+
+- **Zone climb.** `ZONE_OPENING` in `campaign_fit.py` eases a zone's first three stages (70%, 80%, 90% of the leader
+  share) and `FINAL_CLIMB` raises leaders from stage 71 by slot (0.28 to 0.52), so each zone starts gentler than the
+  last one ended and climbs to its commander. The 75% ceiling stands.
+- **Commanders.** The first fit found the Steppe Warlord (80) unwinnable for a squad at its caps and the Ashen Regent
+  (100) close to it; both escorts were thinned and refitted.
+- **Shades are not rank-fillers.** Zone 9 first used the Shade (stealth, damages the wagon) as fodder. Stage 85 opened
+  with two and the wagon broke in 45 seconds whatever the squad: free players lost it 18–27 times (136–312 replays,
+  one run stopped there) and the spender 13. Lowering its strength to 0 did not help. With Grave Rats in the fodder
+  instead, stage 85 fits at a normal strength and takes 7–9 tries. Lesson: a loss in under a minute with the wagon at
+  zero is a wave problem, not a strength problem.
+- **The sim grinds where it last farmed** (see "Losing"), which removed a false wall at stage 95.
+
+| Run | Battles | Grind replays | Days at 1 h/day | Money |
+| --- | --- | --- | --- | --- |
+| Free, two runs | 557–666 | 379–478 | 64–76 | $0 |
+| Spender | 126 | 0 | 8 | $79.94 |
+
+The free player's hardest stops are now stage 30 (35–45 replays), 62–66 (40–60), 85–90 (up to 90 each; the Gloamwood
+Witch took 16 tries in one run). Fit warning that remains: the lagging player loses stages 61, 75 and 92 even at the
+lowest strength, so those need some training whatever the table says.
 
 ## Retuning
 

@@ -10,6 +10,7 @@ public sealed class StageHazardDefinition
     public float Interval { get; set; } = 8f;
     public float StartTime { get; set; } = 8f;
     public float WarningDuration { get; set; } = 1.6f;
+    /// <summary>Percent of maximum health taken from everything in the ring (a quarter of it from commanders).</summary>
     public float Damage { get; set; } = 14f;
     public string ColorHex { get; set; } = "ff7b00";
 

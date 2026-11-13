@@ -135,6 +135,18 @@ ZONE_FODDER = [
     ['enemy_bog_spore', 'enemy_plague_leech', 'enemy_grave_rat'], ['enemy_walker', 'enemy_splitter', 'enemy_bog_spore'],
 ]
 CAST_ZONES = 4
+RUSH_SHARE = .25
+
+# Battlefield hazards of the last four zones, on their second, sixth and eighth stages: (label, colour, briefing
+# sentence). Each strike takes 18% of maximum health from everything in its ring, friend and foe
+# (BattleController.Strikes.cs); the campaign strength is fitted with them on.
+ZONE_HAZARDS = {
+    6: ('Bog gas', '8ac84a', 'Bog gas bursts from marked rings.'),
+    7: ('Grass fire', 'ff8a3a', 'Grass fires flare in marked rings.'),
+    8: ('Witch-light', '9a7ae8', 'Witch-lights burst in marked rings.'),
+    9: ('Falling ash', 'ff6a2a', 'Burning ash falls in marked rings.'),
+}
+HAZARD_SLOTS = (2, 6, 8)
 
 # One rule a zone (after the first), on its third, seventh and ninth stages: (modifier, value, briefing sentence).
 # The modifiers are StageModifiers' (scripts/core/StageModifiers.cs); the campaign strength is fitted with them on.
@@ -334,6 +346,17 @@ def main():
             out.append({'Label': w['label'], 'TriggerTime': round(time, 1), 'SpawnInterval': interval, 'Area': area,
                         'SpawnXRatio': 1, 'AdvanceTriggerXRatio': -1 if i == 0 else round(min(.82, .2 + i * .14), 2),
                         'Entries': entries(w['ids'])})
+        if boss is None:
+            # Fast foes that damage the wagon may bring no more than RUSH_SHARE of its health (one swing each) in the
+            # first 40 seconds: beyond that the wagon breaks before a line can be fielded, whatever the squad.
+            def rush():
+                return [(units[e['UnitId']]['BaseDamage'], w, e) for w in out if w['TriggerTime'] < 40 for e in w['Entries']
+                        if units[e['UnitId']].get('DamagesStructures') and units[e['UnitId']]['Speed'] >= 30]
+            while sum(d * e['Count'] for d, w, e in rush()) > RUSH_SHARE * stage['PlayerBaseHealth']:
+                d, w, e = max(rush(), key=lambda x: (x[0] * x[2]['Count'], x[1]['TriggerTime']))
+                if e['Count'] > 1: e['Count'] -= 1
+                elif len(w['Entries']) > 1: w['Entries'].remove(e)
+                else: break
         stage['Waves'] = out
         # The zone's rule on three of its leaders, and a breather after each zone boss.
         rule = None
@@ -342,6 +365,12 @@ def main():
         elif zone > 0 and slot == 1:
             rule = BREATHERS[(zone - 1) % len(BREATHERS)]
         stage['Modifiers'] = [{'Type': rule[0], 'Value': rule[1]}] if rule else []
+        # A hazard on three stages of each late zone: two spots on the road that erupt in turn.
+        hazard = ZONE_HAZARDS.get(zone) if slot in HAZARD_SLOTS and boss is None and not rule else None
+        stage['Hazards'] = [{'Type': 'strike', 'Label': hazard[0], 'XRatio': x, 'YRatio': .5, 'Radius': 56, 'Interval': 14,
+                             'StartTime': start, 'WarningDuration': 1.8, 'Damage': 18, 'ColorHex': hazard[1]}
+                            for x, start in ((.36, 12), (.62, 19))] if hazard else []
+        if hazard: rule = (None, None, hazard[2])
         if rule:
             # The rule takes the place of the recipe's second sentence (the briefing has room for about 120 letters).
             text = text.replace(' Break the gate before the Reckoning.', '')
@@ -352,7 +381,7 @@ def main():
         total = sum(e['Count'] for w in out for e in w['Entries'])
         summary.append(f"{n:3} {recipe:10} waves {len(out)} foes {total:3} kinds {len({e['UnitId'] for w in out for e in w['Entries']}):2}"
                        f"{'  new: ' + ', '.join(names[u] for u in newcomers) if newcomers else ''}"
-                       f"{'  rule: ' + rule[0] if rule else ''}")
+                       f"{'  rule: ' + rule[0] if rule and rule[0] else ''}{'  hazard: ' + hazard[0] if hazard else ''}")
     for uid, u in units.items():
         if u.get('Side') == 'Enemy' and not u.get('IsBoss'):
             u['CampaignDebutStage'] = debut.get(uid, 101)

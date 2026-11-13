@@ -49,6 +49,8 @@ public sealed class UnitDefinition
     public float AuraAttackDamageScale { get; set; } = 1f;
     public float AuraSpeedScale { get; set; } = 1f;
     public string SpecialAbilityId { get; set; } = "";
+    /// <summary>A commander's own move (BattleController.Strikes.cs), used with every other special call.</summary>
+    public string SignatureAbilityId { get; set; } = "";
     public float SpecialCooldown { get; set; }
     public float SpecialCourageGainScale { get; set; } = 1f;
     public float SpecialDeployCooldownPenalty { get; set; }

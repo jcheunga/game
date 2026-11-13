@@ -45,6 +45,8 @@ public partial class UiReviewSmoke : Node
             { await ReviewBattleCleanup(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--battle-lighting"))
             { await ReviewBattleLighting(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--commanders"))
+            { await ReviewCommanders(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--battle-polish"))
             { await ReviewBattlePolish(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--home-map"))

@@ -210,6 +210,30 @@ The free player's hardest stops are now stage 30 (35–45 replays), 62–66 (40�
 Witch took 16 tries in one run). Fit warning that remains: the lagging player loses stages 61, 75 and 92 even at the
 lowest strength, so those need some training whatever the table says.
 
+## Commanders, hazards and the grudge bounty (13 November 2026)
+
+- **Wagon rush budget.** Stage 75 was the same fault as stage 85: seven Bone Lancers in 36 seconds broke the wagon
+  before a line could stand (the lagging player lost in 34–44 seconds at any strength). `RUSH_SHARE` in
+  `design_waves.py` now caps what fast wagon-damaging foes bring in the first 40 seconds at a quarter of the wagon's
+  health; it trimmed stages 75 and 83. Stage 75's fit went from unwinnable to −0.38 (lag) and 0.03 (cap). Stages 61
+  and 92 still beat the lagging player at the lowest strength, but the playthrough's free player takes them in four
+  tries or fewer: they ask for training, not a redesign.
+- **Signature moves** (docs/CAMPAIGN_WAVES.md) made some commanders harder to fit: stage 20 fell from 1.00 to 0.75 at
+  the cap, stage 70 from 0.44 to 0.19, and the Steppe Warlord's frenzy had to be toned down (attack ×1.2, speed ×1.25)
+  to keep stage 80 off the floor (cap −0.34).
+- **Hazards** hit both sides, so most hazard stages fitted the same or stronger (stage 88: −0.03 to 0.56 at the cap).
+- **Grudge bounty** (`GameState.Grudge.cs`): each loss on an uncleared campaign stage adds 10% gold to replays of
+  cleared stages, up to 60%, until that stage is won. The wall is as strong as before; the grind in front of it is
+  shorter the more often the player has lost. `GrudgeGoldCap` is the one number to turn if the campaign should take
+  longer again.
+
+| Run | Battles | Grind replays | Days at 1 h/day | Money |
+| --- | --- | --- | --- | --- |
+| Free, two runs | 402–534 | 239–337 | 34–57 | $0 |
+| Spender | 129 | 0 | 9 | $67.94 |
+
+The Gloamwood Witch (stage 90) is the hardest stop: 6 tries in one free run, 20 tries and 135 replays in the other.
+
 ## Retuning
 
 After changing stages, troops, prices or the level curve:

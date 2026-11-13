@@ -843,9 +843,10 @@ public partial class GameState : Node
 		var diff = GetDifficulty();
 		rewardGold = Godot.Mathf.RoundToInt(Math.Max(0, rewardGold) * diff.GoldRewardScale * GetPrestigeGoldBonus());
 		rewardFood = Godot.Mathf.RoundToInt(Math.Max(0, rewardFood) * diff.FoodRewardScale * GetPrestigeFoodBonus());
+		var firstClear = CurrentBattleMode == BattleRunMode.Campaign && GetStageStars(stage) <= 0;
+		if (CurrentBattleMode == BattleRunMode.Campaign) rewardGold = SettleGrudge(stage, firstClear, rewardGold);
 		Gold += rewardGold;
 		Food += rewardFood;
-		var firstClear = CurrentBattleMode == BattleRunMode.Campaign && GetStageStars(stage) <= 0;
 		if (firstClear) { Food += CampaignFirstClearFood; rewardFood += CampaignFirstClearFood; }
 		var bestStars = RecordStageStars(stage, starsEarned);
 		if (CurrentBattleMode == BattleRunMode.Campaign) RevealAdventureStageVictory(stage);
@@ -874,6 +875,7 @@ public partial class GameState : Node
 
 	public void ApplyDefeat(int stage)
 	{
+		if (CurrentBattleMode == BattleRunMode.Campaign) RecordGrudge(stage);
 		var momentumSummary = BreakCampaignMomentum();
 		LastResultMessage = $"Stage {stage} failed. The war wagon line was overrun." +
 			(string.IsNullOrWhiteSpace(momentumSummary) ? "" : $" {momentumSummary}");
@@ -4221,7 +4223,7 @@ public partial class GameState : Node
 		Gold = DefaultGold;
 		Food = DefaultFood;
 		FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-		_foodRefillDay = ""; _foodRefillsOnDay = 0;
+		_foodRefillDay = ""; _foodRefillsOnDay = 0; _grudgeStage = 0; _grudgeLosses = 0;
 		ResetAdRewards();
 		ResetAdventureProgress();
 		HighestUnlockedStage = DefaultUnlockedStage;
@@ -4389,6 +4391,7 @@ public partial class GameState : Node
 		FoodRechargedAtUnixSeconds = saved.FoodRechargedAtUnixSeconds;
 		_foodRefillDay = saved.FoodRefillDay?.Trim() ?? "";
 		_foodRefillsOnDay = Math.Max(0, saved.FoodRefillsOnDay);
+		_grudgeStage = Math.Max(0, saved.GrudgeStage); _grudgeLosses = Math.Max(0, saved.GrudgeLosses);
 		LoadAdRewards(saved);
 		HighestUnlockedStage = saved.HighestUnlockedStage;
 		LoadAdventureProgress(saved);
@@ -5131,6 +5134,7 @@ public partial class GameState : Node
 			FoodRechargedAtUnixSeconds = FoodRechargedAtUnixSeconds,
 			FoodRefillDay = _foodRefillDay,
 			FoodRefillsOnDay = _foodRefillsOnDay,
+			GrudgeStage = _grudgeStage, GrudgeLosses = _grudgeLosses,
 			HighestUnlockedStage = HighestUnlockedStage,
 			VisitedAdventureSites = _visitedAdventureSites.OrderBy(x => x).ToArray(),
 			AdventureOpenTiles = _openedAdventureTiles.OrderBy(id => id).ToArray(),

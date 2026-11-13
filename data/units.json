@@ -2633,10 +2633,11 @@
       "AttackSplashRadius": 0,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Rallies nearby enemies and calls escorts while leading the assault.",
-      "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
+      "Description": "Rallies its escorts and pulls your front line under: the Undertow ring roots whoever stands in it.",
+      "Weakness": "Watch for the ring on the ground and move or hold troops back before it lands. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "staff"
+      "PlaceholderWeapon": "staff",
+      "SignatureAbilityId": "undertow"
     },
     {
       "Id": "enemy_boss_forge",
@@ -2678,10 +2679,11 @@
       "UsesProjectile": false,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Rallies nearby enemies and calls escorts while leading the assault.",
+      "Description": "Rallies its escorts and raises Iron skin, a shield worth a sixth of its health.",
       "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "axe"
+      "PlaceholderWeapon": "axe",
+      "SignatureAbilityId": "iron_skin"
     },
     {
       "Id": "enemy_boss_ward",
@@ -2722,11 +2724,12 @@
       "UsesProjectile": false,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Disrupts troop deployment while commanding its escorts.",
-      "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
+      "Description": "Jams your deployment and breathes plague over the ground in front of it.",
+      "Weakness": "Watch for the ring on the ground and move or hold troops back before it lands. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
       "PlaceholderWeapon": "axe",
-      "SpecialBuffAttackDamageScale": 1
+      "SpecialBuffAttackDamageScale": 1,
+      "SignatureAbilityId": "plague_breath"
     },
     {
       "Id": "enemy_boss_pass",
@@ -2768,10 +2771,11 @@
       "UsesProjectile": false,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Rallies nearby enemies and calls escorts while leading the assault.",
-      "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
+      "Description": "Rallies its escorts and slams the ground around it, wounding and rooting your line.",
+      "Weakness": "Watch for the ring on the ground and move or hold troops back before it lands. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "axe"
+      "PlaceholderWeapon": "axe",
+      "SignatureAbilityId": "ground_slam"
     },
     {
       "Id": "enemy_boss_basilica",
@@ -2815,10 +2819,11 @@
       "UsesProjectile": false,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Rallies nearby enemies and calls escorts while leading the assault.",
+      "Description": "Rallies its escorts and says a Dark mass that heals every foe near it.",
       "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "axe"
+      "PlaceholderWeapon": "axe",
+      "SignatureAbilityId": "dark_mass"
     },
     {
       "Id": "enemy_boss_mire",
@@ -2862,10 +2867,11 @@
       "UsesProjectile": false,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Rallies nearby enemies and calls escorts while leading the assault.",
-      "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
+      "Description": "Rallies its escorts and shakes a wide ring around it, throwing your troops back.",
+      "Weakness": "Watch for the ring on the ground and move or hold troops back before it lands. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "axe"
+      "PlaceholderWeapon": "axe",
+      "SignatureAbilityId": "quake"
     },
     {
       "Id": "enemy_boss_steppe",
@@ -2907,10 +2913,11 @@
       "UsesProjectile": false,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Rallies nearby enemies and calls escorts while leading the assault.",
+      "Description": "Rallies its escorts and falls into a Blood frenzy: faster and deadlier, but easier to wound.",
       "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "axe"
+      "PlaceholderWeapon": "axe",
+      "SignatureAbilityId": "blood_frenzy"
     },
     {
       "Id": "enemy_boss_verge",
@@ -2953,10 +2960,11 @@
       "AttackSplashRadius": 0,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Raises reinforcements to rebuild its line during the battle.",
-      "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
+      "Description": "Raises the fallen and puts your two hardest hitters to sleep until they are struck.",
+      "Weakness": "Watch for the ring on the ground and move or hold troops back before it lands. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "staff"
+      "PlaceholderWeapon": "staff",
+      "SignatureAbilityId": "slumber"
     },
     {
       "Id": "enemy_boss_citadel",
@@ -2998,10 +3006,11 @@
       "UsesProjectile": false,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Rallies nearby enemies and calls escorts while leading the assault.",
+      "Description": "Rallies its escorts and spreads Dread: troops near it strike weaker and slower.",
       "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "axe"
+      "PlaceholderWeapon": "axe",
+      "SignatureAbilityId": "dread"
     },
     {
       "Id": "enemy_boss_reliquary",
@@ -3042,11 +3051,12 @@
       "DamageType": "magical",
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Raises reinforcements to rebuild its line during the battle.",
+      "Description": "Raises the fallen and wraps the foes near it in a Bone ward shield.",
       "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
       "PlaceholderWeapon": "staff",
-      "SpecialBuffAttackDamageScale": 1
+      "SpecialBuffAttackDamageScale": 1,
+      "SignatureAbilityId": "bone_ward"
     },
     {
       "Id": "enemy_boss_ashen_regent",
@@ -3091,10 +3101,11 @@
       "UsesProjectile": false,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Rallies nearby enemies and calls escorts while leading the assault.",
-      "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
+      "Description": "Rallies its escorts and calls Ashfall on your line: burning rings under every other troop.",
+      "Weakness": "Watch for the ring on the ground and move or hold troops back before it lands. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "axe"
+      "PlaceholderWeapon": "axe",
+      "SignatureAbilityId": "ashfall"
     },
     {
       "Id": "enemy_boss_tidemaster",
@@ -3138,10 +3149,11 @@
       "DamageType": "magical",
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Rallies nearby enemies and calls escorts while leading the assault.",
-      "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
+      "Description": "Rallies its escorts and shells your three foremost troops with a Tide barrage.",
+      "Weakness": "Watch for the ring on the ground and move or hold troops back before it lands. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
-      "PlaceholderWeapon": "staff"
+      "PlaceholderWeapon": "staff",
+      "SignatureAbilityId": "barrage"
     },
     {
       "Id": "enemy_boss_plague_monarch",
@@ -3183,11 +3195,12 @@
       "UsesProjectile": false,
       "DamageReflectScale": 0,
       "ContentBehavior": "",
-      "Description": "Disrupts troop deployment while commanding its escorts.",
-      "Weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control.",
+      "Description": "Jams your deployment and seeds Pestilence rings that burn and halve healing.",
+      "Weakness": "Watch for the ring on the ground and move or hold troops back before it lands. Bosses recover quickly from control.",
       "PlaceholderVisual": false,
       "PlaceholderWeapon": "axe",
-      "SpecialBuffAttackDamageScale": 1
+      "SpecialBuffAttackDamageScale": 1,
+      "SignatureAbilityId": "pestilence"
     },
     {
       "Id": "enemy_grave_rat",

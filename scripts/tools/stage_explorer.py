@@ -81,7 +81,8 @@ def main():
         stages.append({
             "n": n, "name": s["StageName"], "zone": s["MapName"], "desc": s["Description"],
             "recipe": "Commander" if boss else RECIPES.get(s["Waves"][0]["Label"], "Other"), "s": strength,
-            "rule": ", ".join(RULES.get(m["Type"], m["Type"]) for m in s.get("Modifiers") or []), "level": s.get("EnemyLevel", 1),
+            "rule": ", ".join([RULES.get(m["Type"], m["Type"]) for m in s.get("Modifiers") or []]
+                              + sorted({"hazard: " + h["Label"].lower() for h in s.get("Hazards") or []})), "level": s.get("EnemyLevel", 1),
             "debut": s.get("NewEnemyId") or "", "boss": boss,
             "bodies": sum(counts.values()), "health": round(health), "gate": s["EnemyBaseHealth"], "waves": waves,
             "tries": max((r["attempts"] for r in runs), default=0), "grind": max((r["grind"] for r in runs), default=0),

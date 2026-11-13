@@ -10903,7 +10903,7 @@
       "MapName": "Mire of Saints",
       "TerrainId": "chapel",
       "StageName": "Drowned Chapel",
-      "Description": "First sighting: Bog Spore. A quiet road that turns into an ambush. Keep courage in reserve for the sudden surge.",
+      "Description": "First sighting: Bog Spore. A quiet road that turns into an ambush. Bog gas bursts from marked rings.",
       "RewardGold": 113,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -10924,7 +10924,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Bog gas",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "8ac84a"
+        },
+        {
+          "Type": "strike",
+          "Label": "Bog gas",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "8ac84a"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -11672,7 +11697,7 @@
       "MapName": "Mire of Saints",
       "TerrainId": "marsh",
       "StageName": "Saints' Mire",
-      "Description": "First sighting: Bloated Eel. A long march of steady columns. Pace your courage: the columns keep coming.",
+      "Description": "First sighting: Bloated Eel. A long march of steady columns. Bog gas bursts from marked rings.",
       "RewardGold": 121,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -11693,7 +11718,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Bog gas",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "8ac84a"
+        },
+        {
+          "Type": "strike",
+          "Label": "Bog gas",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "8ac84a"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -12135,7 +12185,7 @@
       "TerrainId": "ferry",
       "WeatherId": "fog",
       "StageName": "Blackwater Procession",
-      "Description": "First sighting: Drowned Colossus. Swarms of light foes on short gaps. Area spells and cheap bodies win this road.",
+      "Description": "First sighting: Drowned Colossus. Swarms of light foes on short gaps. Bog gas bursts from marked rings.",
       "RewardGold": 125,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -12156,7 +12206,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Bog gas",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "8ac84a"
+        },
+        {
+          "Type": "strike",
+          "Label": "Bog gas",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "8ac84a"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -12903,7 +12978,7 @@
       "MapName": "Sunfall Steppe",
       "TerrainId": "grassland",
       "StageName": "Ash Grass",
-      "Description": "First sighting: Dust Reaver. Few foes, every one a veteran. Focus your fire and guard your damage dealers.",
+      "Description": "First sighting: Dust Reaver. Few foes, every one a veteran. Grass fires flare in marked rings.",
       "RewardGold": 122,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -12924,7 +12999,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Grass fire",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff8a3a"
+        },
+        {
+          "Type": "strike",
+          "Label": "Grass fire",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff8a3a"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -13603,7 +13703,7 @@
           "Entries": [
             {
               "UnitId": "enemy_bone_lancer",
-              "Count": 2
+              "Count": 1
             },
             {
               "UnitId": "enemy_bloated_eel",
@@ -13623,10 +13723,6 @@
           "SpawnXRatio": 1,
           "AdvanceTriggerXRatio": 0.62,
           "Entries": [
-            {
-              "UnitId": "enemy_bone_lancer",
-              "Count": 3
-            },
             {
               "UnitId": "enemy_bloated_eel",
               "Count": 1
@@ -13692,7 +13788,7 @@
       "MapName": "Sunfall Steppe",
       "TerrainId": "waystation",
       "StageName": "Sunfall Redoubt",
-      "Description": "First sighting: War Drummer. A quiet road that turns into an ambush. Keep courage in reserve for the sudden surge.",
+      "Description": "First sighting: War Drummer. A quiet road that turns into an ambush. Grass fires flare in marked rings.",
       "RewardGold": 130,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -13713,7 +13809,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Grass fire",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff8a3a"
+        },
+        {
+          "Type": "strike",
+          "Label": "Grass fire",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff8a3a"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -14085,7 +14206,7 @@
       "TerrainId": "siegecamp",
       "WeatherId": "ashstorm",
       "StageName": "Warhorn Expanse",
-      "Description": "First sighting: Carrion Banner. The dead rise again. Cut down the summoners first, or drown in what they raise.",
+      "Description": "First sighting: Carrion Banner. The dead rise again. Grass fires flare in marked rings.",
       "RewardGold": 134,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -14106,7 +14227,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Grass fire",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff8a3a"
+        },
+        {
+          "Type": "strike",
+          "Label": "Grass fire",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff8a3a"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -14809,7 +14955,7 @@
       "MapName": "Gloamwood Verge",
       "TerrainId": "witchcircle",
       "StageName": "Witch Circle",
-      "Description": "First sighting: Mirror Wisp. The dead rise again. Cut down the summoners first, or drown in what they raise.",
+      "Description": "First sighting: Mirror Wisp. The dead rise again. Witch-lights burst in marked rings.",
       "RewardGold": 131,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -14830,7 +14976,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Witch-light",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "9a7ae8"
+        },
+        {
+          "Type": "strike",
+          "Label": "Witch-light",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "9a7ae8"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -15119,7 +15290,7 @@
           "Entries": [
             {
               "UnitId": "enemy_bloated_eel",
-              "Count": 3
+              "Count": 1
             },
             {
               "UnitId": "enemy_bone_lancer",
@@ -15596,7 +15767,7 @@
       "MapName": "Gloamwood Verge",
       "TerrainId": "grove",
       "StageName": "Snare Grove",
-      "Description": "First sighting: Dream Weaver. Few foes, every one a veteran. Focus your fire and guard your damage dealers.",
+      "Description": "First sighting: Dream Weaver. Few foes, every one a veteran. Witch-lights burst in marked rings.",
       "RewardGold": 139,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -15617,7 +15788,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Witch-light",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "9a7ae8"
+        },
+        {
+          "Type": "strike",
+          "Label": "Witch-light",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "9a7ae8"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -16017,7 +16213,7 @@
       "TerrainId": "witchcircle",
       "WeatherId": "fog",
       "StageName": "Moonless Snare",
-      "Description": "First sighting: Wicker Giant. Siege engines and sappers make for your wagon. Push out before the engines set up.",
+      "Description": "First sighting: Wicker Giant. Siege engines and sappers make for your wagon. Witch-lights burst in marked rings.",
       "RewardGold": 143,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -16038,7 +16234,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Witch-light",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "9a7ae8"
+        },
+        {
+          "Type": "strike",
+          "Label": "Witch-light",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "9a7ae8"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -16763,7 +16984,7 @@
       "TerrainId": "breachyard",
       "WeatherId": "fog",
       "StageName": "Breach Yard",
-      "Description": "First sighting: Crown Executioner. Few foes, every one a veteran. Focus your fire and guard your damage dealers.",
+      "Description": "First sighting: Crown Executioner. Few foes, every one a veteran. Burning ash falls in marked rings.",
       "RewardGold": 140,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -16784,7 +17005,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Falling ash",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff6a2a"
+        },
+        {
+          "Type": "strike",
+          "Label": "Falling ash",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff6a2a"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -17487,7 +17733,7 @@
       "MapName": "Crownfall Citadel",
       "TerrainId": "innerkeep",
       "StageName": "Siege Yard",
-      "Description": "First sighting: Soul Standard. Fast raiders dive for the wagon. Keep a screen in front and cut them down early.",
+      "Description": "First sighting: Soul Standard. Fast raiders dive for the wagon. Burning ash falls in marked rings.",
       "RewardGold": 148,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -17508,7 +17754,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Falling ash",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff6a2a"
+        },
+        {
+          "Type": "strike",
+          "Label": "Falling ash",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff6a2a"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {
@@ -17922,7 +18193,7 @@
       "MapName": "Crownfall Citadel",
       "TerrainId": "innerkeep",
       "StageName": "Crownward Wall",
-      "Description": "First sighting: Gate Breaker. A balanced host probes your line. Hold the front and save courage for its main body.",
+      "Description": "First sighting: Gate Breaker. A balanced host probes your line. Burning ash falls in marked rings.",
       "RewardGold": 152,
       "RewardFood": 0,
       "EntryFoodCost": 2,
@@ -17943,7 +18214,32 @@
       "BossWeight": 0,
       "BossSpawnStartTime": 0,
       "BonusWaveChance": 0,
-      "Hazards": [],
+      "Hazards": [
+        {
+          "Type": "strike",
+          "Label": "Falling ash",
+          "XRatio": 0.36,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 12,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff6a2a"
+        },
+        {
+          "Type": "strike",
+          "Label": "Falling ash",
+          "XRatio": 0.62,
+          "YRatio": 0.5,
+          "Radius": 56,
+          "Interval": 14,
+          "StartTime": 19,
+          "WarningDuration": 1.8,
+          "Damage": 18,
+          "ColorHex": "ff6a2a"
+        }
+      ],
       "Modifiers": [],
       "Objectives": [
         {

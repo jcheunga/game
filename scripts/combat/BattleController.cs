@@ -2364,6 +2364,7 @@ public partial class BattleController : Node2D
 		ApplyEndlessBoonEffects(delta);
 		ApplyCampaignMomentumEffects();
 		ApplyCursedGroundAttrition(delta);
+		UpdateGroundStrikes(delta);
 		ApplyWeatherUnitModifiers();
 
 		// Reinforcements join on the next tick; summoning must not invalidate iteration.
@@ -3200,6 +3201,7 @@ public partial class BattleController : Node2D
 		};
 		if (triggered)
 		{
+			TriggerCommanderSignature(unit);
 			var sound = unit.SpecialAbilityId switch { "rally_call" => "rally", "jam_signal" => "jam", "raise_fallen" => "raise", "burrow" => "burrow", _ => "" };
 			AudioDirector.Instance?.PlayEnemySpecial(sound, origin);
 			if (sound == "burrow") AudioDirector.Instance?.PlayEnemySpecial("emerge", unit.Position);
@@ -6489,7 +6491,9 @@ public partial class BattleController : Node2D
 		var closer = ClosestDefeat.TryGetValue(_stage, out var best) && broken > best + .005f;
 		if (!ClosestDefeat.ContainsKey(_stage) || broken > best) ClosestDefeat[_stage] = broken;
 		var gate = broken < .005f ? "The enemy gate stands untouched" : $"Enemy gate {Mathf.RoundToInt(broken * 100f)}% broken";
-		return $"{gate} · {_enemyDefeats} foes slain{(closer ? " · your closest yet" : "")}";
+		// Losing here raises what replays pay (GameState.Grudge.cs); the line says so in place of the tally.
+		var grudge = GameState.Instance.GrudgeStage == _stage ? Mathf.RoundToInt(GameState.Instance.GrudgeGoldBonus * 100f) : 0;
+		return $"{gate}{(grudge > 0 ? $" · replays pay +{grudge}% gold" : $" · {_enemyDefeats} foes slain")}{(closer ? " · your closest yet" : "")}";
 	}
 
 	/// <summary>After a campaign win, the stage to march on to: the next one in the same zone, once it is open.</summary>
@@ -6570,6 +6574,7 @@ public partial class BattleController : Node2D
 			Elapsed = _elapsed,
 			PlayerDeployments = _playerDeployments,
 			EnemyDefeats = _enemyDefeats,
+			PlayerHazardHits = _playerHazardHits,
 			PlayerSignalJamSeconds = _playerSignalJamSeconds
 		};
 	}

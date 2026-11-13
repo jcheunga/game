@@ -87,3 +87,37 @@ headline debut stays on slot 4 (`NewEnemyId`). `CampaignDebutStage` in `data/uni
 
 The Horde and Regional wave versions in `data/waves/` (developer tools) are unchanged and still built from the old
 standard waves.
+
+## Signature moves, hazards and the rush budget (13 November 2026)
+
+**Signature moves.** Every commander but the Grave Lord has one move of its own (`SignatureAbilityId` in units.json,
+`BattleController.Strikes.cs`), used with every other rally, jam or raise call, starting with the first. Moves that
+strike the ground draw a ring a second before they land; damage is a share of the commander's attack, so it follows
+level and strength. Boss Rush uses the same commanders and so the same moves.
+
+| Commander | Stage | Move |
+| --- | --- | --- |
+| Tidecaller | 15 | Undertow: a ring on your foremost troop that wounds and roots |
+| Harrow Tidemaster | 20 | Tide barrage: three small rings on your foremost troops |
+| Iron Warden | 30 | Iron skin: a shield worth 15% of its health for 6 seconds |
+| Plague Archon | 35 | Plague breath: a wide ring in front of it that burns for 5 seconds |
+| Plague Monarch | 40 | Pestilence: two rings that burn and halve healing |
+| Thornwall Chieftain | 50 | Ground slam: a ring around it that wounds and roots |
+| Bone Pontiff | 55 | Dark mass: heals foes near it by 15% |
+| Reliquary Tyrant | 60 | Bone ward: shields foes near it for 20% of their health |
+| Mire Behemoth | 70 | Quake: a very wide ring around it that wounds and throws back |
+| Steppe Warlord | 80 | Blood frenzy: attack ×1.2 and speed ×1.25 for 5 seconds, taking 20% more damage |
+| Gloamwood Witch | 90 | Slumber: rings on your two hardest hitters; asleep until struck |
+| Dread Sovereign | 95 | Dread: troops near it strike 30% weaker and move slower for 5 seconds |
+| Ashen Regent | 100 | Ashfall: burning rings under every other troop |
+
+`UiReviewSmoke --commanders` plays every move and a hazard strike and captures them in `artifacts/commanders`.
+
+**Hazards.** The last four zones each have one (`ZONE_HAZARDS`: Bog gas, Grass fire, Witch-light, Falling ash) on their
+second, sixth and eighth stages, twelve stages in all, never together with a zone rule. Two spots on the road erupt in
+turn every 14 seconds after 1.8 seconds of warning, and the spot drifts a little each time. A strike takes 18% of
+maximum health from everything in the ring, friend and foe (a quarter of that from commanders), so luring a column
+into a ring is as good as stepping out of one.
+
+**Rush budget.** `RUSH_SHARE = .25`: fast foes that damage the wagon may bring no more than a quarter of the wagon's
+health (one swing each) in the first 40 seconds of a stage that has no commander. See docs/PLAYTHROUGH_SIM.md.

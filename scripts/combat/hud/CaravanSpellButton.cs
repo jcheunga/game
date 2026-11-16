@@ -47,7 +47,8 @@ public partial class CaravanSpellButton : Control
         _aura.Draw += DrawAura;
         AddChild(_aura);
         _backing = new Panel { Name = "Backing", MouseFilter = MouseFilterEnum.Ignore };
-        var dock = RoyalKit.Slice("hud-dock", 30, 22, 30, 22);
+        // Like the unit bar, the slot has no tray or outer border: only the card shows.
+        var dock = new StyleBoxEmpty();
         _backing.AddThemeStyleboxOverride("panel", dock);
         AddChild(_backing);
         AddChild(card);

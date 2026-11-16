@@ -235,13 +235,13 @@ public partial class BattleController
     private static BattleActionCard AttachBattleCardContent(Button button, Texture2D icon)
 	{
         button.Text = string.Empty;
-        // The concept card: a thin bronze frame around full-bleed art. A tap acts at once, so no hover or focus
-        // ring is left on the last card touched; only an armed spell wears the gold frame (BattleActionCard).
-        var frame = RoyalKit.Slice("hud-card", 8);
-        frame.ContentMarginLeft = frame.ContentMarginRight = frame.ContentMarginTop = frame.ContentMarginBottom = 0;
+        // A thin bronze rim around a see-through face, drawn as one rounded shape so the battlefield shows through
+        // the bar. A tap acts at once, so no hover or focus ring is left on the last card touched; only an armed
+        // spell wears the gold frame (BattleActionCard).
+        var frame = BattleActionCard.Surface();
         button.AddThemeStyleboxOverride("normal", frame);
         button.AddThemeStyleboxOverride("hover", frame);
-        button.AddThemeStyleboxOverride("pressed", new StackedStyle(frame, new StyleBoxFlat { BgColor = new Color(0, 0, 0, .2f) }));
+        button.AddThemeStyleboxOverride("pressed", BattleActionCard.Surface(.2f));
         button.AddThemeStyleboxOverride("hover_pressed", frame);
         button.AddThemeStyleboxOverride("disabled", frame);
         button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());

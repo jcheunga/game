@@ -85,7 +85,8 @@ public partial class BattleController
     {
         _cardDock = cards;
         var spec = RoyalSpec.For("battle");
-        var dock = RoyalKit.Slice("hud-dock", 30, 22, 30, 22);
+        // No tray or outer border: the cards stand on the field by themselves, each with its own rim and glass face.
+        var dock = new StyleBoxEmpty();
         dock.ContentMarginLeft = dock.ContentMarginRight = 9; dock.ContentMarginTop = 9; dock.ContentMarginBottom = 11;
         cards.AddThemeStyleboxOverride("panel", dock);
         row.AddThemeConstantOverride("separation", 13);

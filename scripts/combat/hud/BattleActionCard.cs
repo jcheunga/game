@@ -7,8 +7,7 @@ public partial class BattleActionCard : Control
     private static readonly Dictionary<ulong, Rect2I> IconBounds = new();
     private AtlasTexture _ownedCrop;
     private Texture2D _sourceIcon;
-    private readonly TextureRect _portrait, _face;
-    private static GradientTexture2D _faceTexture;
+    private readonly TextureRect _portrait;
     private readonly Control _cooldownShade;
     private readonly ShaderMaterial _portraitMaterial;
     private static Shader _cooldownShader;
@@ -33,6 +32,23 @@ public partial class BattleActionCard : Control
     /// <summary>A card without a cost badge (the caravan spell) lets its art fill the face.</summary>
     public bool FullArt { get; set; }
 
+    /// <summary>How solid the dark card face is over the battlefield.</summary>
+    internal const float FaceOpacity = .6f;
+
+    /// <summary>
+    /// The whole card surface as one shape: a see-through neutral dark steel face (no green cast, so the caravan's
+    /// teal troops stand off it) inside a thin bronze rim, with the same rounded corners for both.
+    /// </summary>
+    internal static StyleBoxFlat Surface(float darken = 0f)
+    {
+        var face = new Color("1c1d23").Darkened(darken);
+        var style = new StyleBoxFlat { BgColor = new Color(face, Mathf.Lerp(FaceOpacity, 1f, darken)),
+            BorderColor = new Color("a8946c"), AntiAliasing = true };
+        style.SetBorderWidthAll(2);
+        style.SetCornerRadiusAll(7);
+        return style;
+    }
+
     public BattleActionCard()
     {
         Name = "ActionCardArt";
@@ -42,16 +58,6 @@ public partial class BattleActionCard : Control
         TextureFilter = TextureFilterEnum.Linear;
         _selection = MedievalUi.Engraved("focus", 0, 0);
         _costMaterial = new StyleBoxTexture { Texture = RoyalKit.Texture("hud-cost") };
-        // The card face: neutral dark steel (no green cast, so the caravan's teal troops stand off it), lit softly
-        // behind the figure.
-        _faceTexture ??= new GradientTexture2D {
-            Width = 128, Height = 128, Fill = GradientTexture2D.FillEnum.Radial,
-            FillFrom = new Vector2(.5f, .42f), FillTo = new Vector2(1.05f, 1.1f),
-            Gradient = new Gradient { Offsets = new[] { 0f, 1f }, Colors = new[] { new Color("3a3d45"), new Color("101116") } }
-        };
-        _face = new TextureRect { Name = "Face", Texture = _faceTexture, MouseFilter = MouseFilterEnum.Ignore,
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale };
-        AddChild(_face);
         _cooldownShader ??= new Shader { Code = CooldownShaderCode };
         _portraitMaterial = new ShaderMaterial { Shader = _cooldownShader };
         _portrait = new TextureRect
@@ -189,7 +195,6 @@ public partial class BattleActionCard : Control
     private void LayoutArt()
     {
         var inner = new Rect2(new Vector2(4, 4), (Size - new Vector2(8, 8)).Max(Vector2.One));
-        _face.Position = inner.Position + Vector2.One; _face.Size = (inner.Size - Vector2.One * 2).Max(Vector2.One);
         // The art sits whole inside the card with a margin, a little below the cost badge.
         _portrait.Position = inner.Position + inner.Size * (FullArt ? new Vector2(.08f, .07f) : new Vector2(.14f, .17f));
         _portrait.Size = inner.Size * (FullArt ? new Vector2(.84f, .86f) : new Vector2(.72f, .76f));

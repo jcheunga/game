@@ -121,7 +121,7 @@ public static class SeasonalEventCatalog
                 new(51, 0.92f, 0.97f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 400)), // was 1.20/1.15; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 51 got harder
                 new(66, 0.60f, 0.75f, new[] { "cursed_ground" }, new SeasonalEventReward("food", amount: 8)), // was 1.25/1.20; refit Nov 2026 on the tuned campaign stage, with a margin
                 new(82, 0.66f, 0.79f, new[] { "elite_vanguard", "fortified_deploy" }, new SeasonalEventReward("sigils", amount: 2)), // was 1.35/1.25; refit Nov 2026 on the tuned campaign stage, with a margin
-                new(97, 0.70f, 0.82f, new[] { "cursed_ground", "rapid_assault" }, new SeasonalEventReward("relic", "relic_frostbound_crown")), // was 1.50/1.35; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(97, 0.66f, 0.79f, new[] { "cursed_ground", "rapid_assault" }, new SeasonalEventReward("relic", "relic_frostbound_crown")), // 16 Nov: --event-fit put 0.70/0.82 past the reference player on stage 97's new waves (fit 0.68/0.81), eased with a margin; was 1.50/1.35; refit Nov 2026 on the tuned campaign stage, with a margin
             },
             new SeasonalEventMilestone[]
             {

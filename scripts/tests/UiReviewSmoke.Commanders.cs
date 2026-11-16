@@ -61,5 +61,6 @@ public partial class UiReviewSmoke
         await Capture("hazard-warning");
         await Wait(first.WarningDuration * .4f + .15f);
         await Capture("hazard-landed");
+        GD.Print($"COMMANDERS_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 }

@@ -162,6 +162,9 @@ ZONE_RULES = {
     9: ('elite_vanguard', 1.18, "Every foe is tougher and hits harder."),
 }
 RULE_SLOTS = (3, 7, 9)
+# Cursed ground only burns inside a stage's pockets (Battlefield.CursePatches), so a stage given the rule gets the
+# campaign's usual two, with clear road between them. Without pockets the rule is announced and does nothing.
+CURSE_PATCHES = [{'XRatio': .3, 'YRatio': .5, 'Width': 36.0, 'Height': 7.0}, {'XRatio': .68, 'YRatio': .5, 'Width': 42.0, 'Height': 7.0}]
 # The stage after a zone boss is a breather with a rule in the player's favour, a different one each zone.
 BREATHERS = [('surging_courage', 1.25, 'Courage builds faster here.'),
              ('fortified_deploy', .6, 'Fresh troops shrug off blows briefly.'),
@@ -365,6 +368,7 @@ def main():
         elif zone > 0 and slot == 1:
             rule = BREATHERS[(zone - 1) % len(BREATHERS)]
         stage['Modifiers'] = [{'Type': rule[0], 'Value': rule[1]}] if rule else []
+        if rule and rule[0] == 'cursed_ground': stage['Battlefield']['CursePatches'] = [dict(p) for p in CURSE_PATCHES]
         # A hazard on three stages of each late zone: two spots on the road that erupt in turn.
         hazard = ZONE_HAZARDS.get(zone) if slot in HAZARD_SLOTS and boss is None and not rule else None
         stage['Hazards'] = [{'Type': 'strike', 'Label': hazard[0], 'XRatio': x, 'YRatio': .5, 'Radius': 56, 'Interval': 14,

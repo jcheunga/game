@@ -3756,7 +3756,20 @@
         "SupplyXRatio": 0.58,
         "SupplyYRatio": 0.25,
         "SupplyReward": "siege",
-        "CursePatches": []
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 36.0,
+            "Height": 7.0
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 42.0,
+            "Height": 7.0
+          }
+        ]
       },
       "EnemyLevel": 5,
       "NewEnemyId": "",
@@ -4537,7 +4550,20 @@
         "SupplyXRatio": 0.58,
         "SupplyYRatio": 0.75,
         "SupplyReward": "siege",
-        "CursePatches": []
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 36.0,
+            "Height": 7.0
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 42.0,
+            "Height": 7.0
+          }
+        ]
       },
       "WeatherId": "ashstorm",
       "EnemyLevel": 6,
@@ -4926,7 +4952,20 @@
         "SupplyXRatio": 0.615,
         "SupplyYRatio": 0.75,
         "SupplyReward": "siege",
-        "CursePatches": []
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 36.0,
+            "Height": 7.0
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 42.0,
+            "Height": 7.0
+          }
+        ]
       },
       "EnemyLevel": 6,
       "NewEnemyId": "",

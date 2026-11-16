@@ -12,6 +12,10 @@ public partial class UiReviewSmoke
         System.IO.Directory.CreateDirectory(_output);
         var state = GameState.Instance;
         state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
+        // The More hub opens Challenges after stage 6 (CaravanHub.Gated), so the walk starts just past it.
+        var fixture = state.BuildSaveData(); fixture.HighestUnlockedStage = 7;
+        typeof(GameState).GetMethod("ApplySavedData", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .Invoke(state, new object[] { fixture });
         await Open("MainMenu");
         var home = (MapMenu)GetTree().CurrentScene;
         var canvas = Walk(home).OfType<MapPathCanvas>().Single();

@@ -186,7 +186,7 @@ public partial class BattleController
             if (figure == null) break;
             // They stand behind the parapet: the wall hides them below the chest.
             var feet = new Vector2(post.X, post.Y + figure.HeadHeight * .58f);
-            _sentries.Add((figure, feet, _rng.Randf() < .5f ? -1f : 1f, _rng.RandfRange(2f, 6f)));
+            _sentries.Add((figure, feet, _lookRng.Randf() < .5f ? -1f : 1f, _lookRng.RandfRange(2f, 6f)));
         }
     }
 
@@ -285,7 +285,7 @@ public partial class BattleController
             var (figure, feet, facing, nextTurn) = _sentries[i];
             figure.Tick(delta);
             nextTurn -= delta;
-            if (nextTurn <= 0f) { facing = -facing; nextTurn = _rng.RandfRange(4f, 9f); }
+            if (nextTurn <= 0f) { facing = -facing; nextTurn = _lookRng.RandfRange(4f, 9f); }
             _sentries[i] = (figure, feet, facing, nextTurn);
         }
         // Each quarter of the stronghold's health lost cracks its walls; from half health its roofs burn.
@@ -343,7 +343,7 @@ public partial class BattleController
         if (pieces.Length == 0) return;
         var at = art.Wall[_nextScarSpot++];
         var size = kind == "crack" ? 11f : kind == "scorch" ? 11f : 8f;
-        _baseScars.Add((at, pieces[_rng.RandiRange(0, pieces.Length - 1)], _showTime, size, kind == "chip" ? 0f : _rng.RandfRange(-.6f, .6f),
+        _baseScars.Add((at, pieces[_lookRng.RandiRange(0, pieces.Length - 1)], _showTime, size, kind == "chip" ? 0f : _lookRng.RandfRange(-.6f, .6f),
             PlatePaintAt(art, at, size * .5f)));
         if (!ReducedMotion) BattleParticles.SpawnBaseHitDebris(this, at, new Color("8a7a66"));
     }
@@ -417,7 +417,7 @@ public partial class BattleController
             var width = art.Rect.Size.X * .7f;
             for (var i = 0; i < 4; i++)
             {
-                var at = new Vector2(art.GateX + _rng.RandfRange(-width * .45f, width * .55f), art.Foot - 3f);
+                var at = new Vector2(art.GateX + _lookRng.RandfRange(-width * .45f, width * .55f), art.Foot - 3f);
                 SpellVfx.Burst(this, at, "p_smoke", 6, 1.8f, SpellVfx.Fade(new Color(.62f, .56f, .5f, .7f), new Color(.45f, .42f, .4f, .4f)),
                     16f, 30f, 10f, 34f, spread: 70f, direction: Vector2.Up, gravity: -6f, additive: false, groundRadius: 14f, explosiveness: .6f);
             }

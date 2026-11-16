@@ -57,7 +57,9 @@ public partial class CombatReviewSmoke
                 for (var seed = 0; seed < 2; seed++)
                 {
                     SeedTowerSquad(evt.Stages[index].BaseStageNumber);
-                    if ((await PlayOpened(await OpenEventBattle(evt.Id, index, (ulong)(9000 + evt.Stages[index].BaseStageNumber * 10 + seed)))).Won) continue;
+                    var play = await PlayOpened(await OpenEventBattle(evt.Id, index, (ulong)(9000 + evt.Stages[index].BaseStageNumber * 10 + seed)));
+                    GD.Print($"EVENT_PLAY: {evt.Id} {index + 1} seed {seed}: {(play.Won ? "won" : "lost")} in {play.Seconds:0.00}s, hull {play.Hull:0.0000}, gate {play.Gate:0.0000}");
+                    if (play.Won) continue;
                     unbeaten.Add($"{evt.Title} {index + 1}");
                     break;
                 }

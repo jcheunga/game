@@ -582,8 +582,40 @@ public partial class CombatReviewSmoke
                 if ((bool)caravanReady.GetValue(battle)! && (foes.Length >= 3 || foes.Any(f => f.Definition.IsBoss)))
                     Invoke(battle, "TryCastCaravanSpell");
             }
-            battle._PhysicsProcess(1.0 / 60);
+            SimTick(battle);
             if (tick % 600 == 0) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         }
+        SimRelease();
+    }
+
+    private readonly HashSet<Node> _simStepped = new();
+
+    /// <summary>
+    /// One simulated tick of a hand-stepped battle. Some of the fight runs in nodes the engine steps on the real clock:
+    /// shots fly in their own physics step, troops count down buffs, frenzy and casts in their frame step, and a raised
+    /// body stands up where its corpse slid to, when its wisp and rise visuals finish. Left to the engine, in a battle stepped faster than real
+    /// time, a shot lands whole seconds late and a buff outlasts the fight, and by how much depends on how fast the
+    /// machine is. So they are stepped here, after the battle, in the order the engine steps them.
+    /// </summary>
+    private void SimTick(BattleController battle)
+    {
+        const double step = 1.0 / 60;
+        battle._PhysicsProcess(step);
+        foreach (var child in battle.GetChildren())
+        {
+            if (child is not (Projectile or Unit or RaiseWisp or RiseVisual or UnitDeathVisual)) continue;
+            if (_simStepped.Add(child)) { child.SetPhysicsProcess(false); child.SetProcess(false); }
+            if (child is Projectile shot) shot._PhysicsProcess(step);
+            if (!IsInstanceValid(child) || child.IsQueuedForDeletion()) continue;
+            child._Process(step);
+        }
+    }
+
+    /// <summary>Hands the nodes back to the engine: shots and troops are pooled, and the next battle may run on the real clock.</summary>
+    private void SimRelease()
+    {
+        foreach (var node in _simStepped)
+            if (IsInstanceValid(node)) { node.SetProcess(true); if (node is Projectile) node.SetPhysicsProcess(true); }
+        _simStepped.Clear();
     }
 }

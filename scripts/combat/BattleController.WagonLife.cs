@@ -108,9 +108,9 @@ void fragment() {
         // Bolts bite into the planks even when they would pass through a soldier; pots and flasks don't stick.
         if (!style.Sticks && !style.Sprite.Contains("bolt")) return;
         // Bolts strike the hull's near side (the wagon stands three-quarter on); they come in from the right, nosing down.
-        var uv = new Vector2(_rng.RandfRange(.26f, .64f), _rng.RandfRange(.45f, .55f));
+        var uv = new Vector2(_lookRng.RandfRange(.26f, .64f), _lookRng.RandfRange(.45f, .55f));
         if (_wagonBolts.Count == MaxWagonBolts) _wagonBolts.RemoveAt(0);
-        _wagonBolts.Add((uv, Mathf.Pi + _rng.RandfRange(-.35f, -.1f), style));
+        _wagonBolts.Add((uv, Mathf.Pi + _lookRng.RandfRange(-.35f, -.1f), style));
     }
 
     /// <summary>The caravan falls: its front wheel gives way and it tips forward, smoking and burning.</summary>

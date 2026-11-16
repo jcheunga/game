@@ -125,6 +125,9 @@ public partial class BattleController : Node2D
 	private readonly List<ChallengeDeploymentRecord> _challengeDeploymentTape = new();
 	private readonly List<ChallengeGhostMarker> _challengeGhostMarkers = new();
 	private readonly RandomNumberGenerator _rng = new();
+	// Dice for what is only seen (camera shake, sentries pacing, scars and rubble). These roll on drawn frames, so they
+	// must not come out of _rng: a seeded fight would then play differently at a different frame rate.
+	private readonly RandomNumberGenerator _lookRng = new();
 	private BattleSpawnDirector _spawnDirector = null!;
 	private BattleRunMode _battleMode;
 	private float _eventEnemyHealthScale = 1f;
@@ -1300,6 +1303,7 @@ public partial class BattleController : Node2D
 		}
 
 		_elapsed += deltaF;
+		TickBattleLater();
 		TickCouragePickups(deltaF);
 		_playerBaseFlashTimer = Mathf.Max(0f, _playerBaseFlashTimer - deltaF);
 		_enemyBaseFlashTimer = Mathf.Max(0f, _enemyBaseFlashTimer - deltaF);
@@ -1424,7 +1428,7 @@ public partial class BattleController : Node2D
 		// the shake goes on the active camera's offset, in screen pixels, mostly vertical like a heavy blow.
 		var camera = ActiveShakeCamera();
 		if (camera != null)
-			camera.Offset = new Vector2(_rng.RandfRange(-amplitude, amplitude) * .6f, _rng.RandfRange(-amplitude, amplitude))
+			camera.Offset = new Vector2(_lookRng.RandfRange(-amplitude, amplitude) * .6f, _lookRng.RandfRange(-amplitude, amplitude))
 				/ Mathf.Max(.01f, camera.Zoom.X);
 
 		if (_impactShakeTimer <= 0.001f)

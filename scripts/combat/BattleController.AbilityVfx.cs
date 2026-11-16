@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using System.Linq;
 using Godot;
@@ -30,7 +31,7 @@ public partial class BattleController
                 () => !IsInstanceValid(target) || target.IsDead || target.CombatLifetime != life,
                 (pos, dmg, _) => { if (dmg > 0 && IsInstanceValid(source)) ApplyImpactReaction(source, target, dmg, true); });
         }
-        if (delay > 0f) SpellVfx.Later(this, delay, Launch); else Launch();
+        if (delay > 0f) BattleLater(delay, Launch); else Launch();
     }
 
     /// <summary>A crackling bolt from the caster's hands or weapon to a target, with a flash where it strikes.</summary>
@@ -66,6 +67,27 @@ public partial class BattleController
 
     /// <summary>A charge: the unit runs the distance over a short time (not a teleport), throwing up dust behind,
     /// and the hits land when it arrives.</summary>
+    // Part of the fight that lands a beat later (a charge's run, a held shot) keeps the battle's own clock rather than
+    // a scene timer, so it lands on the same tick at any frame rate and when a review steps the battle by hand.
+    private readonly List<(float At, Action Run)> _battleLater = new();
+
+    private void BattleLater(float delay, Action action)
+    {
+        if (delay <= 0f) { action(); return; }
+        _battleLater.Add((_elapsed + delay, action));
+    }
+
+    private void TickBattleLater()
+    {
+        for (var i = 0; i < _battleLater.Count;)
+        {
+            if (_battleLater[i].At > _elapsed) { i++; continue; }
+            var run = _battleLater[i].Run;
+            _battleLater.RemoveAt(i);
+            run();
+        }
+    }
+
     private void ContentChargeRun(Unit unit, float dx, Action arrive)
     {
         const float seconds = .28f;
@@ -76,7 +98,7 @@ public partial class BattleController
         {
             var t = k / (float)steps;
             var last = k == steps;
-            SpellVfx.Later(this, seconds * t, () =>
+            BattleLater(seconds * t, () =>
             {
                 if (!IsInstanceValid(unit) || unit.IsDead || unit.CombatLifetime != life) return;
                 var e = 1 - (1 - t) * (1 - t);

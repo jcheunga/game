@@ -312,9 +312,10 @@ public partial class CombatReviewSmoke
                 if (foe != null && Read<float>(battle, "_mana") >= spell.ManaCost && spells.GetCooldownRemaining(spell.Id) <= 0)
                     Invoke(battle, "TryCastSpellAt", spell, foe.Position);
             }
-            battle._PhysicsProcess(1.0 / 60);
+            SimTick(battle);
             if (tick % 600 == 0) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         }
+        SimRelease();
         var won = Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_enemyBaseHealth") <= 0f;
         var hull = Read<float>(battle, "_playerBaseHealth") / Mathf.Max(1f, Read<float>(battle, "_playerBaseMaxHealth"));
         var gate = 1f - Read<float>(battle, "_enemyBaseHealth") / Mathf.Max(1f, Read<float>(battle, "_enemyBaseMaxHealth"));

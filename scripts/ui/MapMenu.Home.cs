@@ -109,57 +109,108 @@ public partial class MapMenu
         Medallion("more", "people", "More", ShowMore);
     }
 
+    // The selected-site card is a sheet of the atlas's own parchment: dark ink, engraved capitals, kit buttons.
+    private static readonly Color SiteInk = new("2a1608"), SiteFaded = new("5a4330"), SiteCrimson = new("7a1f14");
+    private const float SitePanelWidth = 372, SitePanelPadding = 28, SitePanelHead = 52, SiteCloseSize = 38;
+
     private void BuildSitePanel()
     {
         _sitePanel = new PanelContainer { Name = "SelectedSite", Visible = false };
-        _sitePanel.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 16));
+        // The sheet's top flourish is part of its heading: the content starts beneath it.
+        var paper = RoyalKit.Slice("paper-clean", SitePanelPadding);
+        paper.ContentMarginTop = SitePanelHead;
+        _sitePanel.AddThemeStyleboxOverride("panel", paper);
         _hud.AddChild(_sitePanel);
         _sitePanel.AnchorLeft = _sitePanel.AnchorRight = 1;
-        _sitePanel.OffsetLeft = -382;
+        _sitePanel.OffsetLeft = -22 - SitePanelWidth;
         _sitePanel.OffsetRight = -22;
         _sitePanel.OffsetTop = SitePanelTop;
         _sitePanel.OffsetBottom = SitePanelTop + 240;
         _sitePanel.VisibilityChanged += QueueSitePanelFit;
         var side = new VBoxContainer();
-        side.AddThemeConstantOverride("separation", 8);
+        side.AddThemeConstantOverride("separation", 12);
         _sitePanel.AddChild(side);
-        var header = new HBoxContainer();
-        side.AddChild(header);
-        _siteEyebrow = RealmUi.Label("", 18, true);
-        _siteEyebrow.VerticalAlignment = VerticalAlignment.Center;
-        header.AddChild(_siteEyebrow);
-        var close = HomeMapUi.IconButton("close", "Close site details", CloseSiteDetails);
-        close.CustomMinimumSize = new Vector2(40, 40);
-        close.AddThemeConstantOverride("icon_max_width", 22); // Clears the rim of the compact button.
-        if (close is RealmButton compact) compact.FingertipReach = true;
-        header.AddChild(close);
+
         var encounter = new HBoxContainer();
-        encounter.AddThemeConstantOverride("separation", 12);
+        encounter.AddThemeConstantOverride("separation", 14);
         side.AddChild(encounter);
-        _portrait = new TextureRect
-        {
-            CustomMinimumSize = new Vector2(56, 64), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, SizeFlagsVertical = SizeFlags.ShrinkBegin
-        };
-        encounter.AddChild(_portrait);
+        // The portrait sits in a dark gilt cell, so leaders, landmark miniatures and line icons all read on paper.
+        var cell = new PanelContainer { CustomMinimumSize = new Vector2(72, 80), SizeFlagsVertical = SizeFlags.ShrinkBegin, MouseFilter = MouseFilterEnum.Ignore };
+        cell.AddThemeStyleboxOverride("panel", new SliceStyle(RoyalKit.Texture("relic-card"), new Rect2(Vector2.Zero, RoyalKit.Texture("relic-card").GetSize() / RoyalKit.Density), RoyalKit.Density, 10, 10, 10, 10, 6, 6));
+        cell.SetMeta("frame_bleed", true);
+        encounter.AddChild(cell);
+        _portrait = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps };
+        _portrait.SetMeta("frame_bleed", true);
+        cell.AddChild(_portrait);
         var names = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        names.AddThemeConstantOverride("separation", 4);
+        names.AddThemeConstantOverride("separation", 2);
         encounter.AddChild(names);
-        _siteName = RealmUi.Heading("", 22);
-        _siteName.VerticalAlignment = VerticalAlignment.Center;
+        _siteEyebrow = RoyalText.Caps("", ReadingText.PhoneCaps, SiteCrimson, 700);
+        _siteEyebrow.ShadowOffset = Vector2.Zero;
+        _siteEyebrow.CustomMinimumSize = new Vector2(0, 26);
+        names.AddChild(_siteEyebrow);
+        _siteName = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = MouseFilterEnum.Ignore };
+        _siteName.AddThemeFontOverride("font", RoyalFonts.Display(700));
+        _siteName.AddThemeFontSizeOverride("font_size", 24);
+        _siteName.AddThemeColorOverride("font_color", SiteInk);
+        _siteName.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+        _siteName.AddThemeConstantOverride("line_spacing", -4);
         names.AddChild(_siteName);
-        _siteStatus = RealmUi.Label("", 18, true);
-        names.AddChild(_siteStatus);
+
+        side.AddChild(new TextureRect { Texture = RoyalKit.Texture("codex-rule"), CustomMinimumSize = new Vector2(0, 14), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
+
         _overview = RealmUi.Scroll(side);
         _overview.AddThemeConstantOverride("separation", 10);
+        _siteStatus = SiteText("", SiteFaded);
+        _overview.AddChild(_siteStatus);
         _rewards = new VBoxContainer { Name = "SiteRewards" };
-        _rewards.AddThemeConstantOverride("separation", 10);
+        _rewards.AddThemeConstantOverride("separation", 8);
         _overview.AddChild(_rewards);
-        _description = RealmUi.Label("");
+        _description = SiteText("", SiteCrimson, 600);
         _overview.AddChild(_description);
-        _action = RealmUi.Button("flag", "Prepare battle", VisitSelected, true);
-        HomeMapUi.StyleButton(_action, true);
-        side.AddChild(_action);
+
+        var width = SitePanelWidth - 2 * SitePanelPadding;
+        var action = RoyalButton.Over(new Rect2(0, 0, width, 50), "Prepare battle", VisitSelected, 6);
+        action.CustomMinimumSize = action.Size;
+        side.AddChild(action);
+        _action = action;
+
+        // The kit's red close sits in the card's top right corner, over the layout rather than in it.
+        var close = RoyalButton.Over(new Rect2(SitePanelWidth - SiteCloseSize - 14, 14, SiteCloseSize, SiteCloseSize), "Close site details", CloseSiteDetails, 6);
+        close.SetStates(RoyalKit.Slice("close-button", 14), 6);
+        var corner = new Control { MouseFilter = MouseFilterEnum.Ignore };
+        corner.SetMeta("frame_bleed", true);
+        _sitePanel.AddChild(corner);
+        corner.AddChild(close);
+        // The panel container lays the holder out inside its padding; the button is placed from the card's corner.
+        close.Position -= new Vector2(SitePanelPadding, SitePanelHead);
+    }
+
+    /// <summary>Wrapping book-serif text in ink for the site card.</summary>
+    private static Label SiteText(string text, Color ink, int weight = 500)
+    {
+        var label = RoyalText.Paragraph(text, ReadingText.PhoneBody, ink, weight);
+        label.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+        return label;
+    }
+
+    private (string Caption, string Glyph, bool Enabled) _siteActionLook;
+
+    /// <summary>The card's action: a gold plaque when it can be taken, a locked slate one when it can't.</summary>
+    private void StyleSiteAction(string glyph)
+    {
+        var button = (RoyalButton)_action;
+        var enabled = !button.Disabled;
+        var look = (button.Text, glyph, enabled);
+        if (look == _siteActionLook && button.Caption != null) return;
+        _siteActionLook = look;
+        button.SetStates(RoyalKit.Slice(enabled ? "button-gold" : "button-slate", 14), 6);
+        var caption = RoyalText.Caps(button.Text, 18, enabled ? RoyalBoard.Ink : new Color("fbf3cf"), 700);
+        var icon = enabled ? (glyph == null ? null : RoyalKit.Texture(glyph)) : RoyalKit.Texture("icon-lock-small");
+        button.Arrange(caption, icon, new Vector2(24, 24), gap: 10);
+        button.AccessibilityName = button.Text;
     }
 
     // New reward rows only report their wrapped height once laid out, so measure on the next frame.
@@ -173,13 +224,14 @@ public partial class MapMenu
     {
         if (!IsInstanceValid(_sitePanel) || !_sitePanel.Visible) return;
         var side = _sitePanel.GetChild<VBoxContainer>(0);
+        // Wrapped text reports its height for the width it has, so the card is measured after layout.
         var content = side.GetCombinedMinimumSize().Y + _overview.GetCombinedMinimumSize().Y
             + _sitePanel.GetThemeStylebox("panel").GetMinimumSize().Y;
         var available = _hud.Size.Y - SitePanelTop - SitePanelBottomGap;
         _sitePanel.OffsetBottom = SitePanelTop + Mathf.Min(content, available);
     }
 
-    private const float SitePanelTop = 136, SitePanelBottomGap = 156;
+    private const float SitePanelTop = 118, SitePanelBottomGap = 156;
 
     private void RefreshZoneNavigation()
     {

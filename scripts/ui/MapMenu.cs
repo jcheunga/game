@@ -13,7 +13,8 @@ public partial class MapMenu : Control
     private AdventureTile _selectedGround;
     private string _activeMapId;
     private RoyalLabel _mapTitle, _zoneProgress;
-    private Label _siteName, _siteEyebrow, _siteStatus, _description;
+    private Label _siteName, _siteStatus, _description;
+    private RoyalLabel _siteEyebrow;
     private VBoxContainer _rewards;
     private TextureRect _portrait;
     private Button _action, _previousZone, _nextZone;
@@ -105,14 +106,14 @@ public partial class MapMenu : Control
         var canOpen = state.CanTravelToAdventureTile(_selectedGround, out var reason);
         _portrait.Texture = HomeMapArt.Icon("map");
         _siteEyebrow.Text = "Frontier";
-        RealmUi.SetDisplayText(_siteName, _selectedGround.Title);
+        _siteName.Text = _selectedGround.Title;
         _siteStatus.Text = state.IsAdventureTileOpened(_selectedGround) ? "Charted" : $"Costs {GameState.AdventureTileFoodCost} food to open";
         RealmUi.Clear(_rewards);
-        _rewards.AddChild(RealmUi.Label("Reveals the land around it", 18, true));
+        _rewards.AddChild(SiteText("Reveals the land around it", SiteFaded));
         _description.Text = reason; _description.Visible = !canOpen;
         _action.Text = _mapCanvas.IsTravelling ? "Opening…" : "Open";
-        _action.Icon = HomeMapArt.Icon("food");
         _action.Disabled = _mapCanvas.IsTravelling || !canOpen;
+        StyleSiteAction(null);
     }
     private void RefreshDiscoveryDetails()
     {
@@ -121,13 +122,13 @@ public partial class MapMenu : Control
         var canTravel = state.CanTravelToAdventureTile(tile, out var reason);
         _portrait.Texture = HomeMapArt.Icon(_selectedDiscovery.Icon);
         _siteEyebrow.Text = "Resource tile";
-        RealmUi.SetDisplayText(_siteName, _selectedDiscovery.Title);
+        _siteName.Text = _selectedDiscovery.Title;
         _siteStatus.Text = state.HasClaimedAdventureDiscovery(tile.Id) ? "Collected" : $"Frontier · costs {GameState.AdventureTileFoodCost} food to open";
         ShowDiscoveryRewards();
         _description.Text = reason; _description.Visible = !canTravel;
         _action.Text = _mapCanvas.IsTravelling ? "Collecting…" : "Collect";
-        _action.Icon = HomeMapArt.Icon(_selectedDiscovery.Icon);
         _action.Disabled = _mapCanvas.IsTravelling || !canTravel;
+        StyleSiteAction(null);
     }
     private void RefreshUi()
     {
@@ -160,7 +161,7 @@ public partial class MapMenu : Control
         }
         _portrait.Texture = !known ? RealmUi.Icon("lock") : leader ? AdventureMapArt.Leader(_selected.Portrait) : AdventureMapArt.Miniature(_selected.Kind);
         _siteEyebrow.Text = !known ? "Uncharted" : leader ? $"{(boss ? "Boss" : "Rival")} · Stage {_selected.Stage}" : "Landmark";
-        RealmUi.SetDisplayText(_siteName, known ? _selected.Title : "Beyond the mist");
+        _siteName.Text = known ? _selected.Title : "Beyond the mist";
         _siteStatus.Text = !known ? "Open the land beside this tile to reach it" : bossLocked ? $"Boss gate · {BossGateLeaders - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/{BossGateLeaders} leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : GameState.IsAdventureResourceTile(tile) ? $"Frontier · costs {GameState.AdventureTileFoodCost} food to open" : "Open tile · ready to visit";
         _description.Text = ""; _description.Visible = false;
         ShowSiteRewards(known, leader, stage);
@@ -176,7 +177,7 @@ public partial class MapMenu : Control
             _action.Disabled = true;
             _description.Text = battleReason; _description.Visible = true;
         }
-        _action.Icon = RealmUi.Icon(leader ? "sword" : _selected.Icon);
+        StyleSiteAction(leader ? "icon-swords-dark" : null);
 
         _mapCanvas.RefreshKnowledge();
     }

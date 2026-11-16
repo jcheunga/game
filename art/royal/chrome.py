@@ -94,13 +94,13 @@ def main(only=()):
     warband, hub, multiplayer, codex = plate("warband"), plate("hub"), plate("multiplayer"), plate("codex")
     # The tab is the strip's second tab with its whole rim: both gold dividers it shares with its neighbours and
     # the rail beneath, so a tab standing on its own is framed on all four sides. The buttons lose the plate's
-    # background beyond their chamfered corners.
+    # background beyond their chamfered corners, and so does the close button (it sits on parchment on the map).
     for name, rect in {"button-navy": (753, 610, 216, 62), "button-gold": (979, 610, 265, 62), "tab": (730.3, 56, 111.8, 72.6),
                        "tile": (753, 377, 181, 68), "close-button": (1186, 27, 54, 54)}.items():
         if wanted(name):
             piece = cut(warband, *rect)
             if name == "tab": piece = clear_tab_corners(piece)
-            elif name.startswith("button-"): piece = rims.clear_outside(piece)
+            elif name.startswith("button-") or name == "close-button": piece = rims.clear_outside(piece)
             piece.save(OUT / f"{name}.png", optimize=True)
     if wanted("paper"): cut(codex, 126, 145, 535, 512).save(OUT / "paper.png", optimize=True)
     if wanted("modal-frame"): modal_frame(hub)

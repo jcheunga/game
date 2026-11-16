@@ -26,8 +26,8 @@ public partial class CombatReviewSmoke
 
         var foot = (Vector2)Invoke(battle, "get_CaravanDeployPosition");
         var exit = (Vector2)Invoke(battle, "get_WagonDoorExit");
-        Check(Mathf.IsEqualApprox(foot.Y, center) && exit.Y < foot.Y && Mathf.Abs(exit.X - foot.X) < 1,
-            "The ramp foot lies on the centre line, straight below the doorway");
+        Check(Mathf.IsEqualApprox(foot.Y, center) && exit.Y < foot.Y && Mathf.Abs(exit.X - foot.X) < 10,
+            "The ramp foot lies on the centre line, below the doorway (the ramp runs toward the viewer of a three-quarter wagon)");
         Check((int)Invoke(battle, "get_WagonDoorFrame") < 0, "The troop door starts shut");
         Frame(0);
         await CaptureStructures("wagon-door-shut");

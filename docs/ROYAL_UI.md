@@ -187,7 +187,9 @@ is raised before the result board comes up. Review: `CombatReviewSmoke --base-li
 The caravan and its seven skins are Codex paintings in the unit sheet's style (`art/royal/caravan.py`, which also
 paints the roof weapons, barricades, decals, banner and standard). Every edit (open door, battle damage, armour, snow,
 mud, each skin and its door and damage) is registered back onto the clean wagon by `art/royal/caravan_cut.py`, so one
-set of points read by eye (`WAGON_POINTS`: ground, wheels, roof sockets, lamps, lantern, flag, awning) serves them all.
+set of points read by eye (`WAGON_POINTS`: anchor, wheel contacts, roof sockets, lamps, lantern, flag, awning) serves them all.
+The wagon is painted in a gentle three-quarter view (front end and roof deck visible) so it has depth on the field; the
+flat side-view paintings it was turned from are kept in `art/royal/gen/caravan/flat` as the skins' colour references.
 At runtime (`BattleController.WagonLife.cs`) the flag and awning ripple in a cloth shader, the wagon rocks on its
 springs when struck and keeps up to six siege bolts, its lanterns flicker and the cupola fills with light as mana
 gathers, armour plating shows in three steps with the upgrade, Thornwall adds snow and the Mire mud, it shows its

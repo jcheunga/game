@@ -107,8 +107,8 @@ void fragment() {
         var style = ProjectileStyles.ForUnit(attacker.DefinitionId, attacker.MotionProfile);
         // Bolts bite into the planks even when they would pass through a soldier; pots and flasks don't stick.
         if (!style.Sticks && !style.Sprite.Contains("bolt")) return;
-        // Bolts strike the hull's side; they come in from the right, nosing down.
-        var uv = new Vector2(_rng.RandfRange(.32f, .74f), _rng.RandfRange(.5f, .66f));
+        // Bolts strike the hull's near side (the wagon stands three-quarter on); they come in from the right, nosing down.
+        var uv = new Vector2(_rng.RandfRange(.26f, .64f), _rng.RandfRange(.45f, .55f));
         if (_wagonBolts.Count == MaxWagonBolts) _wagonBolts.RemoveAt(0);
         _wagonBolts.Add((uv, Mathf.Pi + _rng.RandfRange(-.35f, -.1f), style));
     }
@@ -123,7 +123,7 @@ void fragment() {
         if (ReducedMotion) return;
         SpellVfx.Burst(this, roof, "p_flame", 14, 2.4f, SpellVfx.Fade(new Color("ffd27a"), new Color("c2410c")), 5, 10, 10, 30,
             spread: 25, gravity: -40f, groundRadius: 26f, explosiveness: .2f);
-        BattleParticles.SpawnBaseHitDebris(this, art.Point(WagonGround, new Vector2(.74f, .8f)), new Color("6b4a2f"));
+        BattleParticles.SpawnBaseHitDebris(this, art.Point(WagonGround, art.Contacts.Length > 3 ? art.Contacts[3] - new Vector2(0, .1f) : new Vector2(.62f, .72f)), new Color("6b4a2f"));
     }
 
     // Tipping forward about the rear wheel as the front one collapses, over half a second; then it lies still.

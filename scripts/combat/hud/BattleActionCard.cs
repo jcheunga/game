@@ -42,11 +42,12 @@ public partial class BattleActionCard : Control
         TextureFilter = TextureFilterEnum.Linear;
         _selection = MedievalUi.Engraved("focus", 0, 0);
         _costMaterial = new StyleBoxTexture { Texture = RoyalKit.Texture("hud-cost") };
-        // The concept's card face: dark steel-teal, lit softly behind the figure.
+        // The card face: neutral dark steel (no green cast, so the caravan's teal troops stand off it), lit softly
+        // behind the figure.
         _faceTexture ??= new GradientTexture2D {
             Width = 128, Height = 128, Fill = GradientTexture2D.FillEnum.Radial,
             FillFrom = new Vector2(.5f, .42f), FillTo = new Vector2(1.05f, 1.1f),
-            Gradient = new Gradient { Offsets = new[] { 0f, 1f }, Colors = new[] { new Color("2a3d40"), new Color("0d1515") } }
+            Gradient = new Gradient { Offsets = new[] { 0f, 1f }, Colors = new[] { new Color("3a3d45"), new Color("101116") } }
         };
         _face = new TextureRect { Name = "Face", Texture = _faceTexture, MouseFilter = MouseFilterEnum.Ignore,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale };
@@ -216,7 +217,7 @@ public partial class BattleActionCard : Control
     {
         var size = _cooldownShade.Size;
         if (size.Y < .5f) return;
-        // A light veil keeps the face's teal from reading as ready; the greyed portrait carries most of the contrast.
+        // A light veil keeps the lit face from reading as ready; the greyed portrait carries most of the contrast.
         _cooldownShade.DrawRect(new Rect2(Vector2.Zero, size), new Color(.02f, .04f, .05f, .45f));
         // The leading edge: a soft gold glow either side of a crisp bright line, visible on any art.
         var glow = Mathf.Clamp(size.X * .06f, 3, 8);

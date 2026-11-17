@@ -72,9 +72,7 @@ public partial class RoadVista : Control
         {
             var size = _wagon.Size * CaravanScale;
             var rect = new Rect2(Caravan - _wagon.Anchor * size, size);
-            // The plate leaves room around the three-quarter wagon: the shadow lies under the painting's middle.
-            var middle = Caravan.X + (_wagon.Centre.X - _wagon.Anchor.X) * size.X;
-            DrawTextureRect(Shadow, new Rect2(middle - size.X * .46f, Caravan.Y - 9, size.X * .92f, 18), false);
+            DrawTextureRect(Shadow, new Rect2(Caravan.X - size.X * .56f, Caravan.Y - 9, size.X * 1.12f, 18), false);
             DrawTextureRect(_wagon.Texture, rect, false);
         }
         foreach (var (figure, x, height) in _escort)

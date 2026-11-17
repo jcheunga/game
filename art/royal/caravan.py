@@ -2,7 +2,8 @@
 """The painted Lantern Caravan and the battle dressing around both bases.
 
 The caravan was a Blender render, then a flat side-view painting. Codex repaints it in the unit sheet's style
-(output/units.png) turned to a gentle three-quarter view so it has depth on the field, then edits that painting for its open door, its battle damage, every skin,
+(output/units.png), still square-on to the road but with its depth drawn behind it (a lit roof deck, the far wheels
+showing past the near ones), then edits that painting for its open door, its battle damage, every skin,
 and the overlays the runtime lays over it (armour plating, snow, mud). The same runner paints the roof weapons, each zone's barricade in front of the stronghold, the damage decals, the stronghold's banner meter and
 the victory flag.
 
@@ -19,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 GEN = ROOT / "art/royal/gen/caravan"
 STYLE = ROOT / "output/units.png"
-FLAT = GEN / "flat"      # the flat side-view paintings the three-quarter wagon was turned from (Nov 2026)
+FLAT = GEN / "flat"      # the flatter side-view paintings the wagon was repainted from (Nov 2026)
 
 STYLE_LINE = ("Painted by the same artist as the unit sheet attached as a reference: identical hand-painted rendering, "
               "the same proportions, level of detail, materials and lighting (soft warm key light from the upper left, a "
@@ -30,12 +31,13 @@ SAME_FRAME = ("Everything else must stay exactly the same: the same wagon, the s
               "the same framing, the same painting style and lighting. Keep the background TRANSPARENT (PNG with alpha, "
               "no floor, no shadow). Output the same size as the input.")
 
-WAGON = f"""Image 1 is a game painting of the war wagon of the Lantern Caravan, the player's mobile base in the side-scrolling strategy game "Crownroad: Siege of Ash", drawn as a flat side elevation. Image 2 is the game's official unit sheet.
-Use your image generation tool to paint ONE new image: the SAME wagon, with the same design, colours, heraldry, materials and every part of image 1, redrawn with real depth in a THREE-QUARTER view instead of a flat side elevation. Turn the wagon only a little: about 20 degrees toward the viewer, seen from about 25 degrees above. A gentle three-quarter view; the front end face is narrow, about one fifth as wide as the near side.
-It must read as a solid three-dimensional box on four wheels: the long near side (with its shields, awning window and the troop hold slung low between the wheels with its CLOSED ramp door) still faces the viewer and stays the largest face; the FRONT END of the wagon (the right end, where the shafts and the hanging lantern are) is now visible as a second, foreshortened face in slightly darker shade with its own planks, ironwork and a small shield; the flat roof deck is seen from above as a clear receding plane inside its low railing, open and empty (the game places crew and weapons on it); the two far-side wheels show behind and slightly above the near wheels; the near wheels are drawn as slightly turned ellipses, not perfect circles. The lantern cupola stays at the right end of the roof, the tall flag at the left end, the shafts reach out to the right and toward the viewer.
-Consistent perspective throughout, strong form shading: lit top planes, mid-tone near side, darker front end, deep shadow under the body between the wheels.
+WAGON = f"""Image 1 is a game painting of the war wagon of the Lantern Caravan, the player's mobile base in the side-scrolling strategy game "Crownroad: Siege of Ash". It is a side view, but it reads as flat, like a cardboard cutout. Image 2 is the game's official unit sheet.
+Use your image generation tool to paint ONE new image: the SAME wagon, in the SAME straight side-on view, with the same silhouette, proportions, layout, design, colours, heraldry and every part exactly where it is in image 1, repainted so it reads as a heavy, solid, three-dimensional object.
+Do NOT turn or rotate the wagon (a three-quarter turn was tried and rejected). It stays square-on to the viewer: its long side is parallel to the picture, the front end face and the rear end face are NOT visible, and the wheels' bottoms sit on one perfectly level horizontal line. No three-quarter view, no isometric view.
+Give it depth the way classic side-view strategy games do, with an oblique projection: the near side stays a true, undistorted, square-on side elevation, and the wagon's depth is drawn receding straight UP AND TO THE RIGHT behind it. So the roof deck shows as a broad, brightly lit plane of planks inside its railing (about a quarter as tall as the side wall), and the two far-side wheels are clearly visible behind the near wheels, each shifted up and to the right by about a third of a wheel, darker and in shadow, with the dark underside and axles between them. The near wheels remain perfect circles. Model every plank, iron band, shield and beam in relief with lit edges and cast shadows under strong warm light from the upper left: bright top planes, clear mid-tone side, deep shadow under the body. Lift the overall values a little so the wagon is not murky: lighter, warmer wood than image 1, with crisp dark accents.
+Keep the roof deck open and empty (the game places crew and weapons on it), the troop hold slung low between the wheels with its ramp door CLOSED, the lantern cupola at the right end of the roof, the tall flag at the left end and the shafts reaching out to the right.
 {STYLE_LINE}
-The wagon still travels to the RIGHT. Same overall size in the frame as image 1, with the near wheels' bottoms on one level line near the bottom of the frame. No horses, no people, no text. {TRANSPARENT} Square 1024x1024."""
+The wagon still travels to the RIGHT. Same size and position in the frame as image 1. No horses, no people, no text. {TRANSPARENT} Square 1024x1024."""
 
 DOOR = f"""The attached image is a game painting of a war wagon with a transparent background. Use your image generation tool to EDIT it: open the troop hold's ramp door. The door at the bottom centre, between the wheels, swings down on its hinges into a sturdy plank ramp reaching the ground below and in front of the wagon (toward the viewer). Inside the open doorway the hold is lit by warm golden lantern light. Only the door and the doorway change. {SAME_FRAME}"""
 
@@ -60,8 +62,8 @@ SKINS = {
 
 
 def skin_prompt(brief):
-    return f"""Image 1 is a game painting of a war wagon in a three-quarter view with a transparent background. Image 2 is an older, flat side-view painting of one of its unlockable variants. Use your image generation tool to EDIT image 1 into that variant: {brief}
-Take from image 2 only the variant's colours, materials and motifs, never its flat view. Keep image 1's three-quarter view and perspective, its painting style, finish and level of detail, and keep its exact layout: the same wagon shape, front end, wheels, troop hold and closed ramp door at the bottom centre, roof deck and railing, lantern cupola, flag, lanterns and shafts, in the same places and at the same size. {TRANSPARENT} Output the same size as the input."""
+    return f"""Image 1 is a game painting of a war wagon with a transparent background. Image 2 is an older, flatter painting of one of its unlockable variants. Use your image generation tool to EDIT image 1 into that variant: {brief}
+Take from image 2 only the variant's colours, materials and motifs. Keep image 1's painting style, light, finish and level of detail, and keep its exact layout: the same wagon shape, near and far wheels, troop hold and closed ramp door at the bottom centre, lit roof deck and railing, lantern cupola, flag, lanterns and shafts, in the same places and at the same size. {TRANSPARENT} Output the same size as the input."""
 
 
 def mount_prompt(kind, what):
@@ -103,7 +105,7 @@ FLAG = f"""Image 1 is the game's official unit sheet; its top half shows the Lan
 def jobs():
     """name -> (prompt, inputs [edit target first], output). Edits read earlier jobs' outputs, so order matters."""
     gen = lambda name: GEN / f"{name}.png"
-    # The wagon itself is not a Codex job: fit_wagon() frames wagon_raw into it.
+    # The wagon itself is not a Codex job: fit_wagon() copies wagon_raw into it.
     out = {"wagon_raw": (WAGON, [FLAT / "wagon.png", STYLE], gen("wagon_raw"))}
     for name, prompt in (("wagon_door", DOOR), ("wagon_damaged", DAMAGED), ("wagon_armour", ARMOUR),
                          ("wagon_snow", SNOW), ("wagon_mud", MUD)):
@@ -141,21 +143,11 @@ Do not modify any other file and do not run anything else.
 
 
 def fit_wagon():
-    """Frames the three-quarter painting for the game: the wagon at 82% with a margin all round, and room under
-    the wheels for the ramp the door edit lowers toward the viewer."""
-    from PIL import Image
+    """The wagon every edit starts from is the painting as it came: it keeps the flat painting's frame."""
+    import shutil
     raw, out = GEN / "wagon_raw.png", GEN / "wagon.png"
-    if out.exists() or not raw.exists():
-        return
-    image = Image.open(raw).convert("RGBA")
-    side = max(image.size)
-    left, top, right, bottom = image.split()[3].point(lambda a: 255 if a > 26 else 0).getbbox()
-    scale = min(.82, .82 * side / (right - left), .78 * side / (bottom - top))
-    small = image.resize((round(image.width * scale), round(image.height * scale)), Image.LANCZOS)
-    frame = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-    frame.paste(small, (round((side - (left + right) * scale) / 2), round(side * .05 - top * scale)))
-    frame.save(out)
-    print("wagon: framed from wagon_raw", flush=True)
+    if raw.exists() and not out.exists():
+        shutil.copyfile(raw, out)
 
 
 def run(names, workers=3):
@@ -217,7 +209,7 @@ def run(names, workers=3):
 
     pending = [n for n in (names or list(table)) if not table[n][2].exists()]
     print(f"{len(pending)} paintings to make", flush=True)
-    if "wagon_raw" in pending:   # everything else edits the framed wagon
+    if "wagon_raw" in pending:   # everything else edits the wagon
         paint("wagon_raw")
         fit_wagon()
         pending.remove("wagon_raw")

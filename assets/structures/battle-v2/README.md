@@ -2,15 +2,15 @@
 
 The caravan and all seven skins are Codex paintings in the unit sheet's style (`art/royal/caravan.py` and
 `caravan_cut.py`, see docs/ROYAL_UI.md "The painted caravan"), first laid out over the Blender renders the remaster siege
-recipes in `art/remaster/siege/` still make, then turned three-quarter on (Nov 2026). Each plate has a `_damaged` twin and shares the `war_wagon_{armour,snow,mud}`
+recipes in `art/remaster/siege/` still make, then repainted with more depth (Nov 2026). Each plate has a `_damaged` twin and shares the `war_wagon_{armour,snow,mud}`
 overlays. The enemy side is a painted stronghold per stage
 (`assets/structures/bases`, see docs/ROYAL_UI.md "Enemy strongholds"), so the Blender gatehouse and its
 outworks are no longer shipped (the recipes can still render them). The painted roof weapons are the `mount_*`
 sprites in `assets/structures/` (the ballista as a stand and a bow that turns).
 
-The caravan stands in a gentle three-quarter view (turned about 20 degrees toward the viewer, seen from about 25
-degrees above), so its front end and roof deck show and it has depth on the field; its near wheels touch down at
-different heights (`contacts`). The battle sun is from the upper left and there is no baked ground shadow. Caravan and skin plates are 1024 × 1024 RGBA; door strips are cropped. All import with
+The caravan stands square-on to the road, seen slightly from above, with its depth drawn up and to the right: a lit
+roof deck and the far wheels showing past the near ones (a three-quarter turn was tried and rejected, it read as
+tipping). The battle sun is from the upper left and there is no baked ground shadow. Caravan and skin plates are 1024 × 1024 RGBA; door strips are cropped. All import with
 mipmaps.
 
 Each JSON stores the ground anchor, wheel contacts, roof weapon sockets, lamp ground positions and the

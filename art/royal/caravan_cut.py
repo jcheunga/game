@@ -31,25 +31,21 @@ REVIEW = GEN / "review"
 SKINS = ["skin_iron", "skin_royal", "skin_bone", "skin_flame", "skin_shadow", "skin_guild", "skin_legendary"]
 ZONES = ["city", "harbor", "foundry", "quarantine", "thornwall", "basilica", "mire", "steppe", "gloamwood", "citadel"]
 
-# Read by eye on the 1254 px wagon painting (gen/caravan/sheets/wagon.png). It stands in a gentle three-quarter
-# view, so its near wheels touch down at different heights and the roof deck is a plane.
+# Read by eye on the 1254 px clean wagon painting (gen/caravan/sheets/wagon.png). It stands square-on to the road
+# with its depth drawn up and to the right, so the far wheels show past the near ones.
 WAGON_POINTS = {
-    "anchor": [560, 985],                 # under the middle of the body, level with the near wheels' bottoms
-    "wheel": 245,                         # a near wheel's diameter
-    # Where the wheels meet the ground: far rear (hidden under the body), far front, near rear, near front.
-    "contacts": [[520, 812], [1000, 880], [310, 948], [775, 1022]],
-    "mounts": [[417, 378], [553, 392], [683, 405]],   # roof deck: archers' post, ballista, firepot
-    "lamps": [[198, 548], [1042, 612]],   # the hanging lanterns' glass
-    "lamp_ground": [[198, 925], [1042, 900]],
-    "lantern": [850, 395],                # the cupola's lamp
-    "flag": [125, 135, 322, 318],         # the flag's cloth (x0, y0, x1, y1); its pole stands at x1
-    "awning": [668, 578, 838, 660],
-    "hitch": [1108, 828],                 # the shafts' ring at the front
-    "smoke": [600, 380],
-    "wheel_top": 700,                     # the row the near wheels' tops reach (armour arrives from here down)
+    "ground": 1097,                       # wheel bottoms
+    "wheels": [354, 926],                 # wheel centres (x)
+    "mounts": [[352, 446], [548, 446], [714, 446]],   # roof deck: archers' post, ballista, firepot
+    "lamps": [[148, 678], [1096, 674]],   # the hanging lanterns' glass
+    "lantern": [905, 395],                # the cupola's lamp
+    "flag": [18, 192, 258, 388],          # the flag's cloth (x0, y0, x1, y1); its pole stands at x1
+    "awning": [756, 598, 952, 690],
+    "hitch": [1222, 862],                 # the shafts' ring at the front
+    "smoke": [560, 430],
 }
-# A wheel stays as tall in battle as on the old 210-wide render (a 310 px wheel on a 1254 px plate drawn 190 wide).
-WHEEL_HEIGHT = 190.0 * 310 / 1254
+# The old render's wheel span (0.63 of a 210-wide plate) keeps the wagon its old size in battle.
+OLD_WIDTH, OLD_SPAN = 210.0, 0.63
 
 ALPHA_FLOOR = 26 / 255      # Codex's transparent paintings carry a faint glow halo below this
 PLATE = 1024                # wagon plates ship at the old renders' size
@@ -134,17 +130,24 @@ def wagon_meta(size, door):
     h, w = size
     points = WAGON_POINTS
     uv = lambda p: [round(p[0] / w, 6), round(p[1] / h, 6)]
-    box = lambda b: [round(v / (w if i % 2 == 0 else h), 6) for i, v in enumerate(b)]
-    return {
-        "source": "art/royal/caravan.py (painted)", "generator": "art/royal/caravan_cut.py", "cameraElevation": 25,
-        "anchor": uv(points["anchor"]), "width": round(WHEEL_HEIGHT / (points["wheel"] / w), 2),
-        "mounts": [uv(p) for p in points["mounts"]], "contacts": [uv(p) for p in points["contacts"]],
-        "lights": [uv(p) for p in points["lamp_ground"]],
+    width = OLD_WIDTH * OLD_SPAN / ((points["wheels"][1] - points["wheels"][0] + 300) / w)
+    ground = points["ground"] / h
+    # Far wheels touch down a little higher and further right than the near ones.
+    far = (points["ground"] - 60) / h
+    meta = {
+        "source": "art/royal/caravan.py (painted)", "generator": "art/royal/caravan_cut.py", "cameraElevation": 22,
+        "anchor": [.5, round(ground, 6)], "width": round(width, 2),
+        "mounts": [uv(p) for p in points["mounts"]],
+        "contacts": [[round((x + 55) / w, 6), round(far, 6)] for x in points["wheels"]] +
+                    [[round(x / w, 6), round(ground, 6)] for x in points["wheels"]],
+        "lights": [[round(p[0] / w, 6), round((points["ground"] - 40) / h, 6)] for p in points["lamps"]],
         "lamps": [uv(p) for p in points["lamps"]], "lantern": uv(points["lantern"]),
-        "flag": box(points["flag"]), "awning": box(points["awning"]),
+        "flag": [round(v / (w if i % 2 == 0 else h), 6) for i, v in enumerate(points["flag"])],
+        "awning": [round(v / (w if i % 2 == 0 else h), 6) for i, v in enumerate(points["awning"])],
         "hitch": uv(points["hitch"]), "smoke": uv(points["smoke"]), "door": door,
         "damaged": True, "overlays": {"armour": [], "snow": True, "mud": True},
     }
+    return meta
 
 
 def cut_wagon():
@@ -209,8 +212,8 @@ def cut_wagon():
         overlay[..., 3] = edit[..., 3] * mask
         write(BATTLE / f"war_wagon_{name}.png", plate_size(overlay))
     # Armour arrives by level: the wheels first, then the lower hull, then the body (rows of the plate).
-    wheel_top = WAGON_POINTS["wheel_top"] / h
-    meta["overlays"]["armour"] = [round(wheel_top, 4), round(wheel_top - .01, 4), 0.0]
+    wheel_top = (WAGON_POINTS["ground"] - 310) / h
+    meta["overlays"]["armour"] = [round(wheel_top, 4), round(.62, 4), 0.0]
     (BATTLE / "war_wagon.json").write_text(json.dumps(meta, indent=2) + "\n")
 
     for skin in SKINS:

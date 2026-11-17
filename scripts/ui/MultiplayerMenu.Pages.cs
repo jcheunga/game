@@ -498,7 +498,7 @@ public partial class MultiplayerMenu
         _page.Image(UnitClassIcon.For(unit), medallion.Grow(-8));
         _page.Serif(unit.DisplayName, new Rect2(rect.Position.X + 8, rect.End.Y - 38, rect.Size.X - 16, 32), 22, align: HorizontalAlignment.Center, weight: 700);
         Stats(statsRow, ("stat-courage", unit.Cost.ToString(), "Courage to deploy"), ("stat-health", Mathf.RoundToInt(stats.MaxHealth).ToString("N0"), "Health"),
-            ("stat-damage", stats.AttackDamage.ToString("0.#"), "Damage"));
+            ("stat-damage", stats.AttackDamage.ToString(stats.AttackDamage < 9.95f ? "0.#" : "0"), "Damage")); // two digits and a decimal ("10.6") overflow the slot
     }
 
     private void SpellCard(Rect2 rect, Rect2 statsRow, SpellDefinition spell)

@@ -234,6 +234,30 @@ lowest strength, so those need some training whatever the table says.
 
 The Gloamwood Witch (stage 90) is the hardest stop: 6 tries in one free run, 20 tries and 135 replays in the other.
 
+## The corrected simulator (17 November 2026)
+
+The same seed did not give the same battle, and `--events` lost a different stage about one run in four. Three
+causes, all fixed in 2a35609a: presentation rolled the battle's seeded dice on drawn frames; the cavalry charge and
+delayed shots ran on scene timers instead of the battle clock; and the hand-stepped battles (`SimDrive`,
+`PlayOpened`) stepped only the battle, so arrows, buff and cast timers and raised dead moved on the engine clock and
+shots landed seconds late. A seeded battle now plays the same every time.
+
+With shots landing on time the simulated player is much stronger, so every fitted table had been fitted too easy
+for real play: on the 13 November table the check gave the free player 109 replays in 17 days and the spender
+$38.94. All three tables were refitted with the same shares and caps as before (75% for stages 1–70, the zone climb,
+the playtest caps on stages 1–3).
+
+- **Campaign.** Mean s goes from 0.41 to 1.11 (zone means: 0.72, 1.46, 1.58, 0.96, 1.55, 0.94, 1.30, 1.18, 0.84,
+  0.57). Five stages sit at the 2.25 ceiling or the outlier cap. No stage was unbeaten at the search's floor.
+- **Check.** Free player: 539 battles, 362 replays, 58 days, 45.5 play hours. Spender: 126 battles, no replays,
+  9 days, $63.93. The free player's walls are stages 48 (49 replays), 96 (135) and 97 (57); the others take 6–24.
+  One run per profile: a seeded battle repeats, so a second run gives the same answer.
+- **Tower.** Every floor refitted on the new stages: s from −0.186 to 0.110 (mean −0.03, as before). Ten floors
+  (27, 55, 58, 59, 67, 68, 77, 78, 79, 87) lost at −0.1 and were fitted with `--tower-lowest=-0.2`.
+- **Events.** Nine of ten event stages still hold at their strengths. Harvest Moon Hunt 4 (stage 76) was eased from
+  ×1.08 / ×1.10 to ×0.88 / ×0.95 (fit ×0.92 / ×0.98). `--event-fit` only searches down from the written values, so
+  it does not say how much harder the other nine could be.
+
 ## Retuning
 
 After changing stages, troops, prices or the level curve:

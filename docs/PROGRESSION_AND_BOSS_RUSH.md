@@ -148,3 +148,8 @@ stages are built on campaign stages, so:
   Siege 1 (stage 34) to ×0.74 / ×0.84, Midwinter Siege 2 (stage 51) to ×0.92 / ×0.97 and Harvest Moon Hunt 1
   (stage 22) to ×0.98 / ×1.02. Harvest Moon Hunt 3 (stage 57), already at the fit's floor of ×0.60 / ×0.75, lost
   one `--events` run in six and went to ×0.55 / ×0.72.
+- 17 November 2026: the simulated battles were made to repeat exactly and to step shots and timers on the battle
+  clock ([the corrected simulator](PLAYTHROUGH_SIM.md#the-corrected-simulator-17-november-2026)), and the campaign was
+  refitted much harder. `--tower-fit` refitted all 100 floors (s from −0.186 to 0.110; floors 27, 55, 58, 59, 67, 68,
+  77, 78, 79 and 87 needed `--tower-lowest=-0.2`), and Harvest Moon Hunt 4 (stage 76) went to ×0.88 / ×0.95. `--events`
+  no longer varies from run to run.

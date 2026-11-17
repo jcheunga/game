@@ -137,7 +137,7 @@ public static class SeasonalEventCatalog
                 new(22, 0.98f, 1.02f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 250)), // was 1.10/1.10; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 22 got harder
                 new(42, 0.86f, 0.92f, new[] { "mirror_pressure" }, new SeasonalEventReward("food", amount: 6)), // 12 Nov: 1.00/1.00 lost on the new stage 42 waves; was 1.18/1.15; eased Nov 2026 on the tuned campaign stage
                 new(57, 0.55f, 0.72f, new[] { "lich_graveyard" }, new SeasonalEventReward("gold", amount: 500)), // was 1.25/1.20; refit Nov 2026 on the tuned campaign stage, with a margin; 9 Nov below the fit's floor (0.60/0.75) when stage 57 got harder and one --events run in six lost it
-                new(76, 1.08f, 1.10f, new[] { "tunnel_invasion" }, new SeasonalEventReward("sigils", amount: 2)), // was 1.30/1.25; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(76, 0.88f, 0.95f, new[] { "tunnel_invasion" }, new SeasonalEventReward("sigils", amount: 2)), // 17 Nov: stage 76 was refitted harder once the simulated player was fixed (--event-fit 0.92/0.98), eased with a margin from 1.08/1.10; was 1.30/1.25; refit Nov 2026 on the tuned campaign stage, with a margin
                 new(91, 0.76f, 0.87f, new[] { "mirror_pressure", "lich_graveyard" }, new SeasonalEventReward("relic", "relic_moonfire_talisman")), // was 1.40/1.30; refit Nov 2026 on the tuned campaign stage, with a margin
             },
             new SeasonalEventMilestone[]

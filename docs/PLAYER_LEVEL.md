@@ -72,5 +72,4 @@ A save from before levels starts at the level its won stages earn, counting each
 ```sh
 godot --headless --path . --fixed-fps 60 res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-levels --regressions
 godot --path . --windowed --resolution 1280x720 res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-levels --player-level
-godot --path . --windowed --resolution 844x390 res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-levels-phone --player-level --mobile-preview
 ```

@@ -19,8 +19,8 @@ public partial class UiReviewSmoke
             GameState.Instance.RestoreCloudSave(fixture);
             foreach(var touch in new[]{false,true})
             {
-                var mode=touch?"phone-touch":"desktop-mouse";
-                GetWindow().Size=touch?new Vector2I(844,390):new Vector2I(1280,720);
+                var mode=touch?"touch":"mouse";
+                GetWindow().Size=new Vector2I(1280,720);
                 GameState.Instance.PrepareCampaignBattle(); await Open("Battle");
                 var battle=(BattleController)GetTree().CurrentScene; battle.SetPhysicsProcess(false);
                 T Read<T>(string name)=>(T)typeof(BattleController).GetField(name,hidden)!.GetValue(battle)!;
@@ -165,7 +165,7 @@ public partial class UiReviewSmoke
                 Check(Read<int>("_spellsCast")==casts && !Read<bool>("_cardPointerDown"),mode+": checkpoint interrupts without spending");
                 Start(deck.Roster.Count); Write("_battleEnded",true); Call("UpdateCardDragPreview"); Up(point); Write("_battleEnded",false);
                 Check(Read<int>("_spellsCast")==casts && !Read<bool>("_cardPointerDown"),mode+": battle end interrupts without spending");
-                Press(); GetWindow().Size=touch?new Vector2I(667,375):new Vector2I(1200,720); await Wait(.15); Up(CardPoint(0));
+                Press(); GetWindow().Size=new Vector2I(1200,720); await Wait(.15); Up(CardPoint(0));
                 Check(!Read<bool>("_cardPointerDown") && Read<int>("_playerDeployments")==count,mode+": resizing cancels stale card presses");
 
                 if(touch)

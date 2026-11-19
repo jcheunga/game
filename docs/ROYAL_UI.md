@@ -48,7 +48,7 @@ The pieces themselves live in `royal/RoyalPage.cs`, which composes into any canv
 forwards to one over its live layer. Screens on a concept plate of their own use it for content the concept never
 drew: Multiplayer Challenges composes its five pages with it (`MultiplayerMenu.Pages.cs`: the loaded code's best
 and medal ladder beside its runs, today's board and leaders, featured and saved board cards three to a page, and
-the squad's cards). Reviewed with `UiReviewSmoke --challenges [--window=844x390]`.
+the squad's cards). Reviewed with `UiReviewSmoke --challenges`.
 
 The art behind them, all Codex-painted and installed by `art/royal/boards.py` (`boards`, `emblems`, `sheets`,
 `scenes`, `kit`):

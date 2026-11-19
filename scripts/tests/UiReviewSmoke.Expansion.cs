@@ -8,10 +8,9 @@ public partial class UiReviewSmoke
 {
     private async Task ReviewExpansion()
     {
-        foreach(var phone in new[]{false,true})
         {
-            GetWindow().Size=phone?new Vector2I(844,390):new Vector2I(1280,720);
-            _output=ProjectSettings.GlobalizePath("res://artifacts/expansion/"+(phone?"phone":"desktop"));System.IO.Directory.CreateDirectory(_output);
+            GetWindow().Size=new Vector2I(1280,720);
+            _output=ProjectSettings.GlobalizePath("res://artifacts/expansion/desktop");System.IO.Directory.CreateDirectory(_output);
             var state=GameState.Instance;state.ResetProgress();state.SetShowHints(false);state.SetAnalyticsConsent(false);
             var fixture=state.BuildSaveData();fixture.Gold=10000;fixture.Essence=100;fixture.HighestUnlockedStage=100;
             fixture.OwnedPlayerUnitIds=GameData.PlayerRosterIds;fixture.UnitLevels=GameData.PlayerRosterIds.ToDictionary(id=>id,_=>20);

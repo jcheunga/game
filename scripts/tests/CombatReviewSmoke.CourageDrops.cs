@@ -145,12 +145,12 @@ public partial class CombatReviewSmoke
             Write(battle, "_courage", 0f);
             await CloseBattle(battle); battle = null;
 
-            // Exercise actual viewport input with mouse and touch, at a monitor and a phone size.
+            // Exercise actual viewport input with mouse and touch.
             tuning.CourageDropChance = 1;
             foreach (var touch in new[] { false, true })
             {
-                var mode = touch ? "phone" : "desktop";
-                GetWindow().Size = touch ? new Vector2I(844, 390) : new Vector2I(1280, 720);
+                var mode = touch ? "touch" : "mouse";
+                GetWindow().Size = new Vector2I(1280, 720);
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 battle = await OpenBattle(1);
                 // The game pauses a battle when its window loses OS focus (AppLifecycleService -> TogglePause). These checks

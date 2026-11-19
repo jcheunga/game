@@ -8,10 +8,9 @@ public partial class UiReviewSmoke
 {
     private async Task ReviewEquipmentPreview()
     {
-        foreach(var phone in new[]{false,true})
         {
-            GetWindow().Size=phone?new Vector2I(844,390):new Vector2I(1280,720);
-            _output=ProjectSettings.GlobalizePath("res://artifacts/equipment-preview/"+(phone?"phone":"desktop"));
+            GetWindow().Size=new Vector2I(1280,720);
+            _output=ProjectSettings.GlobalizePath("res://artifacts/equipment-preview/desktop");
             System.IO.Directory.CreateDirectory(_output);
             var state=GameState.Instance;state.ResetProgress();state.SetShowHints(false);state.SetAnalyticsConsent(false);
             var fixture=state.BuildSaveData();fixture.Gold=100000;fixture.Essence=100;

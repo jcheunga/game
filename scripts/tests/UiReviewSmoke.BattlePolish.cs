@@ -19,14 +19,13 @@ public partial class UiReviewSmoke
         fixture.OwnedPlayerUnitIds = GameData.PlayerRosterIds.ToArray(); fixture.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray();
         fixture.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(3).ToArray(); fixture.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(2).ToArray();
         state.RestoreCloudSave(fixture);
-        foreach (var size in new[] { new Vector2I(1280, 720), new Vector2I(1024, 768), new Vector2I(844, 390) })
+        foreach (var size in new[] { new Vector2I(1280, 720), new Vector2I(1024, 768) })
         {
-            var phone = size.X == 844;
             GetWindow().Size = size;
             state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
             var battle = (BattleController)GetTree().CurrentScene; battle.SetPhysicsProcess(false);
             if (Read<bool>(battle, "_battlePaused")) Call(battle, "TogglePause");
-            var tag = phone ? "phone" : size.X == 1024 ? "small" : "desktop";
+            var tag = size.X == 1024 ? "small" : "desktop";
             var health = Read<PanelContainer>(battle, "_topHudPanel");
             var gold = Read<HBoxContainer>(battle, "_goldReadout");
             var menu = Read<Button>(battle, "_hudSettingsButton");
@@ -58,13 +57,6 @@ public partial class UiReviewSmoke
             var volume = state.MusicVolumePercent; slider.Value = volume == 42 ? 43 : 42;
             Check(state.MusicVolumePercent != volume, tag + ": audio controls work while paused");
             await Capture(tag + "-settings");
-            if (phone)
-            {
-                GetWindow().Size = new Vector2I(667, 375); await Wait(.15);
-                var volumeControl = Walk(Read<RealmModal>(battle, "_battleSettingsModal")).OfType<HSlider>().First(s => s.IsVisibleInTree());
-                Check(new Rect2(Vector2.Zero, battle.GetViewportRect().Size).Encloses(volumeControl.GetGlobalRect()), "Phone settings refits after resizing");
-                GetWindow().Size = size; await Wait(.15);
-            }
             Send(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Wait(.1);
             Check(Read<RealmModal>(battle, "_battleSettingsModal") == null && GetTree().Paused && Read<CenterContainer>(battle, "_pauseOverlay").Visible,
                 tag + ": Escape returns to pause menu without restarting the fight");

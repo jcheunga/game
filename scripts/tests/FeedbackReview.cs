@@ -21,7 +21,7 @@ public partial class FeedbackReview : Node
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         RenderingServer.ForceDraw(false);
         using var pixels = GetViewport().GetTexture().GetImage();
-        var folder = ProjectSettings.GlobalizePath("res://artifacts/feedback-review/" + (OS.GetCmdlineUserArgs().Contains("--mobile-preview") ? "phone" : "desktop")); System.IO.Directory.CreateDirectory(folder);
+        var folder = ProjectSettings.GlobalizePath("res://artifacts/feedback-review/" + "desktop"); System.IO.Directory.CreateDirectory(folder);
         pixels.SavePng(folder + "/" + id + ".png");
     }
     private static IEnumerable<Node> Walk(Node node)
@@ -35,7 +35,7 @@ public partial class FeedbackReview : Node
             if (!OS.GetCmdlineUserArgs().Any(x => x.StartsWith("--save-suffix=feedback-review-"))) throw new Exception("Use an isolated feedback-review save.");
             GetTree().AutoAcceptQuit = false;
             GetWindow().Mode = Window.ModeEnum.Windowed;
-            var dimensions = OS.GetCmdlineUserArgs().Contains("--mobile-preview") ? new Vector2I(844,390) : new Vector2I(1280,720);
+            var dimensions = new Vector2I(1280,720);
             GetWindow().Size = dimensions;
             GetWindow().ContentScaleSize = new Vector2I(1280,720);
             GetWindow().ContentScaleMode = Window.ContentScaleModeEnum.CanvasItems;

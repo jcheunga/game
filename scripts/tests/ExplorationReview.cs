@@ -10,7 +10,6 @@ public partial class ExplorationReview : Node
 {
     private const BindingFlags Hidden = BindingFlags.NonPublic | BindingFlags.Instance;
     private int _failures;
-    private bool Phone => OS.GetCmdlineUserArgs().Contains("--mobile-preview");
     private static T Read<T>(object obj,string field) => (T)(obj is MapMenu ? typeof(MapMenu) : obj.GetType()).GetField(field,Hidden).GetValue(obj);
     private static object Call(object obj,string method,params object[] args) => obj.GetType().GetMethod(method,Hidden).Invoke(obj,args);
     private void Check(bool ok,string text) { GD.Print($"EXPLORATION_CHECK: {(ok ? "PASS" : "FAIL")} {text}"); if (!ok) _failures++; }
@@ -34,7 +33,7 @@ public partial class ExplorationReview : Node
         if (!OS.GetCmdlineUserArgs().Contains("--capture")) return;
         await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame); RenderingServer.ForceDraw(false);
         using var image=GetViewport().GetTexture().GetImage();
-        var folder=ProjectSettings.GlobalizePath("res://artifacts/exploration-review/"+(Phone ? "phone" : "desktop")); Directory.CreateDirectory(folder);
+        var folder=ProjectSettings.GlobalizePath("res://artifacts/exploration-review/"+"desktop"); Directory.CreateDirectory(folder);
         Check(image.SavePng(folder+"/"+name+".png")==Error.Ok,"Capture "+name);
     }
     public override void _Ready() => Callable.From(Run).CallDeferred();
@@ -44,7 +43,7 @@ public partial class ExplorationReview : Node
         {
             if (!OS.GetCmdlineUserArgs().Any(s=>s.StartsWith("--save-suffix=exploration-review-"))) throw new Exception("Use an isolated exploration-review save.");
             GetTree().AutoAcceptQuit=false; GetWindow().Mode=Window.ModeEnum.Windowed;
-            GetWindow().Size=Phone ? new Vector2I(844,390) : new Vector2I(1280,720);
+            GetWindow().Size=new Vector2I(1280,720);
             GetWindow().ContentScaleSize=new Vector2I(1280,720); GetWindow().ContentScaleMode=Window.ContentScaleModeEnum.CanvasItems;
             Reset(); var state=GameState.Instance;
             int Steps(AdventureTile from, AdventureTile to)

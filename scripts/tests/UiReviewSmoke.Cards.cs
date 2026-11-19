@@ -20,10 +20,9 @@ public partial class UiReviewSmoke
         fixture.UnitLevels = new Dictionary<string,int>{[fixture.ActiveDeckUnitIds[0]]=UnitBalance.MaxPlayerLevel,[fixture.ActiveDeckUnitIds[1]]=7};
         fixture.SpellLevels = new Dictionary<string,int>{[fixture.ActiveDeckSpellIds[0]]=GameState.Instance.MaxSpellLevel};
         GameState.Instance.RestoreCloudSave(fixture);
-        foreach(var mobile in new[]{false,true})
         {
-            var prefix=mobile?"phone":"desktop";
-            GetWindow().Size=mobile?new Vector2I(844,390):new Vector2I(1280,720);
+            var prefix="desktop";
+            GetWindow().Size=new Vector2I(1280,720);
             GameState.Instance.PrepareCampaignBattle();
             await Open("Battle");
             var battle=(BattleController)GetTree().CurrentScene;

@@ -20,7 +20,6 @@ public partial class UiReviewSmoke : Node
             // --window=WxH reviews at any screen size (the canvas scales to fit it; what it shows must not change).
             var window = OS.GetCmdlineUserArgs().FirstOrDefault(arg => arg.StartsWith("--window="))?["--window=".Length..].Split('x');
             var requestedSize = window != null ? new Vector2I(int.Parse(window[0]), int.Parse(window[1]))
-                : OS.GetCmdlineUserArgs().Contains("--mobile-preview") ? new Vector2I(844, 390)
                 : OS.GetCmdlineUserArgs().Contains("--small-window") ? new Vector2I(1024, 768) : new Vector2I(1280, 720);
             GetWindow().Mode = Window.ModeEnum.Windowed;
             GetWindow().Size = requestedSize;
@@ -184,7 +183,6 @@ public partial class UiReviewSmoke : Node
             if (OS.GetCmdlineUserArgs().Contains("--typography"))
             {
                 _output = ProjectSettings.GlobalizePath(window != null ? $"res://artifacts/typography-{window[0]}x{window[1]}"
-                    : OS.GetCmdlineUserArgs().Contains("--mobile-preview") ? "res://artifacts/typography-phone"
                     : OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/typography-small" : "res://artifacts/typography");
                 System.IO.Directory.CreateDirectory(_output);
                 // --only=ShopMenu,ArenaMenu narrows a review to the screens being polished.

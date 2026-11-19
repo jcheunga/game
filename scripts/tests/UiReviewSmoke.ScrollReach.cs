@@ -9,7 +9,7 @@ using Godot;
 /// Every vertical scroll area must reveal its last row. Scrolled to its end (with any outer scroll
 /// following), the bottom-most content must sit inside what the screen shows, and a wheel turn or a
 /// finger drag over the area must move it.
-///   --scroll-reach [--only=ProfileMenu,levels] [--late-game] [--mobile-preview]
+///   --scroll-reach [--only=ProfileMenu,levels] [--late-game]
 /// </summary>
 public partial class UiReviewSmoke
 {

@@ -9,7 +9,7 @@ public partial class UiReviewSmoke
     /// <summary>The first-run welcome's nickname, the home player card, the level track, the caps in the armory and the result board's level card.</summary>
     private async Task ReviewPlayerLevel()
     {
-        _output = ProjectSettings.GlobalizePath(GetWindow().Size.Y < 500 ? "res://artifacts/player-level/mobile" : "res://artifacts/player-level/desktop");
+        _output = ProjectSettings.GlobalizePath("res://artifacts/player-level/desktop");
         System.IO.Directory.CreateDirectory(_output);
         var state = GameState.Instance; state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
         await Open("MainMenu");

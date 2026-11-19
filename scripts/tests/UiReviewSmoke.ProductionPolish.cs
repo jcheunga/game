@@ -8,10 +8,9 @@ public partial class UiReviewSmoke
 {
     private async Task ReviewProductionPolishUi()
     {
-        foreach (var phone in new[] { false, true })
         {
-            GetWindow().Size = phone ? new Vector2I(844, 390) : new Vector2I(1280, 720);
-            _output = ProjectSettings.GlobalizePath("res://artifacts/production-polish/" + (phone ? "phone" : "desktop"));
+            GetWindow().Size = new Vector2I(1280, 720);
+            _output = ProjectSettings.GlobalizePath("res://artifacts/production-polish/desktop");
             System.IO.Directory.CreateDirectory(_output);
             var state = GameState.Instance;
             state.ResetProgress(); state.SetShowHints(true); state.SetAnalyticsConsent(false);

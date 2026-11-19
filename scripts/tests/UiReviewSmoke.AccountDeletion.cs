@@ -9,11 +9,11 @@ public partial class UiReviewSmoke
     /// Settings → Account → Delete account, tapped like a player. A signed-in player sees their sign-in named, and
     /// with no server nothing is deleted. A guest that never reached a server confirms (after keeping the account
     /// once) and only the device resets; server_e2e.sh covers the server side. Last, an account deleted elsewhere
-    /// resets the device and home explains it once. Run with --mobile-preview for the phone-sized canvas.
+    /// resets the device and home explains it once.
     /// </summary>
     private async Task ReviewAccountDeletion()
     {
-        _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--mobile-preview") ? "res://artifacts/account-deletion-phone" : "res://artifacts/account-deletion");
+        _output = ProjectSettings.GlobalizePath("res://artifacts/account-deletion");
         System.IO.Directory.CreateDirectory(_output);
         var state = GameState.Instance;
         state.ResetProgress(); state.SetAnalyticsConsent(false); state.SetShowHints(false);

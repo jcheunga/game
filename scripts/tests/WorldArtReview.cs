@@ -11,7 +11,6 @@ public partial class WorldArtReview : Node
 {
     private const BindingFlags Hidden = BindingFlags.NonPublic | BindingFlags.Instance;
     private int _failures;
-    private bool Phone => OS.GetCmdlineUserArgs().Contains("--mobile-preview");
     private bool Incomplete => OS.GetCmdlineUserArgs().Contains("--allow-incomplete");
     private static T Read<T>(object obj, string field) => (T)(obj is MapMenu ? typeof(MapMenu) : obj.GetType()).GetField(field,Hidden).GetValue(obj);
     private void Check(bool ok, string message) { GD.Print($"WORLD_ART_CHECK: {(ok ? "PASS" : "FAIL")} {message}"); if (!ok) _failures++; }
@@ -23,7 +22,7 @@ public partial class WorldArtReview : Node
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         RenderingServer.ForceDraw(false);
         using var pixels = GetViewport().GetTexture().GetImage();
-        var directory = ProjectSettings.GlobalizePath("res://artifacts/world-art-review/" + (Phone ? "phone" : "desktop"));
+        var directory = ProjectSettings.GlobalizePath("res://artifacts/world-art-review/" + "desktop");
         Directory.CreateDirectory(directory); Check(pixels.SavePng(directory + "/" + name + ".png") == Error.Ok, "Capture " + name);
     }
     private async void Run()
@@ -32,7 +31,7 @@ public partial class WorldArtReview : Node
         {
             if (!OS.GetCmdlineUserArgs().Any(s => s.StartsWith("--save-suffix=world-art-review-"))) throw new Exception("Use an isolated world-art-review save.");
             GetTree().AutoAcceptQuit = false;
-            GetWindow().Mode = Window.ModeEnum.Windowed; GetWindow().Size = Phone ? new Vector2I(844,390) : new Vector2I(1280,720);
+            GetWindow().Mode = Window.ModeEnum.Windowed; GetWindow().Size = new Vector2I(1280,720);
             GetWindow().ContentScaleSize = new Vector2I(1280,720); GetWindow().ContentScaleMode = Window.ContentScaleModeEnum.CanvasItems;
             var state = GameState.Instance; state.ResetProgress(); state.SetAnalyticsConsent(false); state.SetShowHints(false);
             var hashes = new HashSet<string>();
@@ -89,7 +88,7 @@ public partial class WorldArtReview : Node
                     GameData.Combat.BattlefieldTop + GameData.Combat.BattlefieldBottom) * .5f; camera.ForceUpdateScroll();
                 await Wait(); await Capture($"battle-{stage:00}-overview"); battle.QueueFree(); await Wait();
             }
-            if (!Phone && OS.GetCmdlineUserArgs().Contains("--capture"))
+            if (OS.GetCmdlineUserArgs().Contains("--capture"))
             {
                 var gallery = new WorldArtGallery { Size = new Vector2(1280,720) }; AddChild(gallery);
                 foreach (var zone in AssetCoverageCatalog.RouteIds)

@@ -61,7 +61,7 @@ public partial class MobilePresentationReview : Node
             insets=SafeAreaService.LogicalInsets(new Rect2(30,0,784,390),new Transform2D(0,Vector2.One*(390f/720),0,new Vector2(75.333f,0)),new Vector2(1280,720));
             Check(insets.Length()<.01,"Letterbox padding already protects safe-area insets");
             GetWindow().Mode=Window.ModeEnum.Windowed;
-            GetWindow().Size=new Vector2I(844,390);
+            GetWindow().Size=new Vector2I(1280,720);
             GetWindow().ContentScaleSize=new Vector2I(1280,720);
             GetWindow().ContentScaleMode=Window.ContentScaleModeEnum.CanvasItems;
             await Settle();
@@ -137,8 +137,6 @@ public partial class MobilePresentationReview : Node
             battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Position=screen});
             Check(Read<int>(battle,"_playerDeployments")==pausedCount,"Paused touches cannot deploy");
             Call(battle,"TogglePause");
-            GetWindow().Size=new Vector2I(667,375); await Settle(); await Capture("small-phone-after");
-            Check(top.GetGlobalRect().End.X<=battle.GetViewportRect().Size.X+1,"Small-phone header fits after resize");
             Read<CenterContainer>(battle,"_endCenter").Show();
             var result=Read<PanelContainer>(battle,"_endPanel"); result.Show();
             Read<Label>(battle,"_endLabel").Text=string.Join("\n",Enumerable.Repeat("Victory · Full battle report remains scrollable.",25));

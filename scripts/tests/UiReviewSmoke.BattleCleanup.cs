@@ -130,26 +130,25 @@ public partial class UiReviewSmoke
             Check(GetTree().CurrentScene is MapMenu home && home.HomeModalDestination == destination,
                 System.IO.Path.GetFileNameWithoutExtension(destination) + " opens with the current map modal from battle");
         }
-        GetWindow().Size = new Vector2I(844, 390);
         fight = await Battle(); SceneRouter.Instance.GoToLoadout(); await Wait(.7);
         var prepare = (MapMenu)GetTree().CurrentScene;
         var deploy = Walk(prepare).OfType<Button>().Single(button => button.IsVisibleInTree() && button.AccessibilityName == "Deploy");
         Check(deploy.GetGlobalRect().End.Y <= prepare.GetViewportRect().End.Y && deploy.GetGlobalRect().Position.Y >= 0,
-            "Phone preparation keeps the entry button inside the current modal");
+            "Preparation after a battle keeps the entry button inside the current modal");
         Check(prepare.GetViewportRect().Encloses(deploy.GetGlobalRect()),
-            "Phone entry action is fully visible within the modal content");
+            "The entry action is fully visible within the modal content");
         Check(state.SelectedStage == 48, "Opening a preparation modal preserves the selected stage");
-        Check(Walk(prepare).OfType<LoadoutMenu>().Single().IsVisibleInTree(), "Phone preparation is visible after returning from battle");
-        await Capture("05-phone-preparation-return");
+        Check(Walk(prepare).OfType<LoadoutMenu>().Single().IsVisibleInTree(), "Preparation is visible after returning from battle");
+        await Capture("05-preparation-return");
         fight = await Battle(BattleRunMode.Endless); Call(fight, "EndBattle", false);
         Call(fight, "HandleEndPanelSecondaryAction"); await Wait(.7);
         var phoneEndless = (MapMenu)GetTree().CurrentScene;
         var start = Walk(phoneEndless).OfType<Button>().Single(button => button.IsVisibleInTree() && button.AccessibilityName == "Begin endless march");
         Check(start.GetGlobalRect().End.Y <= phoneEndless.GetViewportRect().End.Y,
-            "Phone Endless preparation keeps the launch action inside the current modal");
+            "Endless preparation keeps the launch action inside the current modal");
         Check(phoneEndless.GetViewportRect().Encloses(start.GetGlobalRect()),
-            "Phone Endless launch action is fully visible within the modal content");
-        await Capture("06-phone-endless-return");
+            "The Endless launch action is fully visible within the modal content");
+        await Capture("06-endless-return");
         GD.Print($"BATTLE_CLEANUP_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 }

@@ -12,12 +12,11 @@ public partial class UiReviewSmoke
     /// Settings → Account → Manage, opened like a player against a stand-in server that offers every sign-in. Measures
     /// the sign-in buttons against Google's and Apple's published button rules (art/signin/README.md lists them),
     /// captures the dialog, a held press and every brand on dark and light surroundings. Then the stand-in offers
-    /// only email, and then nothing answers at all, to show Apple and Google are left out. Run with --mobile-preview
-    /// for the phone-sized canvas.
+    /// only email, and then nothing answers at all, to show Apple and Google are left out.
     /// </summary>
     private async Task ReviewAccount()
     {
-        _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--mobile-preview") ? "res://artifacts/account-phone" : "res://artifacts/account");
+        _output = ProjectSettings.GlobalizePath("res://artifacts/account");
         System.IO.Directory.CreateDirectory(_output);
         if (ReleaseBackendConfiguration.ApiBaseUrl.Length > 0) { Check(false, "The account review never talks to a production server"); return; }
         var state = GameState.Instance;

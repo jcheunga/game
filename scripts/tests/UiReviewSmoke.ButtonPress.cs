@@ -12,7 +12,7 @@ public partial class UiReviewSmoke
     /// </summary>
     private async Task ReviewButtonPress()
     {
-        _output = ProjectSettings.GlobalizePath(GetWindow().Size.Y < 500 ? "res://artifacts/button-press/mobile" : "res://artifacts/button-press/desktop");
+        _output = ProjectSettings.GlobalizePath("res://artifacts/button-press/desktop");
         System.IO.Directory.CreateDirectory(_output);
         var state = GameState.Instance; state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
         async Task Frames(int count) { for (var i = 0; i < count; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }

@@ -82,18 +82,6 @@ public partial class UiReviewSmoke
             Call(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit(GameData.PlayerRosterIds[0])), enemyGround + new Vector2(-40, 25));
             await Wait(.1); await Capture(stage.MapId + "-castle");
         }
-        GetWindow().Size = new Vector2I(844, 390);
-        state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
-        var phone = (BattleController)GetTree().CurrentScene; phone.SetPhysicsProcess(false);
-        if ((bool)typeof(BattleController).GetField("_battlePaused", hidden)!.GetValue(phone)!) Call(phone, "TogglePause");
-        Call(phone, "ClearArmedSelection");
-        Call(phone, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit(GameData.PlayerRosterIds[0])), new Vector2(280, 340));
-        Call(phone, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit("enemy_walker")), new Vector2(420, 380));
-        await Wait(.15); await Capture("phone-caravan");
-        var canvases = Walk(phone).OfType<BattleBaseCanvas>().ToArray();
-        Check(Walk(phone).OfType<BattleShadowCanvas>().Single().Visible && canvases.Count(b => b.Name == "Caravan" || b.Name == "Castle") == 2
-            && Call(phone, "get_PaintedBase") != null && !canvases.Any(b => b.Name.ToString().StartsWith("Outwork")),
-            "Phone view retains the same grounded bases and shadow pass");
         foreach (var id in new[] { "war_wagon" }.Concat(WagonSkinCatalog.GetAll().Where(skin => skin.Id != WagonSkinCatalog.DefaultSkinId).Select(skin => "war_wagon_" + skin.Id)))
         {
             var art = BattleStructureArt.Load(id);

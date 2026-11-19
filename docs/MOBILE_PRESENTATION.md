@@ -33,13 +33,15 @@ Apple's minimums there (since 2026-10-31; before, the floors were 18/16 px):
   78×86 pt, meters, gold and pause scaled alike. The result board stands on the
   unscaled canvas.
 
-`UiReviewSmoke --typography --window=844x390` audits every screen at phone size:
+`UiReviewSmoke --typography` audits every screen against the phone floors, which are measured on the canvas and so hold at any window size:
 `SMALL_ON_PHONE` (text under the floors), `ROYAL_TEXT_OVERFLOW` (a label at its
 floor still wider than its box, or a button caption past its button) and
 `SMALL_TOUCH` (a tap target under 72 px). Any other review audits its captures
 the same way with `--audit-captures` (e.g. `--concepts`, `--boards`, `--guides`,
-`--player-level`). Captures at 844×390, 1024×768, 1280×720 and 1440×900 match
-once scaled to the same size.
+`--player-level`). Captures at any window size match once scaled to the same size, so the reviews run at
+1280×720 (and 1024×768 with `--small-window`); the separate phone-sized runs (844×390, 667×375, `--mobile-preview`)
+were removed on 20 November 2026: the window was too small to read and showed the same canvas. `--window=WxH`
+still opens a review at any size.
 
 The battle shares the soldier scale and two-screen field everywhere (see
 [Deployment cards](DEPLOYMENT_CARDS.md#battlefield-proportions)).
@@ -120,8 +122,8 @@ dotnet build --no-restore
 godot --path . --scene res://scenes/tests/MobilePresentationReview.tscn -- --save-suffix=mobile-review-UNIQUE --capture-motion
 godot --headless --path . --scene res://scenes/tests/CombatMotionReview.tscn -- --save-suffix=motion-review-UNIQUE
 godot --headless --path . --scene res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-UNIQUE --regressions
-godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-UNIQUE --typography --window=844x390
-godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-UNIQUE --scroll-reach --mobile-preview [--late-game] [--only=ProfileMenu,extras]
+godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-UNIQUE --typography
+godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-UNIQUE --scroll-reach [--late-game] [--only=ProfileMenu,extras]
 ```
 
 `--scroll-reach` visits every home page and tab (`realm_tabs` rows and `royal_tab` tabs), the level track, achievements and
@@ -137,9 +139,8 @@ checks that a wobbly tap still presses a button in a list. `--late-game` seeds a
 save with everything owned, so lists are at their longest. Captures go to
 `artifacts/scroll-reach`.
 
-The presentation review uses 844×390 and 667×375 landscape windows and writes previews
-under `artifacts/mobile-review`. The 844×390 window retains the game's existing
-aspect-preserving letterboxing, so its captured game surface is 693×390. The
+The presentation review runs at 1280×720 with touch input and writes previews
+under `artifacts/mobile-review`. The
 optional motion capture is an arranged in-engine duel using real attack and
 damage code, not a complete recorded campaign playthrough.
 
@@ -149,5 +150,5 @@ passed. The combat drivers report ObjectDB exit warnings; the visible mobile
 review reports none.
 
 Scope: this covers battle, mobile preparation, and the armory in
-phone-sized landscape views. Portrait layouts and physical Android/iOS device
-validation are not covered by the desktop phone-sized review.
+landscape views with touch input. Portrait layouts and physical Android/iOS device
+validation are not covered by the desktop review.

@@ -132,7 +132,7 @@ public partial class CombatMotionReview
 
     private async Task CaptureCrowdContacts()
     {
-        GetWindow().Mode=Window.ModeEnum.Windowed; GetWindow().Size=new Vector2I(844,390);
+        GetWindow().Mode=Window.ModeEnum.Windowed; GetWindow().Size=new Vector2I(1280,720);
         GetWindow().ContentScaleSize=new Vector2I(1280,720);
         GetWindow().ContentScaleMode=Window.ContentScaleModeEnum.CanvasItems;
         var battle=await Battle();

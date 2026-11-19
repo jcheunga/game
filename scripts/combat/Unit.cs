@@ -825,6 +825,7 @@ public partial class Unit : Node2D
         if (!_contactMotionActive) _spriteAttackRemaining = Mathf.Max(0f, _spriteAttackRemaining - deltaF);
         _spriteDeployRemaining = Mathf.Max(0f, _spriteDeployRemaining - deltaF);
         _castRemaining = Mathf.Max(0f, _castRemaining - deltaF);
+        UpdateWardShell();
         if (_statusFx == null && !IsDead && UnitStatusFx.Wants(this))
             AddChild(_statusFx = new UnitStatusFx { Owner = this });
         QueueRedraw();

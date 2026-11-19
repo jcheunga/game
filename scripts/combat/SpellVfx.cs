@@ -15,13 +15,13 @@ public static class SpellVfx
 {
     // Layers, against the battle's own: decals with the gore stains, sigils under the troops, eruptions
     // depth-sorted with the troops, light and sky effects over them.
-    public const int DecalLayer = -3, GroundLayer = -2, TroopLayer = 0, AirLayer = 24, FlashLayer = 26;
+    public const int DecalLayer = -3, GroundLayer = -2, BehindLayer = -1, TroopLayer = 0, AirLayer = 24, FlashLayer = 26;
     private const string TexturePath = "res://assets/fx/spells/";
     private static readonly Dictionary<string, Texture2D> Textures = new();
     private static Dictionary<string, Flipbook> _books;
     private static CanvasItemMaterial _additive, _premultiplied;
-    private static Shader _sigilShader, _beamShader;
-    private static Texture2D _glow, _ring, _beam, _streak, _disc;
+    private static Shader _sigilShader, _beamShader, _curtainShader, _domeShader;
+    private static Texture2D _glow, _ring, _beam, _streak, _disc, _white;
 
     public static bool Reduced => GameState.Instance?.ReducedMotion ?? false;
     public static CanvasItemMaterial Additive => _additive ??= new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
@@ -101,6 +101,9 @@ public static class SpellVfx
     public static Texture2D Streak => _streak ??= Procedural(256, 32, (x, y) =>
         Mathf.Exp(-Mathf.Pow((y - .5f) / (.08f + .2f * x), 2f)) * Mathf.Pow(x, 1.6f) * Mathf.SmoothStep(1f, .94f, x));
 
+    /// <summary>Plain white, for pieces a shader draws entirely (the light wall, the sphere).</summary>
+    public static Texture2D White => _white ??= Procedural(4, 4, (_, _) => 1f);
+
     private static Texture2D Procedural(int width, int height, Func<float, float, float> alpha)
     {
         using var image = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
@@ -114,7 +117,7 @@ public static class SpellVfx
     {
         Textures.Clear();
         _books = null;
-        _glow = _ring = _beam = _streak = _disc = null;
+        _glow = _ring = _beam = _streak = _disc = _white = null;
     }
 
     private static ShaderMaterial ShaderOf(ref Shader shader, string name, float seed)
@@ -180,7 +183,8 @@ public static class SpellVfx
     public static VfxSprite Sigil(Node parent, Vector2 at, string school, Color color, float radius, float life = 1.1f, float spin = .5f, float delay = 0f,
         float draw = .22f, float flareAt = -1f)
     {
-        var sigil = Sprite(parent, at, Tex("sigil_" + school), color, Vector2.One * radius * 1.75f, Vector2.One * radius * 2.1f, life,
+        // Kept under full strength: at full, the added light fills the circle in and it reads as a flat white disc.
+        var sigil = Sprite(parent, at, Tex("sigil_" + school), new Color(color, color.A * .6f), Vector2.One * radius * 1.75f, Vector2.One * radius * 2.1f, life,
             GroundLayer, true, true, delay);
         if (sigil == null) return null;
         sigil.Spin = Reduced ? 0 : spin; sigil.SizeEase = 4f;
@@ -189,10 +193,63 @@ public static class SpellVfx
         return sigil.Envelope(.04f, .4f);
     }
 
-    /// <summary>An expanding ring across the ground.</summary>
-    public static VfxSprite Shockwave(Node parent, Vector2 at, Color color, float radius, float life = .45f, float delay = 0f) =>
-        Sprite(parent, at, Ring, color, Vector2.One * radius * .3f, Vector2.One * radius * 2.4f, life, GroundLayer, true, true, delay)
+    /// <summary>An expanding wave across the ground: a ring on the road with a low wall of light riding out on it.</summary>
+    public static VfxSprite Shockwave(Node parent, Vector2 at, Color color, float radius, float life = .45f, float delay = 0f)
+    {
+        if (!Reduced)
+        {
+            var crest = Mathf.Clamp(radius * .34f, 12f, 46f);
+            foreach (var wall in Curtain(parent, at, new Color(color, color.A * .8f), radius * .15f, crest, life, delay, radius * 1.2f, crest * .35f, rise: .06f))
+                wall.Envelope(.02f, .75f);
+        }
+        return Sprite(parent, at, Ring, new Color(color, color.A * .7f), Vector2.One * radius * .3f, Vector2.One * radius * 2.4f, life, GroundLayer, true, true, delay)
             ?.Envelope(.02f, .7f);
+    }
+
+    /// <summary>
+    /// A wall of light standing on a circle of the road: the far half behind the troops, the near half over them, so
+    /// whoever stands inside is seen to be inside it. It grows up out of the road over <paramref name="rise"/> seconds
+    /// and can widen or sink over its life (<paramref name="radiusTo"/>, <paramref name="heightTo"/>). A life of 0
+    /// keeps it standing until it is freed; drive it with <see cref="VfxCurtain.Strength"/>.
+    /// </summary>
+    public static VfxCurtain[] Curtain(Node parent, Vector2 at, Color color, float radius, float height, float life = 1f, float delay = 0f,
+        float radiusTo = 0f, float heightTo = 0f, float twist = 0f, float speed = 1f, float rise = .22f)
+    {
+        if (parent == null) return Array.Empty<VfxCurtain>();
+        var seed = (float)GD.RandRange(0, 100);
+        var walls = new VfxCurtain[2];
+        for (var i = 0; i < 2; i++)
+        {
+            var material = ShaderOf(ref _curtainShader, "spell_curtain", seed);
+            material.SetShaderParameter("side", i == 0 ? -1f : 1f);
+            material.SetShaderParameter("twist", Reduced ? 0f : twist);
+            material.SetShaderParameter("speed", Reduced ? 0f : speed);
+            walls[i] = Add(parent, new VfxCurtain
+            {
+                Tint = color, RadiusFrom = radius, RadiusTo = radiusTo > 0 ? radiusTo : radius, HeightFrom = height, HeightTo = heightTo > 0 ? heightTo : height,
+                Life = life > 0 && Reduced ? Mathf.Min(life, .3f) : life, Delay = delay, Rise = Reduced ? 0 : rise, Material = material,
+            }, at, i == 0 ? BehindLayer : AirLayer);
+        }
+        return walls;
+    }
+
+    /// <summary>
+    /// A sphere of force centred on <paramref name="centre"/>: clear in the middle, bright at its rim, a lattice of
+    /// light turning over it. It closes from the ground up over <paramref name="form"/> seconds.
+    /// </summary>
+    public static VfxSprite Dome(Node parent, Vector2 centre, Color color, Vector2 size, float life, float delay = 0f, int layer = AirLayer,
+        float form = .22f, float fill = .1f, float cells = 5f, float spin = .6f)
+    {
+        var dome = Sprite(parent, centre, White, color, size, size, life, layer, false, false, delay);
+        if (dome == null) return null;
+        var material = ShaderOf(ref _domeShader, "spell_dome", (float)GD.RandRange(0, 100));
+        material.SetShaderParameter("fill", fill);
+        material.SetShaderParameter("cells", cells);
+        material.SetShaderParameter("spin", Reduced ? 0f : spin);
+        dome.Material = material;
+        dome.FormTime = Reduced ? 0 : form;
+        return dome.Envelope(.03f, .35f);
+    }
 
     /// <summary>A column of light standing on the ground.</summary>
     public static VfxSprite Pillar(Node parent, Vector2 at, Color color, float width, float height, float life = .7f, float delay = 0f)
@@ -360,6 +417,8 @@ public partial class VfxSprite : Node2D
     public float Clip = -1f;
     /// <summary>Sigils: seconds for the ink to run round the circle, and when it flares (-1 = never).</summary>
     public float DrawTime, FlareAt = -1f;
+    /// <summary>Spheres: seconds to close from the ground up (0 = already whole).</summary>
+    public float FormTime;
     public bool Ground, Flip, Reverse;
     private float _age;
 
@@ -386,8 +445,9 @@ public partial class VfxSprite : Node2D
         {
             var age = _age - Delay;
             shader.SetShaderParameter("draw", DrawTime <= 0 ? 1f : Mathf.Clamp(age / DrawTime, 0, 1));
-            shader.SetShaderParameter("flare", FlareAt < 0 ? 0f : 1.6f * Mathf.Exp(-Mathf.Pow((age - FlareAt) / .07f, 2)) + (age > FlareAt ? .35f * Mathf.Exp(-(age - FlareAt) * 4f) : 0f));
+            shader.SetShaderParameter("flare", FlareAt < 0 ? 0f : 1.1f * Mathf.Exp(-Mathf.Pow((age - FlareAt) / .07f, 2)) + (age > FlareAt ? .35f * Mathf.Exp(-(age - FlareAt) * 4f) : 0f));
         }
+        if (FormTime > 0 && Material is ShaderMaterial sphere) sphere.SetShaderParameter("form", Mathf.Clamp((_age - Delay) / FormTime, 0, 1));
         QueueRedraw();
     }
 
@@ -439,7 +499,9 @@ public partial class VfxSprite : Node2D
         var a = Tint.A * alpha;
         // Premultiplied books fade by scaling their colour with their cover.
         var color = Book != null ? new Color(Tint.R * a, Tint.G * a, Tint.B * a, a) : new Color(Tint, a);
-        DrawTextureRectRegion(Texture, rect, source, color);
+        // A whole texture is drawn as one: a region draw holds the edge half a texel in, which squares off shader-drawn pieces.
+        if (Book == null && Emerge <= 0 && Sink <= 0) DrawTextureRect(Texture, rect, false, color);
+        else DrawTextureRectRegion(Texture, rect, source, color);
         DrawSetTransform(Vector2.Zero);
     }
 }
@@ -553,5 +615,58 @@ public partial class VfxChains : Node2D
             }
         }
         DrawSetTransform(Vector2.Zero);
+    }
+}
+
+/// <summary>
+/// Half of a wall of light standing on a circle of the road (assets/shaders/spell_curtain.gdshader). Built in pairs
+/// by <see cref="SpellVfx.Curtain"/>: the far half under the troops, the near half over them.
+/// </summary>
+public partial class VfxCurtain : Node2D
+{
+    public Color Tint = Colors.White;
+    public float RadiusFrom = 40, RadiusTo = 40, HeightFrom = 60, HeightTo = 60, Delay, Rise = .2f, Ease = 3f, FadeIn = .06f, FadeOut = .4f;
+    /// <summary>Seconds it lasts; 0 keeps it standing until it is freed.</summary>
+    public float Life = 1f;
+    /// <summary>Brightness, for walls kept standing and driven from outside (a field fading, a warning filling).</summary>
+    public float Strength = 1f;
+    private float _age;
+    private ulong _touched;
+    private bool _needsTouch;
+
+    /// <summary>For a wall shown only while something keeps asking for it (the aiming circle): it shows for the frame after each call.</summary>
+    public void Touch() { _needsTouch = true; _touched = Engine.GetProcessFrames(); }
+
+    public VfxCurtain Envelope(float fadeIn, float fadeOut) { FadeIn = fadeIn; FadeOut = fadeOut; return this; }
+
+    /// <summary>Sets a standing wall's size (both ends of its growth).</summary>
+    public void Resize(float radius, float height) { RadiusFrom = RadiusTo = radius; HeightFrom = HeightTo = height; }
+
+    public override void _Process(double delta)
+    {
+        _age += (float)delta;
+        if (_age < Delay) { Visible = false; return; }
+        Visible = true;
+        if (Life > 0 && _age - Delay >= Life) { QueueFree(); return; }
+        QueueRedraw();
+    }
+
+    public override void _Draw()
+    {
+        if (_age < Delay || Material is not ShaderMaterial shader) return;
+        if (_needsTouch && Engine.GetProcessFrames() > _touched + 2) return;
+        var age = _age - Delay;
+        var t = Life > 0 ? Mathf.Clamp(age / Life, 0, 1) : 0f;
+        var grow = 1f - Mathf.Pow(1f - t, Ease);
+        var radius = Mathf.Lerp(RadiusFrom, RadiusTo, grow);
+        var height = Mathf.Lerp(HeightFrom, HeightTo, grow);
+        var alpha = Life > 0 ? Mathf.Clamp(Mathf.Min(FadeIn <= 0 ? 1 : t / FadeIn, FadeOut <= 0 ? 1 : (1 - t) / FadeOut), 0, 1) : 1f;
+        alpha *= Tint.A * Strength;
+        if (alpha <= .003f || radius < 1f) return;
+        var depth = radius * BattleGroundPlane.DepthScale;
+        var total = height + depth * 2f;
+        shader.SetShaderParameter("ellipse", depth / total);
+        shader.SetShaderParameter("rise", Rise <= 0 ? 1f : Mathf.Clamp(age / Rise, 0, 1));
+        DrawTextureRect(SpellVfx.White, new Rect2(-radius, -height - depth, radius * 2f, total), false, new Color(Tint, alpha));
     }
 }

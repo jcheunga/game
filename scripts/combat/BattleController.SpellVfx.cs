@@ -45,6 +45,25 @@ public partial class BattleController
         _ => ("arcane", WardBody),
     };
 
+    private VfxCurtain[] _aimWalls;
+
+    /// <summary>While a spell is being aimed, a low wall of light stands on its circle, so its reach reads as a space.</summary>
+    private void AimWalls(Vector2 at, float radius, Color color)
+    {
+        if (_aimWalls == null || _aimWalls.Any(wall => !IsInstanceValid(wall)))
+        {
+            if (_aimWalls != null) foreach (var wall in _aimWalls) if (IsInstanceValid(wall)) wall.QueueFree();
+            _aimWalls = SpellVfx.Curtain(this, at, color, radius, 30f, 0f);
+            foreach (var wall in _aimWalls) wall.ProcessMode = ProcessModeEnum.Always;
+        }
+        foreach (var wall in _aimWalls)
+        {
+            wall.Position = at; wall.Tint = color; wall.Strength = .5f;
+            wall.Resize(radius * 1.02f, Mathf.Clamp(radius * .55f, 22f, 48f));
+            wall.Touch();
+        }
+    }
+
     private static Vector2 Sz(float size) => Vector2.One * size;
     private static Vector2 Chest(Unit unit) => unit.Position + new Vector2(0, -Mathf.Max(18f, unit.Radius * 2.1f));
 
@@ -98,20 +117,25 @@ public partial class BattleController
         if (rock != null) { rock.Sink = .3f; rock.Clip = 1f; rock.Envelope(0, .1f); }
     }
 
-    /// <summary>A protective bubble around a unit: a bright rim and a faint fill.</summary>
+    /// <summary>A protective sphere closing around a unit from the ground up, with its light on the road under it.</summary>
     private void WardBubble(Unit unit, Color color, float life = .9f, float delay = 0f)
     {
         var size = Mathf.Max(56f, unit.Radius * 4.4f);
-        SpellVfx.Sprite(this, Chest(unit) + new Vector2(0, 8), SpellVfx.Ring, color, Sz(size * .6f), Sz(size), life, SpellVfx.AirLayer, true, false, delay)?.Envelope(.08f, .5f);
-        SpellVfx.Sprite(this, Chest(unit) + new Vector2(0, 8), SpellVfx.Glow, new Color(color, .35f), Sz(size * .5f), Sz(size * .95f), life, SpellVfx.AirLayer, true, false, delay)?.Envelope(.1f, .5f);
+        SpellVfx.Dome(this, Chest(unit) + new Vector2(0, 8), color, new Vector2(size * .9f, size), life, delay);
+        SpellVfx.Flash(this, unit.Position, new Color(color, .35f), size * .38f, life * .7f, true, delay);
     }
 
-    /// <summary>Concentric rings rolling out through the air, like the sound of a horn.</summary>
-    private void SoundRings(Vector2 at, Color color, int count, float reach)
+    /// <summary>The sound of a horn: walls of air rolling out along the road from where it was blown, one after another.</summary>
+    private void SoundRings(Vector2 ground, Color color, int count, float reach)
     {
         for (var i = 0; i < count; i++)
-            SpellVfx.Sprite(this, at, SpellVfx.Ring, color, Sz(reach * .15f), Sz(reach), .7f, SpellVfx.AirLayer, true, false, i * .12f)?.Envelope(.05f, .7f);
+            foreach (var wall in SpellVfx.Curtain(this, ground, color, reach * .08f, reach * .34f, .8f, i * .13f, reach * .55f, reach * .1f, rise: .05f))
+                wall.Envelope(.05f, .7f);
     }
+
+    /// <summary>The light a circle of magic gives off: a wall of it standing on the circle's edge, around whoever is inside.</summary>
+    private void Aura(Vector2 at, Color color, float radius, float height, float life, float delay = 0f, float twist = 0f) =>
+        SpellVfx.Curtain(this, at, color, radius, height, life, delay, twist: twist);
 
     /// <summary>Fire landing: a rolling fireball that climbs into smoke, a ring of soot, embers, flames left burning, a scorch.</summary>
     private void FireImpactVfx(Vector2 at, float radius, float delay = 0f, float shake = .55f)
@@ -144,6 +168,7 @@ public partial class BattleController
     {
         SpellVfx.Sigil(this, at, "nature", LifeBody, radius * .9f, 1.3f, .35f, draw: .3f, flareAt: .3f);
         Vapour(at, radius * .8f, new Color(LifeBody, .6f), 1f, .2f);
+        Aura(at, new Color(LifeBody, .8f), radius * .9f, 90, 1.2f, .22f);
         SpellVfx.Pillar(this, at, new Color(LifeHot, .7f), radius * 1.4f, 170, 1f, .15f);
         SpellVfx.Burst(this, at, "p_orb", 22, 1.25f, SpellVfx.Fade(LifeHot, LifeBody), 5, 11, 20, 60, spread: 30, gravity: -50,
             groundRadius: radius * .8f, explosiveness: .6f, delay: .15f);
@@ -215,6 +240,7 @@ public partial class BattleController
     {
         SpellVfx.Sigil(this, at, "arcane", WardBody, radius * .9f, 1.5f, .3f, draw: .25f, flareAt: .25f);
         SpellVfx.Shockwave(this, at, WardBody, radius, .5f, .2f);
+        Aura(at, new Color(WardBody, .75f), radius * .9f, 70, 1.3f, .2f);
         Vapour(at, radius * .7f, new Color(WardBody, .7f), .9f, .18f);
         SpellVfx.Burst(this, at, "p_rune", 8, 1.2f, SpellVfx.Fade(new Color(.9f, .95f, 1f), WardBody), 10, 16, 20, 50, spread: 20, gravity: -40,
             groundRadius: radius * .7f, explosiveness: .5f, delay: .2f);
@@ -234,9 +260,10 @@ public partial class BattleController
     private void WarCryVfx(Vector2 core, IEnumerable<Unit> rallied)
     {
         SpellVfx.Sigil(this, core + new Vector2(0, 14), "war", GoldBody, 80, 1.4f, .4f, draw: .2f, flareAt: .15f);
-        SoundRings(core + new Vector2(0, -50), GoldBody, 3, 240);
+        SoundRings(core + new Vector2(0, 14), new Color(GoldBody, .85f), 3, 240);
+        Aura(core + new Vector2(0, 14), new Color(GoldBody, .7f), 76, 110, 1.2f, .12f);
         DustRing(core + new Vector2(70, 18), 70, new Color(Dust, .5f), .08f, .9f);
-        SpellVfx.Flash(this, core + new Vector2(0, -40), HolyHot, 60, .35f);
+        SpellVfx.Pillar(this, core + new Vector2(0, 14), new Color(HolyHot, .8f), 90, 230, .9f, .1f);
         foreach (var ally in rallied)
         {
             SpellVfx.Flash(this, Chest(ally), GoldBody, 26, .4f, delay: .15f);
@@ -282,6 +309,7 @@ public partial class BattleController
     {
         SpellVfx.Sigil(this, at, "holy", HolyBody, 55, 1.6f, .5f, draw: .3f, flareAt: .3f);
         SpellVfx.Pillar(this, at, HolyHot, 70, 280, 1.4f, .2f);
+        Aura(at, new Color(HolyBody, .8f), 50, 120, 1.5f, .28f);
         Vapour(at, 52, HolyBody, 1f, .3f);
         var angel = SpellPicture("spell_resurrect", at + new Vector2(0, -80), 90, 130, 1.4f, true, .55f, .25f);
         if (angel != null) { angel.Velocity = new Vector2(0, -24); angel.Envelope(.2f, .5f); }
@@ -336,6 +364,7 @@ public partial class BattleController
                 Vapour(target.Position, 30, HolyBody, .55f, .1f);
                 SpellVfx.Flash(this, Chest(target), HolyHot, 40, .3f, delay: .1f);
                 SpellVfx.Shockwave(this, target.Position, HolyBody, 40, .4f, .1f);
+                Aura(target.Position, new Color(HolyBody, .8f), 28, 90, .7f, .1f);
                 SpellVfx.Burst(this, Chest(target), "p_rune", 6, .55f, SpellVfx.Fade(VoidHot, VoidBody), 8, 14, 80, 160, gravity: 200, delay: .1f);
                 SpellVfx.Burst(this, Chest(target), "p_star", 10, .5f, SpellVfx.Fade(HolyHot, HolyBody), 6, 12, 60, 150, delay: .1f);
                 break;
@@ -387,6 +416,7 @@ public partial class BattleController
             case "purifying_light":
                 SpellVfx.Sigil(this, point, "holy", HolyBody, radius * .9f, 1.3f, .5f, draw: .2f, flareAt: .2f);
                 SpellVfx.Pillar(this, point, HolyHot, radius * 1.6f, 260, 1.1f, .1f);
+                Aura(point, new Color(HolyBody, .8f), radius * .9f, 110, 1.3f, .2f);
                 Vapour(point, radius * .8f, HolyBody, .9f, .18f);
                 foreach (var unit in affected)
                 {
@@ -398,6 +428,7 @@ public partial class BattleController
             case "withering_seal":
                 SpellVfx.Sigil(this, point, "shadow", VoidBody, radius * 1.05f, 1.8f, -.5f, draw: .3f, flareAt: .3f);
                 SpellVfx.Decal(this, point, "blight", Colors.White, radius * .95f, 5f, .2f);
+                Aura(point, new Color(VoidBody, .75f), radius * 1.05f, 80, 1.7f, .3f, -.8f);
                 Puff(point, radius * .9f, 1.8f, new Color(Gloom, .4f), .15f);
                 SpellVfx.Burst(this, point + new Vector2(0, -30), "p_ash", 14, 1.6f, PaleRamp, 5, 10, 10, 40, spread: 160, gravity: 30, additive: false,
                     groundRadius: radius * .6f, spin: 120, explosiveness: .5f, delay: .2f);
@@ -420,7 +451,10 @@ public partial class BattleController
                         new Vector2(150, 16), new Vector2(120, 10), .45f, delay: i * .035f);
                     if (streak != null) streak.Velocity = new Vector2(260, 0);
                 }
-                SpellVfx.Burst(this, Chest(ally), "p_swirl", 5, .7f, SpellVfx.Fade(TideHot, TealBody), 30, 44, 10, 20, spin: 500, delay: .1f);
+                // A whirlwind stands round them where they land.
+                for (var tier = 0; tier < 3; tier++)
+                    SpellVfx.Curtain(this, ally.Position + new Vector2(0, -tier * 30), new Color(tier == 1 ? TealBody : TideHot, .75f - tier * .12f),
+                        10 + tier * 9, 52, .85f, .1f + tier * .05f, 14 + tier * 13, 40, twist: 11f - tier * 2f, speed: 2.6f, rise: .1f);
                 DustRing(ally.Position, 40, new Color(Dust, .7f), .1f, .8f);
                 SpellVfx.Shockwave(this, ally.Position, TealBody, 40, .4f, .1f);
                 break;
@@ -430,6 +464,7 @@ public partial class BattleController
                     // Vapour sucked in to a point, then a dark eye on the road with a turning swirl of light around it.
                     Vapour(point, radius * 1.1f, new Color(VoidBody, .6f), .5f, gather: true);
                     SpellVfx.Sigil(this, point, "shadow", VoidBody, radius * .8f, life, -2.2f, draw: .3f);
+                    SpellVfx.Curtain(this, point, new Color(VoidBody, .7f), radius * 1.15f, 70, life, .1f, radius * .7f, 110, twist: -5f, speed: 1.8f);
                     var core = SpellVfx.Sprite(this, point, SpellVfx.Disc, new Color(.1f, .03f, .18f, .62f), Sz(radius * 2.5f), Sz(radius * 1.9f), life,
                         SpellVfx.GroundLayer, false, true);
                     core?.Envelope(.12f, .25f);
@@ -479,15 +514,17 @@ public partial class BattleController
                 break;
             case "consecrated_ground":
                 SpellVfx.Sigil(this, point, "holy", HolyBody, radius * .9f, 1f, .4f, draw: .25f, flareAt: .25f);
-                SpellVfx.Pillar(this, point, new Color(HolyHot, .8f), radius * 1.4f, 220, .9f, .15f);
+                SpellVfx.Pillar(this, point, new Color(HolyHot, .6f), radius * 1.1f, 220, .9f, .15f);
+                Aura(point, new Color(HolyBody, .85f), radius * .9f, 130, 1.2f, .22f);
                 Vapour(point, radius * .8f, HolyBody, .8f, .2f);
-                SpellVfx.Shockwave(this, point, HolyBody, radius, .5f, .25f);
+                SpellVfx.Shockwave(this, point, new Color(HolyBody, .7f), radius, .5f, .25f);
                 SpellVfx.Burst(this, point, "p_star", 12, 1f, SpellVfx.Fade(HolyHot, HolyBody), 6, 11, 20, 70, gravity: -30, groundRadius: radius * .7f, delay: .2f);
                 break;
             case "verdant_renewal":
                 if (ally == null) break;
                 SpellVfx.Sigil(this, ally.Position, "nature", LifeBody, 44, 1.6f, .6f, draw: .25f, flareAt: .25f);
                 SpellVfx.Pillar(this, ally.Position, LifeHot, 30, 120, 1f, .15f);
+                Aura(ally.Position, new Color(LifeBody, .85f), 40, 80, 1.4f, .22f, 1.5f);
                 Vapour(ally.Position, 32, new Color(LifeBody, .7f), .8f, .2f);
                 SpellVfx.Burst(this, ally.Position, "p_leaf", 16, 1.4f, PaleRamp, 9, 13, 30, 80, spread: 40, gravity: -45, additive: false, groundRadius: 22, spin: 260, delay: .2f);
                 SpellVfx.Burst(this, ally.Position, "p_orb", 18, 1.2f, SpellVfx.Fade(LifeHot, LifeBody), 5, 10, 20, 60, spread: 30, gravity: -55, groundRadius: 24, delay: .2f);
@@ -525,7 +562,8 @@ public partial class BattleController
                 break;
             case "rallying_advance":
                 SpellVfx.Sigil(this, point, "war", TealBody, radius * .9f, 1.3f, .5f, draw: .2f, flareAt: .2f);
-                SpellVfx.Shockwave(this, point, GoldBody, radius, .5f, .2f);
+                SpellVfx.Shockwave(this, point, new Color(GoldBody, .7f), radius, .5f, .2f);
+                Aura(point, new Color(TealBody, .8f), radius * .9f, 80, 1.1f, .2f);
                 {
                     var pennant = SpellPicture("spell_rallying_advance", point + new Vector2(0, -70), 30, 70, 1.1f);
                     if (pennant != null) { pennant.Velocity = new Vector2(40, -20); pennant.Envelope(.08f, .4f); }
@@ -557,15 +595,14 @@ public partial class BattleController
                     if (halo != null) { halo.Velocity = new Vector2(6, 26); halo.Flicker = .2f; halo.Envelope(.04f, .35f); }
                     // Its light falls on the area: a soft cone and a lit circle on the road.
                     SpellVfx.Pillar(this, point, new Color(HolyHot, .7f), radius * 2f, 110, hang, climb);
-                    SpellVfx.Flash(this, point, HolyBody, radius * 1.1f, hang, true, climb);
-                    SpellVfx.Sigil(this, point, "holy", HolyBody, radius, hang, .4f, climb, flareAt: 0f);
+                    SpellVfx.Flash(this, point, new Color(HolyBody, .2f), radius * 1.1f, hang, true, climb);
+                    Aura(point, new Color(HolyHot, .7f), radius, 70, hang, climb);
                     SpellVfx.Burst(this, sky, "p_star", 30, 1.7f, SpellVfx.Fade(HolyHot, HolyBody), 5, 10, 40, 150, gravity: 80, delay: climb, damping: 40);
                     // Every hidden thing it finds is picked out in light.
                     foreach (var unit in affected)
                     {
-                        var outline = SpellVfx.Sprite(this, Chest(unit) + new Vector2(0, 8), SpellVfx.Ring, new Color(HolyHot, .6f), Sz(unit.Radius * 2.6f),
-                            Sz(unit.Radius * 3.6f), .6f, delay: climb + .05f);
-                        outline?.Envelope(.1f, .6f);
+                        SpellVfx.Pillar(this, unit.Position, new Color(HolyHot, .8f), unit.Radius * 1.8f, 100, .7f, climb + .05f);
+                        SpellVfx.Burst(this, Chest(unit), "p_star", 4, .6f, SpellVfx.Fade(HolyHot, HolyBody), 7, 12, 30, 80, delay: climb + .05f);
                         SpellVfx.Flash(this, Chest(unit), HolyHot, 24, .4f, delay: climb + .05f);
                     }
                 }
@@ -573,6 +610,7 @@ public partial class BattleController
             case "mirror_ward":
                 SpellVfx.Sigil(this, point, "arcane", new Color(.85f, .95f, 1f), radius * .8f, 1.2f, -.6f, draw: .2f, flareAt: .2f);
                 Vapour(point, radius * .6f, new Color(.85f, .95f, 1f, .7f), .8f, .15f);
+                Aura(point, new Color(.85f, .95f, 1f, .6f), radius * .8f, 60, 1.1f, .2f);
                 foreach (var unit in affected)
                 {
                     WardBubble(unit, new Color(.85f, .95f, 1f), 1f, .2f);
@@ -591,13 +629,13 @@ public partial class BattleController
                     var dark = SpellVfx.Sprite(this, at, SpellVfx.Glow, new Color(.08f, .02f, .14f, .95f), new Vector2(6, tall * .8f), new Vector2(54, tall), open,
                         SpellVfx.AirLayer, false);
                     if (dark != null) { dark.SizeEase = 3f; dark.Envelope(.1f, 0); }
-                    var rim = SpellVfx.Sprite(this, at, SpellVfx.Ring, VoidHot, new Vector2(8, tall * .85f), new Vector2(62, tall * 1.06f), open);
-                    if (rim != null) { rim.SizeEase = 3f; rim.Flicker = .2f; rim.Envelope(.1f, 0); }
+                    var rim = SpellVfx.Dome(this, at, VoidHot, new Vector2(62, tall * 1.06f), open, form: 0f, fill: .04f, cells: 4f, spin: 5f);
+                    if (rim != null) { rim.SizeFrom = new Vector2(8, tall * .85f); rim.SizeEase = 3f; rim.Flicker = .2f; rim.Envelope(.1f, 0); }
                     var shutDark = SpellVfx.Sprite(this, at, SpellVfx.Glow, new Color(.08f, .02f, .14f, .95f), new Vector2(54, tall), new Vector2(2, tall * 1.1f), .16f,
                         SpellVfx.AirLayer, false, delay: open);
                     shutDark?.Envelope(0, .3f);
-                    var shutRim = SpellVfx.Sprite(this, at, SpellVfx.Ring, VoidHot, new Vector2(62, tall * 1.06f), new Vector2(3, tall * 1.2f), .16f, delay: open);
-                    shutRim?.Envelope(0, .3f);
+                    var shutRim = SpellVfx.Dome(this, at, VoidHot, new Vector2(62, tall * 1.06f), .16f, open, form: 0f, fill: .04f, cells: 4f, spin: 9f);
+                    if (shutRim != null) { shutRim.SizeTo = new Vector2(3, tall * 1.2f); shutRim.Envelope(0, .3f); }
                     // Vapour, wisps and shadow stream into it from all around.
                     Vapour(target.Position, 46, VoidBody, open, gather: true);
                     SpellVfx.Burst(this, at, "p_wisp", 16, .5f, SpellVfx.Fade(VoidHot, VoidBody), 14, 24, 0, 20, groundRadius: 70, pull: 700, spin: 300, explosiveness: .5f);
@@ -608,14 +646,15 @@ public partial class BattleController
                     var seam = SpellVfx.Sprite(this, at, SpellVfx.Beam, VoidHot, new Vector2(10, tall * 1.3f), new Vector2(2, tall * 1.5f), .3f, delay: open + .05f);
                     if (seam != null) seam.Pivot = new Vector2(.5f, .5f);
                     SpellVfx.Shockwave(this, target.Position, VoidBody, 70, .5f, open);
-                    DustRing(target.Position, 60, new Color(Gloom, .7f), open, .8f);
+                    DustRing(target.Position, 60, new Color(Gloom, .4f), open, .8f);
                     SpellVfx.Burst(this, at, "p_star", 12, .5f, SpellVfx.Fade(VoidHot, VoidBody), 6, 11, 80, 180, delay: open);
                     SpellShake(.35f, open);
                 }
                 break;
             case "royal_edict":
                 SpellVfx.Sigil(this, point, "war", GoldBody, radius, 1.4f, .3f, draw: .25f, flareAt: .25f);
-                SpellVfx.Shockwave(this, point, GoldBody, radius * 1.1f, .5f, .25f);
+                SpellVfx.Shockwave(this, point, new Color(GoldBody, .7f), radius * 1.1f, .5f, .25f);
+                Aura(point, new Color(GoldBody, .8f), radius, 100, 1.3f, .25f);
                 Vapour(point, radius * .7f, new Color(GoldBody, .6f), .8f, .25f);
                 {
                     var seal = SpellPicture("spell_royal_edict", point + new Vector2(0, -80), 30, 84, 1.3f);
@@ -638,7 +677,7 @@ public partial class BattleController
                 DustRing(point, radius * .9f, new Color(.7f, .7f, .68f, .7f), 0, 1f);
                 break;
             case "tactic_war_horn":
-                SoundRings(point + new Vector2(0, -30), new Color(MarkRed, .45f), 2, 150);
+                SoundRings(point, MarkRed, 3, 170);
                 foreach (var unit in affected)
                 {
                     SpellVfx.Sigil(this, unit.Position, "war", MarkRed, 30, 1.4f, 1f, draw: .15f, flareAt: .15f);

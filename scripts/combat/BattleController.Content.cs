@@ -674,6 +674,16 @@ public partial class BattleContentField : Node2D
     private string _built;
     private readonly System.Collections.Generic.List<CpuParticles2D> _motes = new();
     private readonly System.Collections.Generic.List<VfxSprite> _flames = new();
+    private VfxCurtain[] _walls = System.Array.Empty<VfxCurtain>();
+
+    /// <summary>How tall the light stands on a field's edge (0 = none: flames and smoke are their own volume).</summary>
+    private float WallHeight => Kind switch
+    {
+        "meteor" => 40f + 90f * Mathf.Clamp(1 - Pulse / MeteorDelay, 0, 1),
+        "holy" => 46f, "heal" => 40f, "gravity" => 56f, "reveal" => 34f, "null" => 44f,
+        "burn" or "smoke" or "miasma" or "rot" => 0f,
+        _ => 34f,
+    };
 
     private (string Sigil, Color Tint, bool Glow, float Spin) Look => Kind switch
     {
@@ -697,6 +707,14 @@ public partial class BattleContentField : Node2D
         if (_built != Kind) Rebuild();
         // Burning ground keeps its flames alight for as long as it lasts; smoke and rot keep rolling out in puffs.
         foreach (var flame in _flames) if (IsInstanceValid(flame)) flame.KeepFor(Remaining);
+        // The wall of light on the field's edge: it follows the field, fades with it, and climbs as a meteor nears.
+        var standing = Mathf.Clamp(_age / .35f, 0, 1) * Mathf.Clamp(Remaining / .6f, 0, 1);
+        foreach (var wall in _walls)
+        {
+            if (!IsInstanceValid(wall)) continue;
+            wall.Position = Position; wall.Resize(Radius, WallHeight);
+            wall.Strength = standing * (Kind == "meteor" ? .5f + .5f * Mathf.Clamp(1 - Pulse / MeteorDelay, 0, 1) : .7f);
+        }
         if (Kind is "smoke" or "miasma" or "rot" && (_puffTimer -= (float)delta) <= 0 && Remaining > .8f)
         {
             var smoke = Kind == "smoke";
@@ -712,6 +730,7 @@ public partial class BattleContentField : Node2D
     public override void _ExitTree()
     {
         foreach (var flame in _flames) if (IsInstanceValid(flame)) flame.EndIn(.3f);
+        foreach (var wall in _walls) if (IsInstanceValid(wall)) wall.QueueFree();
     }
 
     private void Rebuild()
@@ -720,6 +739,11 @@ public partial class BattleContentField : Node2D
         foreach (var mote in _motes) mote.QueueFree();
         _motes.Clear();
         _flames.Clear();
+        foreach (var wall in _walls) if (IsInstanceValid(wall)) wall.QueueFree();
+        _walls = WallHeight > 0 && GetParent() != null
+            ? SpellVfx.Curtain(GetParent(), Position, Look.Tint, Radius, WallHeight, 0f, twist: Kind == "gravity" ? -5f : 0f, speed: Kind == "meteor" ? 2.2f : 1f)
+            : System.Array.Empty<VfxCurtain>();
+        foreach (var wall in _walls) wall.Strength = 0f;
         Material = Look.Glow ? SpellVfx.Additive : null;
         var smoke = new[] { new Color(.55f, .54f, .52f, 0), new Color(.6f, .59f, .57f, .55f), new Color(.66f, .65f, .63f, 0) };
         var rot = new[] { new Color(.45f, .52f, .25f, 0), new Color(.5f, .58f, .28f, .5f), new Color(.55f, .6f, .35f, 0) };
@@ -793,13 +817,13 @@ public partial class BattleContentField : Node2D
             return;
         }
         var breathe = .85f + .15f * Mathf.Sin(_age * 3.1f);
-        DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * Radius * 1.3f, Vector2.One * Radius * 2.6f), false, new Color(look.Tint, .3f * fade * breathe));
+        DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * Radius * 1.3f, Vector2.One * Radius * 2.6f), false, new Color(look.Tint, .2f * fade * breathe));
         if (Kind == "meteor")
         {
             // The strike lands when the fill reaches the rim; the rim beats faster as it closes.
             var progress = Mathf.Clamp(1 - Pulse / MeteorDelay, 0, 1);
             DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * Radius * 1.2f * progress, Vector2.One * Radius * 2.4f * progress), false,
-                new Color(look.Tint, .8f * fade));
+                new Color(look.Tint, .4f * fade));
             var beat = .6f + .4f * Mathf.Abs(Mathf.Sin(_age * (6f + progress * 14f)));
             for (var rim = 0; rim < 2; rim++)
                 DrawTextureRect(SpellVfx.Ring, new Rect2(-Vector2.One * Radius * 1.18f, Vector2.One * Radius * 2.36f), false, new Color(look.Tint, fade * beat));
@@ -807,7 +831,7 @@ public partial class BattleContentField : Node2D
         var spin = new Transform2D(_age * look.Spin, Vector2.Zero);
         DrawSetTransformMatrix(plane * spin);
         DrawTextureRect(SpellVfx.Tex("sigil_" + look.Sigil), new Rect2(-Vector2.One * Radius * 1.05f, Vector2.One * Radius * 2.1f), false,
-            new Color(look.Tint, (Kind == "meteor" ? 1f : .62f) * fade * breathe));
+            new Color(look.Tint, (Kind == "meteor" ? 1f : .45f) * fade * breathe));
         DrawSetTransform(Vector2.Zero);
     }
 }

@@ -81,7 +81,7 @@ public partial class UiReviewSmoke
             foreach (var unit in units.Where(u => u != anchor).ToArray()) { units.Remove(unit); unit.QueueFree(); }
             foreach (var field in fields) field.QueueFree();
             fields.Clear(); corpses.Clear();
-            foreach (var leftover in battle.GetChildren().Where(c => c is VfxSprite or VfxBolt or VfxChains or CpuParticles2D)) leftover.QueueFree();
+            foreach (var leftover in battle.GetChildren().Where(c => c is VfxSprite or VfxBolt or VfxChains or VfxCurtain or CpuParticles2D)) leftover.QueueFree();
             Resume();
             await Wait(.5);
 

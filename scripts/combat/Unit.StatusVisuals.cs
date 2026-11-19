@@ -13,6 +13,29 @@ public partial class Unit
     /// <summary>Where combat text about this body appears: just over its health bar, so the bar stays readable.</summary>
     public Vector2 CombatTextPoint => Position + new Vector2(0f, -StatusHeight - 17f);
 
+    private VfxSprite _wardShell;
+    private bool _wardShellMirrors;
+
+    /// <summary>A shield or a projectile mirror stands round the body as a sphere of force for as long as it holds.</summary>
+    private void UpdateWardShell()
+    {
+        var want = !IsDead && TacticalArt == null && (ShieldHealth > 0 || ProjectileMirrorTime > 0);
+        var mirrors = ShieldHealth <= 0;
+        if (_wardShell != null && !IsInstanceValid(_wardShell)) _wardShell = null;
+        if (_wardShell != null && (!want || mirrors != _wardShellMirrors))
+        {
+            _wardShell.EndIn(.2f); _wardShell.FadeOut = .2f / Mathf.Max(.2f, _wardShell.Life);
+            _wardShell = null;
+        }
+        if (!want || _wardShell != null) return;
+        var height = StatusHeight;
+        var size = new Vector2(Radius * 3.4f, height * 1.15f);
+        _wardShellMirrors = mirrors;
+        _wardShell = SpellVfx.Dome(this, new Vector2(0, -height * 1.05f + size.Y / 2), new Color(mirrors ? new Color(.85f, .95f, 1f) : new Color(1f, .86f, .5f), .7f),
+            size, 1e6f, layer: 0, fill: .05f, cells: 4f, spin: mirrors ? -.9f : .5f);
+        if (_wardShell != null) { _wardShell.Life = 1e6f; _wardShell.FadeIn = 0f; }
+    }
+
     private void DrawStatusVisuals()
     {
         if (IsDead || TacticalArt != null) return;
@@ -52,13 +75,6 @@ public partial class Unit
                 var at = new Vector2((i - 1) * Radius * .55f, -height * (.18f + .2f * i));
                 DrawTextureRect(flame, new Rect2(at - new Vector2(size * .5f, size), new Vector2(size, size * 1.3f)), false, new Color(1, 1, 1, .85f));
             }
-        }
-        if (ShieldHealth > 0 || ProjectileMirrorTime > 0)
-        {
-            var tint = ShieldHealth > 0 ? new Color(1f, .86f, .5f) : new Color(.85f, .95f, 1f);
-            var shimmer = still ? .5f : .42f + .14f * Mathf.Sin(clock * 4f);
-            var size = new Vector2(Radius * 3.4f, height * 1.15f);
-            DrawTextureRect(SpellVfx.Ring, new Rect2(new Vector2(-size.X / 2, -height * 1.05f), size), false, new Color(tint, shimmer));
         }
         if (IsControlled)
         {

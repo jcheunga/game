@@ -734,6 +734,7 @@ public partial class BattleController : Node2D
 		DrawSetTransformMatrix(plane);
 		DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * radius * 1.2f, Vector2.One * radius * 2.4f), false, new Color(color, valid ? .22f : .16f));
 		DrawTextureRect(SpellVfx.Ring, new Rect2(-Vector2.One * radius * 1.18f, Vector2.One * radius * 2.36f), false, new Color(color, .85f));
+		AimWalls(previewPosition, radius, color);
 		DrawSetTransformMatrix(plane * new Transform2D(spin, Vector2.Zero));
 		DrawTextureRect(SpellVfx.Tex("sigil_" + school.Sigil), new Rect2(-Vector2.One * radius, Vector2.One * radius * 2f), false,
 			new Color(color.Lightened(.35f), valid ? 1f : .5f));

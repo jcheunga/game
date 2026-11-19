@@ -23,6 +23,8 @@ public partial class Unit
         }
     }
 
+    private VfxCurtain[] _tacticalWalls;
+
     /// <summary>A tactic's rune circle, drawn by a child on the ground layer so it lies under every troop.</summary>
     private sealed partial class TacticalGround : Node2D
     {
@@ -68,6 +70,22 @@ public partial class Unit
             _tacticalGround = new TacticalGround { Host = this, ZIndex = SpellVfx.GroundLayer, ZAsRelative = false };
             CallDeferred(Node.MethodName.AddChild, _tacticalGround);
         }
+        if (TacticalSigil.Length > 0)
+        {
+            // A low wall of light stands on the circle, so a working tactic's reach reads as a space, not a flat mark.
+            if (_tacticalWalls == null)
+            {
+                _tacticalWalls = System.Array.Empty<VfxCurtain>();
+                Callable.From(() => { _tacticalWalls = SpellVfx.Curtain(this, Vector2.Zero, glow, TacticalWidth * .8f, 30f, 0f); }).CallDeferred();
+            }
+            var reach = TacticalWidth * .8f * (1 - Mathf.Pow(1 - Mathf.Clamp(ContentAge / .35f, 0, 1), 3));
+            foreach (var wall in _tacticalWalls)
+            {
+                if (!IsInstanceValid(wall)) continue;
+                wall.Tint = glow; wall.Strength = IsDead ? 0f : .7f + beat * .6f; wall.Resize(reach, 44f + 10f * Mathf.Sin(ContentAge * 3.4f));
+                wall.Touch();
+            }
+        }
         if (glow.A > 0)
             DrawTextureRect(SpellVfx.Glow, new Rect2(-width * .75f, -width * 1.15f, width * 1.5f, width * 1.4f), false, new Color(glow, beat));
         DrawTextureRect(art, new Rect2(-width * .5f, -width * .96f, width, width), false, Modulate);
@@ -85,10 +103,10 @@ public partial class Unit
         var glow = TacticalGlow;
         var beat = .32f + .12f * Mathf.Sin(ContentAge * 3.4f);
         canvas.DrawSetTransformMatrix(Transform2D.Identity.Scaled(new Vector2(1, BattleGroundPlane.DepthScale)) * new Transform2D(ContentAge * .5f, Vector2.Zero));
-        canvas.DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * reach * 1.3f, Vector2.One * reach * 2.6f), false, new Color(glow, beat));
-        for (var pass = 0; pass < 2; pass++)
-            canvas.DrawTextureRect(SpellVfx.Tex("sigil_" + TacticalSigil), new Rect2(-Vector2.One * reach, Vector2.One * reach * 2), false,
-                new Color(glow.Lightened(.35f), .5f + beat * .4f));
+        // Kept light: the standing wall carries the circle, and a bright fill would flatten it into a disc.
+        canvas.DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * reach * 1.3f, Vector2.One * reach * 2.6f), false, new Color(glow, beat * .4f));
+        canvas.DrawTextureRect(SpellVfx.Tex("sigil_" + TacticalSigil), new Rect2(-Vector2.One * reach, Vector2.One * reach * 2), false,
+            new Color(glow.Lightened(.35f), .55f + beat * .4f));
         canvas.DrawSetTransform(Vector2.Zero);
     }
 

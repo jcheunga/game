@@ -190,21 +190,6 @@ public partial class CodexMenu : RoyalScreen
         RoyalText.FitLines(blurb, 2);
         var drop = (blurbLines - 1) * 24f;
 
-        var portrait = spec.Rect("detail.portrait");
-        portrait = new Rect2(portrait.Position + new Vector2(0, drop), portrait.Size - new Vector2(0, drop));
-        _vignette ??= ResourceLoader.Load<Shader>("res://assets/shaders/royal_vignette.gdshader");
-        var room = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
-            Texture = RoyalArt.Cut("warband", new Rect2(430, 300, 260, 330)), Position = portrait.Position, Size = portrait.Size, MouseFilter = MouseFilterEnum.Ignore };
-        var material = new ShaderMaterial { Shader = _vignette };
-        material.SetShaderParameter("size", portrait.Size);
-        room.Material = material;
-        _layer.AddChild(room);
-        var picture = Portrait(entry);
-        var figure = GameData.TryGetUnit(entry.Id) != null;
-        _layer.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            Texture = picture, MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps,
-            Position = portrait.Position + (figure ? new Vector2(24, 16) : new Vector2(40, 50)), Size = portrait.Size - (figure ? new Vector2(48, 58) : new Vector2(80, 120)) });
-
         // One column of compact rows where the concept had two tall tiles; the divider and lore follow its height.
         var top = spec.Rect("stat.1");
         top.Position += new Vector2(0, drop);
@@ -221,8 +206,39 @@ public partial class CodexMenu : RoyalScreen
         loreRect.Position += new Vector2(0, shift);
         var defeats = GameState.Instance.GetCodexKillCount(entry.Id);
         if (defeats > 0) rest = (rest + $" Defeated {defeats:N0} times.").Trim();
-        // The lore reads at the phone floor and scrolls in its column when it runs longer than the page.
         var loreArea = new Rect2(loreRect.Position.X, loreRect.Position.Y - 2, loreRect.Size.X + 10, spec.Rect("button.back").End.Y - loreRect.Position.Y - 6);
+        // The lore reads at the phone floor beside the portrait. A boss's runs to six lines there, twice what the
+        // column shows, so a lore too long for the column runs the page's full width under a shorter portrait instead.
+        var loreFont = RoyalFonts.Body(500);
+        var loreSize = ReadingText.Size(ReadingText.PhoneBody);
+        float LoreHeight(float width)
+        {
+            var height = loreFont.GetMultilineStringSize(rest, HorizontalAlignment.Left, width, loreSize).Y;
+            return height - 3 * Mathf.Max(0, Mathf.RoundToInt(height / loreFont.GetHeight(loreSize)) - 1);
+        }
+        var portrait = spec.Rect("detail.portrait");
+        portrait = new Rect2(portrait.Position + new Vector2(0, drop), portrait.Size - new Vector2(0, drop));
+        if (rest.Length > 0 && LoreHeight(loreArea.Size.X - 4) > loreArea.Size.Y + 2)
+        {
+            var left = spec.Number("detail.blurb", "x", 716); // in line with the opening sentence above
+            var width = loreArea.End.X - left;
+            var height = Mathf.Min(LoreHeight(width - 4) + 6, portrait.Size.Y * .4f);
+            loreArea = new Rect2(left, loreArea.End.Y - height, width, height);
+            portrait.Size = new Vector2(portrait.Size.X, loreArea.Position.Y - 8 - portrait.Position.Y);
+        }
+        _vignette ??= ResourceLoader.Load<Shader>("res://assets/shaders/royal_vignette.gdshader");
+        var room = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
+            Texture = RoyalArt.Cut("warband", new Rect2(430, 300, 260, 330)), Position = portrait.Position, Size = portrait.Size, MouseFilter = MouseFilterEnum.Ignore };
+        var material = new ShaderMaterial { Shader = _vignette };
+        material.SetShaderParameter("size", portrait.Size);
+        room.Material = material;
+        _layer.AddChild(room);
+        var picture = Portrait(entry);
+        var figure = GameData.TryGetUnit(entry.Id) != null;
+        _layer.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            Texture = picture, MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps,
+            Position = portrait.Position + (figure ? new Vector2(24, 16) : new Vector2(40, 50)), Size = portrait.Size - (figure ? new Vector2(48, 58) : new Vector2(80, 120)) });
+
         var scroll = new ScrollContainer { Name = "CodexLore", Position = loreArea.Position, Size = loreArea.Size,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever };
         _layer.AddChild(scroll);

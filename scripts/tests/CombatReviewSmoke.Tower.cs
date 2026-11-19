@@ -275,6 +275,38 @@ public partial class CombatReviewSmoke
                     }
                     return true;
                 }
+                if (OS.GetCmdlineUserArgs().Contains("--up"))
+                {
+                    // --event-fit --up [--event=id]: the strongest enemies the reference player beats on both seeds, on the
+                    // line from ×0.6 health, ×0.75 damage (u = 0) to the first design's hardest stage, ×1.5 and ×1.35
+                    // (u = 1). The written values lie on or near this line, so this also says how much harder a stage
+                    // could be. Prints EVENT_FIT_UP.
+                    if (SimArg("event", evt.Id) != evt.Id) continue;
+                    async Task<bool> BeatsUp(float u)
+                    {
+                        healthField.SetValue(stage, .6f + .9f * u);
+                        damageField.SetValue(stage, .75f + .6f * u);
+                        for (var seed = 0; seed < 2; seed++)
+                        {
+                            SeedTowerSquad(stage.BaseStageNumber);
+                            if (!(await PlayOpened(await OpenEventBattle(evt.Id, index, (ulong)(9000 + stage.BaseStageNumber * 10 + seed)))).Won) return false;
+                        }
+                        return true;
+                    }
+                    var (down, up) = (0f, 1f);
+                    var floorBeaten = await BeatsUp(0f);
+                    if (floorBeaten && await BeatsUp(1f)) down = 1f;
+                    else if (floorBeaten)
+                        for (var step = 0; step < 6; step++)
+                        {
+                            var mid = (down + up) / 2f;
+                            if (await BeatsUp(mid)) down = mid; else up = mid;
+                        }
+                    healthField.SetValue(stage, health);
+                    damageField.SetValue(stage, damage);
+                    GD.Print($"EVENT_FIT_UP: {{\"event\":\"{evt.Id}\",\"stage\":{index + 1},\"base\":{stage.BaseStageNumber},\"beatsFloor\":{(floorBeaten ? "true" : "false")},\"u\":{down:0.000},\"health\":{.6f + .9f * down:0.00},\"damage\":{.75f + .6f * down:0.00},\"written\":\"{health:0.00}/{damage:0.00}\"}}");
+                    continue;
+                }
                 var (low, high) = (0f, 1f);
                 var authored = await Beats(1f);
                 var lowest = authored || await Beats(0f);

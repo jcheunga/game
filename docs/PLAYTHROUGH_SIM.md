@@ -257,6 +257,25 @@ the playtest caps on stages 1–3).
 - **Events.** Nine of ten event stages still hold at their strengths. Harvest Moon Hunt 4 (stage 76) was eased from
   ×1.08 / ×1.10 to ×0.88 / ×0.95 (fit ×0.92 / ×0.98). `--event-fit` only searches down from the written values, so
   it does not say how much harder the other nine could be.
+- **Events raised (19 November).** `--event-fit --up` searches upward instead: the strongest enemies the reference
+  player beats on both seeds, on the line from ×0.60 / ×0.75 to the first design's hardest stage (×1.50 / ×1.35).
+  Every stage had room. Each now sits 0.05 of that line inside its fit:
+
+  | Stage | Was | Fit | Now |
+  | --- | --- | --- | --- |
+  | Midwinter Siege 1 (34) | 0.69 / 0.81 | 0.81 / 0.89 | 0.77 / 0.86 |
+  | Midwinter Siege 2 (51) | 0.92 / 0.97 | 1.11 / 1.09 | 1.06 / 1.06 |
+  | Midwinter Siege 3 (66) | 0.60 / 0.75 | 0.90 / 0.95 | 0.85 / 0.92 |
+  | Midwinter Siege 4 (82) | 0.66 / 0.79 | 0.92 / 0.97 | 0.84 / 0.91 |
+  | Midwinter Siege 5 (97) | 0.66 / 0.79 | 0.94 / 0.98 | 0.89 / 0.95 |
+  | Harvest Moon Hunt 1 (22) | 0.98 / 1.02 | 1.23 / 1.17 | 1.19 / 1.14 |
+  | Harvest Moon Hunt 2 (42) | 0.86 / 0.92 | 1.13 / 1.11 | 1.09 / 1.08 |
+  | Harvest Moon Hunt 3 (57) | 0.55 / 0.72 | 0.68 / 0.81 | 0.64 / 0.78 |
+  | Harvest Moon Hunt 4 (76) | 0.88 / 0.95 | 0.92 / 0.97 | 0.88 / 0.94 |
+  | Harvest Moon Hunt 5 (91) | 0.76 / 0.87 | 1.11 / 1.09 | 0.94 / 0.98 |
+
+  A win is not monotonic in enemy strength: Midwinter Siege 4 lost at 0.88 / 0.94 although it won at 0.92 / 0.97,
+  and Harvest Moon Hunt 5 ran out the clock at 1.06 / 1.06. Both were eased further and checked with `--events`.
 
 ## Retuning
 
@@ -274,6 +293,7 @@ godot --headless --path . res://scenes/tests/CombatReviewSmoke.tscn -- --save-su
     --tower-fit --floors=1,5,9 > tower-1.log
 python3 scripts/analysis/tower_fit.py tower-*.log --write
 godot --headless --path . res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-eventfit --event-fit
+# --event-fit --up [--event=id] searches upward too (EVENT_FIT_UP); write the fit less a margin into SeasonalEventCatalog.cs
 ```
 
 Headless runs must keep audio muted (the sim calls `LiveUiReview.StopAudio` before every battle). Unmuted, the

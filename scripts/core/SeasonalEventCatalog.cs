@@ -117,11 +117,11 @@ public static class SeasonalEventCatalog
             "4488cc", "12-15", "01-05",
             new SeasonalEventStage[]
             {
-                new(34, 0.69f, 0.81f, new[] { "elite_vanguard" }, new SeasonalEventReward("gold", amount: 300)), // 12 Nov: 0.74/0.84 lost on the new stage 34 waves; was 1.15/1.10; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 34 got harder
-                new(51, 0.92f, 0.97f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 400)), // was 1.20/1.15; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 51 got harder
-                new(66, 0.60f, 0.75f, new[] { "cursed_ground" }, new SeasonalEventReward("food", amount: 8)), // was 1.25/1.20; refit Nov 2026 on the tuned campaign stage, with a margin
-                new(82, 0.66f, 0.79f, new[] { "elite_vanguard", "fortified_deploy" }, new SeasonalEventReward("sigils", amount: 2)), // was 1.35/1.25; refit Nov 2026 on the tuned campaign stage, with a margin
-                new(97, 0.66f, 0.79f, new[] { "cursed_ground", "rapid_assault" }, new SeasonalEventReward("relic", "relic_frostbound_crown")), // 16 Nov: --event-fit put 0.70/0.82 past the reference player on stage 97's new waves (fit 0.68/0.81), eased with a margin; was 1.50/1.35; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(34, 0.77f, 0.86f, new[] { "elite_vanguard" }, new SeasonalEventReward("gold", amount: 300)), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.69/0.81, now that seeded battles repeat; 12 Nov: 0.74/0.84 lost on the new stage 34 waves; was 1.15/1.10; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 34 got harder
+                new(51, 1.06f, 1.06f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 400)), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.92/0.97, now that seeded battles repeat; was 1.20/1.15; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 51 got harder
+                new(66, 0.85f, 0.92f, new[] { "cursed_ground" }, new SeasonalEventReward("food", amount: 8)), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.60/0.75, now that seeded battles repeat; was 1.25/1.20; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(82, 0.84f, 0.91f, new[] { "elite_vanguard", "fortified_deploy" }, new SeasonalEventReward("sigils", amount: 2)), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.66/0.79, now that seeded battles repeat; was 1.35/1.25; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(97, 0.89f, 0.95f, new[] { "cursed_ground", "rapid_assault" }, new SeasonalEventReward("relic", "relic_frostbound_crown")), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.66/0.79, now that seeded battles repeat; 16 Nov: --event-fit put 0.70/0.82 past the reference player on stage 97's new waves (fit 0.68/0.81), eased with a margin; was 1.50/1.35; refit Nov 2026 on the tuned campaign stage, with a margin
             },
             new SeasonalEventMilestone[]
             {
@@ -134,11 +134,11 @@ public static class SeasonalEventCatalog
             "cc6622", "09-20", "10-10",
             new SeasonalEventStage[]
             {
-                new(22, 0.98f, 1.02f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 250)), // was 1.10/1.10; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 22 got harder
-                new(42, 0.86f, 0.92f, new[] { "mirror_pressure" }, new SeasonalEventReward("food", amount: 6)), // 12 Nov: 1.00/1.00 lost on the new stage 42 waves; was 1.18/1.15; eased Nov 2026 on the tuned campaign stage
-                new(57, 0.55f, 0.72f, new[] { "lich_graveyard" }, new SeasonalEventReward("gold", amount: 500)), // was 1.25/1.20; refit Nov 2026 on the tuned campaign stage, with a margin; 9 Nov below the fit's floor (0.60/0.75) when stage 57 got harder and one --events run in six lost it
-                new(76, 0.88f, 0.95f, new[] { "tunnel_invasion" }, new SeasonalEventReward("sigils", amount: 2)), // 17 Nov: stage 76 was refitted harder once the simulated player was fixed (--event-fit 0.92/0.98), eased with a margin from 1.08/1.10; was 1.30/1.25; refit Nov 2026 on the tuned campaign stage, with a margin
-                new(91, 0.76f, 0.87f, new[] { "mirror_pressure", "lich_graveyard" }, new SeasonalEventReward("relic", "relic_moonfire_talisman")), // was 1.40/1.30; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(22, 1.19f, 1.14f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 250)), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.98/1.02, now that seeded battles repeat; was 1.10/1.10; refit Nov 2026 on the tuned campaign stage, with a margin, and again on 9 Nov when stage 22 got harder
+                new(42, 1.09f, 1.08f, new[] { "mirror_pressure" }, new SeasonalEventReward("food", amount: 6)), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.86/0.92, now that seeded battles repeat; 12 Nov: 1.00/1.00 lost on the new stage 42 waves; was 1.18/1.15; eased Nov 2026 on the tuned campaign stage
+                new(57, 0.64f, 0.78f, new[] { "lich_graveyard" }, new SeasonalEventReward("gold", amount: 500)), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.55/0.72, now that seeded battles repeat; was 1.25/1.20; refit Nov 2026 on the tuned campaign stage, with a margin; 9 Nov below the fit's floor (0.60/0.75) when stage 57 got harder and one --events run in six lost it
+                new(76, 0.88f, 0.94f, new[] { "tunnel_invasion" }, new SeasonalEventReward("sigils", amount: 2)), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.88/0.95, now that seeded battles repeat; 17 Nov: stage 76 was refitted harder once the simulated player was fixed (--event-fit 0.92/0.98), eased with a margin from 1.08/1.10; was 1.30/1.25; refit Nov 2026 on the tuned campaign stage, with a margin
+                new(91, 0.94f, 0.98f, new[] { "mirror_pressure", "lich_graveyard" }, new SeasonalEventReward("relic", "relic_moonfire_talisman")), // 19 Nov: raised to the upward fit (--event-fit --up) less a margin, from 0.76/0.87, now that seeded battles repeat; was 1.40/1.30; refit Nov 2026 on the tuned campaign stage, with a margin
             },
             new SeasonalEventMilestone[]
             {

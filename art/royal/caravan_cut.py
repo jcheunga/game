@@ -126,6 +126,21 @@ def difference(edit, base, threshold=.11):
 
 # ------------------------------------------------------------------ the wagon
 
+WOOD_CALM = .3              # how far the orange wood's saturation is pulled down (it outshone the troops beside it)
+CALMED = {"war_wagon", "war_wagon_skin_guild"}      # the plates in that oak; the other skins keep their own colours
+
+
+def calm(rgba):
+    """Takes a little saturation out of the orange-brown wood, leaving the teal cloth, the iron and the lamp glow."""
+    hsv = cv2.cvtColor(np.clip(rgba[..., :3], 0, 1).astype(np.float32), cv2.COLOR_RGB2HSV)   # hue in degrees
+    hue = np.clip(1 - np.abs(hsv[..., 0] - 24) / 20, 0, 1)                  # full at orange, gone by red and yellow
+    glow = np.clip((hsv[..., 2] - .82) / .13, 0, 1)                         # bright lamp light keeps its colour
+    hsv[..., 1] *= 1 - WOOD_CALM * hue * (1 - glow)
+    out = rgba.copy()
+    out[..., :3] = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+    return out
+
+
 def wagon_meta(size, door):
     h, w = size
     points = WAGON_POINTS
@@ -181,6 +196,8 @@ def cut_wagon():
     meta["centre"] = centre
 
     def save(name, image, door_image):
+        if name in CALMED:
+            image, door_image = calm(image), calm(door_image)
         write(BATTLE / f"{name}.png", plate_size(image))
         opened = door_image[y0:y1, x0:x1].copy()
         # Feather the strip's edges into the plate under it, so its rectangle never shows.
@@ -202,13 +219,13 @@ def cut_wagon():
 
     damaged = clean(register(read(GEN / "wagon_damaged.png"), base, "damaged"))
     save("war_wagon", base, door_edit)
-    write(BATTLE / "war_wagon_damaged.png", plate_size(damaged))
+    write(BATTLE / "war_wagon_damaged.png", plate_size(calm(damaged)))
 
     # Overlays shared by every skin: only what the edit added, at the edit's colour.
     for name in ("armour", "snow", "mud"):
         edit = clean(register(read(GEN / f"wagon_{name}.png"), base, name))
         mask = difference(edit, base, .09 if name == "snow" else .12)
-        overlay = edit.copy()
+        overlay = calm(edit)
         overlay[..., 3] = edit[..., 3] * mask
         write(BATTLE / f"war_wagon_{name}.png", plate_size(overlay))
     # Armour arrives by level: the wheels first, then the lower hull, then the body (rows of the plate).
@@ -224,7 +241,8 @@ def cut_wagon():
         door_image = clean(register(read(GEN / f"{skin}_door.png"), image, skin + " door")) if (GEN / f"{skin}_door.png").exists() else door_edit
         save(f"war_wagon_{skin}", image, door_image)
         if (GEN / f"{skin}_damaged.png").exists():
-            write(BATTLE / f"war_wagon_{skin}_damaged.png", plate_size(clean(register(read(GEN / f"{skin}_damaged.png"), image, skin + " damaged"))))
+            worn = clean(register(read(GEN / f"{skin}_damaged.png"), image, skin + " damaged"))
+            write(BATTLE / f"war_wagon_{skin}_damaged.png", plate_size(calm(worn) if f"war_wagon_{skin}" in CALMED else worn))
     print("wagon:", json.dumps({k: meta[k] for k in ("anchor", "width", "door", "centre")}))
 
 

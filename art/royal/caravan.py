@@ -3,7 +3,7 @@
 
 The caravan was a Blender render, then a flat side-view painting. Codex repaints it in the unit sheet's style
 (output/units.png), still square-on to the road but with its depth drawn behind it (a lit roof deck, the far wheels
-showing past the near ones), then edits that painting for its open door, its battle damage, every skin,
+showing past the near ones) and a body a third longer than it is tall, then edits that painting for its open door, its battle damage, every skin,
 and the overlays the runtime lays over it (armour plating, snow, mud). The same runner paints the roof weapons, each zone's barricade in front of the stronghold, the damage decals, the stronghold's banner meter and
 the victory flag.
 
@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GEN = ROOT / "art/royal/gen/caravan"
 STYLE = ROOT / "output/units.png"
 FLAT = GEN / "flat"      # the flatter side-view paintings the wagon was repainted from (Nov 2026)
+SHORT = GEN / "short"    # the stubby wagon (as tall as it was long) that the longer one was repainted from
 
 STYLE_LINE = ("Painted by the same artist as the unit sheet attached as a reference: identical hand-painted rendering, "
               "the same proportions, level of detail, materials and lighting (soft warm key light from the upper left, a "
@@ -31,13 +32,12 @@ SAME_FRAME = ("Everything else must stay exactly the same: the same wagon, the s
               "the same framing, the same painting style and lighting. Keep the background TRANSPARENT (PNG with alpha, "
               "no floor, no shadow). Output the same size as the input.")
 
-WAGON = f"""Image 1 is a game painting of the war wagon of the Lantern Caravan, the player's mobile base in the side-scrolling strategy game "Crownroad: Siege of Ash". It is a side view, but it reads as flat, like a cardboard cutout. Image 2 is the game's official unit sheet.
-Use your image generation tool to paint ONE new image: the SAME wagon, in the SAME straight side-on view, with the same silhouette, proportions, layout, design, colours, heraldry and every part exactly where it is in image 1, repainted so it reads as a heavy, solid, three-dimensional object.
-Do NOT turn or rotate the wagon (a three-quarter turn was tried and rejected). It stays square-on to the viewer: its long side is parallel to the picture, the front end face and the rear end face are NOT visible, and the wheels' bottoms sit on one perfectly level horizontal line. No three-quarter view, no isometric view.
-Give it depth the way classic side-view strategy games do, with an oblique projection: the near side stays a true, undistorted, square-on side elevation, and the wagon's depth is drawn receding straight UP AND TO THE RIGHT behind it. So the roof deck shows as a broad, brightly lit plane of planks inside its railing (about a quarter as tall as the side wall), and the two far-side wheels are clearly visible behind the near wheels, each shifted up and to the right by about a third of a wheel, darker and in shadow, with the dark underside and axles between them. The near wheels remain perfect circles. Model every plank, iron band, shield and beam in relief with lit edges and cast shadows under strong warm light from the upper left: bright top planes, clear mid-tone side, deep shadow under the body. Lift the overall values a little so the wagon is not murky: lighter, warmer wood than image 1, with crisp dark accents.
-Keep the roof deck open and empty (the game places crew and weapons on it), the troop hold slung low between the wheels with its ramp door CLOSED, the lantern cupola at the right end of the roof, the tall flag at the left end and the shafts reaching out to the right.
+WAGON = f"""Image 1 is a game painting of the war wagon of the Lantern Caravan, the player's mobile base in the side-scrolling strategy game "Crownroad: Siege of Ash". Its proportions are wrong: the body is as tall as it is long, so it reads as a stubby box or a tower on wheels. Image 2 is the game's official unit sheet.
+Use your image generation tool to paint ONE new image: the SAME wagon, same design, colours, heraldry, materials, light and painting style, in the SAME straight side-on view, but LONGER and better proportioned, like a real heavy war wagon or armoured coach. Make the body about one third longer than in image 1 at the same height, so the wagon is clearly longer than it is tall.
+Keep the two near wheels the same size as in image 1, perfect circles, their bottoms on one level horizontal line, and move them further apart under the longer body; the two far-side wheels still show behind them, each shifted up and to the right, dark and in shadow. Keep the brightly lit roof deck seen slightly from above inside its railing, open and empty (the game places crew and weapons on it); the row of small shields under the railing (add more to fill the longer side); the big heraldic shield, the plank door and the awning window on the side wall; the troop hold slung low between the wheels at the bottom centre with its ramp door CLOSED; the lantern cupola at the right end of the roof; the tall flag at the left end; the hanging lanterns at both ends; and the shafts with their chain reaching out to the right.
+Do NOT turn or rotate the wagon (a three-quarter turn was tried and rejected): it stays square-on to the viewer, no three-quarter view, no isometric view.
 {STYLE_LINE}
-The wagon still travels to the RIGHT. Same size and position in the frame as image 1. No horses, no people, no text. {TRANSPARENT} Square 1024x1024."""
+The wagon travels to the RIGHT. Fit the whole wagon inside the frame with a small margin on every side, the wheels' bottoms near the bottom. No horses, no people, no text. {TRANSPARENT} Square 1024x1024."""
 
 DOOR = f"""The attached image is a game painting of a war wagon with a transparent background. Use your image generation tool to EDIT it: open the troop hold's ramp door. The door at the bottom centre, between the wheels, swings down on its hinges into a sturdy plank ramp reaching the ground below and in front of the wagon (toward the viewer). Inside the open doorway the hold is lit by warm golden lantern light. Only the door and the doorway change. {SAME_FRAME}"""
 
@@ -106,7 +106,7 @@ def jobs():
     """name -> (prompt, inputs [edit target first], output). Edits read earlier jobs' outputs, so order matters."""
     gen = lambda name: GEN / f"{name}.png"
     # The wagon itself is not a Codex job: fit_wagon() copies wagon_raw into it.
-    out = {"wagon_raw": (WAGON, [FLAT / "wagon.png", STYLE], gen("wagon_raw"))}
+    out = {"wagon_raw": (WAGON, [SHORT / "wagon.png", STYLE], gen("wagon_raw"))}
     for name, prompt in (("wagon_door", DOOR), ("wagon_damaged", DAMAGED), ("wagon_armour", ARMOUR),
                          ("wagon_snow", SNOW), ("wagon_mud", MUD)):
         out[name] = (prompt, [gen("wagon")], gen(name))

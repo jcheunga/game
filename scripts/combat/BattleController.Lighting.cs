@@ -55,12 +55,27 @@ public partial class BattleController
     {
         var light = FieldLighting;
         var scale = _combat.StructureScale;
-        light.DrawContact(canvas, ground + new Vector2(0, -5) * scale, new Vector2(67, 8) * scale, .55f);
-        if (art == null) return;
+        if (art == null || art.Contacts.Length < 4)
+        {
+            light.DrawContact(canvas, ground + new Vector2(0, -5) * scale, new Vector2(67, 8) * scale, .55f);
+            if (art == null) return;
+        }
         var rect = art.At(Vector2.Zero);
         light.DrawShadow(canvas, art.Texture, new Rect2(Vector2.Zero, art.Texture.GetSize()), rect, ground, 1, 2.4f);
+        if (art.Contacts.Length >= 4)
+        {
+            // The dark the body keeps under itself, from the far wheels to the near ones and a little past each end:
+            // without it the wagon reads as hovering wherever the road is pale.
+            Vector2 farRear = art.Point(ground, art.Contacts[0]), nearRear = art.Point(ground, art.Contacts[2]), nearFront = art.Point(ground, art.Contacts[3]);
+            var half = (nearFront.X - nearRear.X) * .5f;
+            var depth = Mathf.Max(3f, nearRear.Y - farRear.Y);
+            // It lies a little toward the viewer, where the wheels and the hold don't hide it.
+            var middle = new Vector2((nearRear.X + nearFront.X) * .5f + depth * .2f, nearRear.Y + depth * .1f);
+            light.DrawContact(canvas, middle, new Vector2(half * 1.6f, depth * .9f), 1.6f);
+            light.DrawContact(canvas, middle, new Vector2(half * 1.25f, depth * .55f), 1.4f);
+        }
         foreach (var contact in art.Contacts)
-            light.DrawContact(canvas, art.Point(ground, contact), new Vector2(7, 2.8f) * scale, .8f);
+            light.DrawContact(canvas, art.Point(ground, contact), new Vector2(9, 3.2f) * scale, 1.5f);
         foreach (var lamp in art.Lights) light.DrawLampGlow(canvas, art.Point(ground, lamp));
     }
 

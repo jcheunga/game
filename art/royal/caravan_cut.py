@@ -34,18 +34,23 @@ ZONES = ["city", "harbor", "foundry", "quarantine", "thornwall", "basilica", "mi
 # Read by eye on the 1254 px clean wagon painting (gen/caravan/sheets/wagon.png). It stands square-on to the road
 # with its depth drawn up and to the right, so the far wheels show past the near ones.
 WAGON_POINTS = {
-    "ground": 1097,                       # wheel bottoms
-    "wheels": [354, 926],                 # wheel centres (x)
-    "mounts": [[352, 446], [548, 446], [714, 446]],   # roof deck: archers' post, ballista, firepot
-    "lamps": [[148, 678], [1096, 674]],   # the hanging lanterns' glass
-    "lantern": [905, 395],                # the cupola's lamp
-    "flag": [18, 192, 258, 388],          # the flag's cloth (x0, y0, x1, y1); its pole stands at x1
-    "awning": [756, 598, 952, 690],
-    "hitch": [1222, 862],                 # the shafts' ring at the front
-    "smoke": [560, 430],
+    "ground": 1026,                       # wheel bottoms
+    "wheels": [268, 968],                 # wheel centres (x)
+    "wheel": 278,                         # a near wheel's diameter
+    "mounts": [[330, 470], [540, 470], [760, 470]],   # roof deck: archers' post, ballista, firepot
+    "lamps": [[88, 655], [1165, 655]],    # the hanging lanterns' glass
+    "lantern": [1045, 430],               # the cupola's lamp
+    "flag": [18, 255, 205, 395],          # the flag's cloth (x0, y0, x1, y1); its pole stands at x1
+    "awning": [722, 598, 915, 672],
+    "hitch": [1225, 830],                 # the shafts' ring at the front
+    "smoke": [600, 455],
 }
-# The old render's wheel span (0.63 of a 210-wide plate) keeps the wagon its old size in battle.
-OLD_WIDTH, OLD_SPAN = 210.0, 0.63
+# A wheel stays the size it has always been in battle (a 300 px wheel on the 1254 px plate once drawn 190.26 wide),
+# so a longer wagon is longer, not smaller.
+WHEEL_WORLD = 190.26 * 300 / 1254
+# The shafts' ring stays this far in front of the base's position, where the stubby wagon's stood: the extra
+# length runs back past the screen's left edge, so the rear of the wagon is cut off by it.
+HITCH_REACH = 90.3
 
 ALPHA_FLOOR = 26 / 255      # Codex's transparent paintings carry a faint glow halo below this
 PLATE = 1024                # wagon plates ship at the old renders' size
@@ -145,13 +150,13 @@ def wagon_meta(size, door):
     h, w = size
     points = WAGON_POINTS
     uv = lambda p: [round(p[0] / w, 6), round(p[1] / h, 6)]
-    width = OLD_WIDTH * OLD_SPAN / ((points["wheels"][1] - points["wheels"][0] + 300) / w)
+    width = WHEEL_WORLD / (points["wheel"] / w)
     ground = points["ground"] / h
     # Far wheels touch down a little higher and further right than the near ones.
     far = (points["ground"] - 60) / h
     meta = {
         "source": "art/royal/caravan.py (painted)", "generator": "art/royal/caravan_cut.py", "cameraElevation": 22,
-        "anchor": [.5, round(ground, 6)], "width": round(width, 2),
+        "anchor": [round(points["hitch"][0] / w - HITCH_REACH / width, 6), round(ground, 6)], "width": round(width, 2),
         "mounts": [uv(p) for p in points["mounts"]],
         "contacts": [[round((x + 55) / w, 6), round(far, 6)] for x in points["wheels"]] +
                     [[round(x / w, 6), round(ground, 6)] for x in points["wheels"]],
@@ -184,6 +189,7 @@ def cut_wagon():
     # The doorway's lit interior is where troops appear; the ramp's lowest point is where they reach the ground.
     interior = changed[y0:y1, x0:x1] > .5
     lit = door_edit[y0:y1, x0:x1, :3].mean(axis=2) * interior
+    lit[max(0, WAGON_POINTS["ground"] - 20 - y0):] = 0      # the doorway is above the ground; the bright ramp is not it
     iy, ix = np.unravel_index(np.argmax(cv2.GaussianBlur(lit, (0, 0), 12)), lit.shape)
     # The ramp's foot is the middle of its lowest boards: the edit's box also takes in what the repaint touched
     # beside the ramp, so the box's middle is not the ramp's.
@@ -229,7 +235,7 @@ def cut_wagon():
         overlay[..., 3] = edit[..., 3] * mask
         write(BATTLE / f"war_wagon_{name}.png", plate_size(overlay))
     # Armour arrives by level: the wheels first, then the lower hull, then the body (rows of the plate).
-    wheel_top = (WAGON_POINTS["ground"] - 310) / h
+    wheel_top = (WAGON_POINTS["ground"] - WAGON_POINTS["wheel"]) / h
     meta["overlays"]["armour"] = [round(wheel_top, 4), round(.62, 4), 0.0]
     (BATTLE / "war_wagon.json").write_text(json.dumps(meta, indent=2) + "\n")
 

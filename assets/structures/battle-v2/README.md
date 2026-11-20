@@ -10,7 +10,8 @@ sprites in `assets/structures/` (the ballista as a stand and a bow that turns).
 
 The caravan stands square-on to the road, seen slightly from above, with its depth drawn up and to the right: a lit
 roof deck and the far wheels showing past the near ones (a three-quarter turn was tried and rejected, it read as
-tipping). The battle sun is from the upper left and there is no baked ground shadow. Caravan and skin plates are 1024 × 1024 RGBA; door strips are cropped. All import with
+tipping). Its body is a third longer than it is tall; the wheels keep their old size, the front end stands where
+it always did and the rear runs off the left edge of the screen (`HITCH_REACH` in the cutter). The battle sun is from the upper left and there is no baked ground shadow. Caravan and skin plates are 1024 × 1024 RGBA; door strips are cropped. All import with
 mipmaps.
 
 Each JSON stores the ground anchor, wheel contacts, roof weapon sockets, lamp ground positions and the

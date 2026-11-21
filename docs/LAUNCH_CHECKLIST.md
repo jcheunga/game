@@ -174,16 +174,18 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 
 - [ ] Create the VM and install Docker with the Compose v2 plugin. Use a
   non-root account.
-- [ ] In DNS, point `<domain>` (and the website domain and its `www.`) at the
-  VM, and open ports 80 and 443.
+- [ ] In DNS, point `<domain>` at the VM (DNS only, if the zone is on
+  Cloudflare), and open ports 80 and 443. The website domain and its `www.`
+  go to Cloudflare instead (see [WEBSITE.md](WEBSITE.md)).
 - [ ] Create the PostgreSQL database with a least-privilege role. Put its
   pooled URL, with `sslmode=verify-full`, in `DATABASE_URL`.
 - [ ] Copy `server/.env.production.example` to `.env.production`. Set:
-  - the API and website hostnames (`CROWNROAD_SITE_DOMAIN`)
+  - the API hostname
   - a monitored email address
   - the exact allowed browser origins (never `*`)
-- [ ] Fill in `site/site.json` with the same website domain and the publisher
-  details (see [WEBSITE.md](WEBSITE.md)).
+- [ ] Fill in `site/site.json` with the website domain and the publisher
+  details, then deploy the site with `scripts/release/deploy_site.sh` (see
+  [WEBSITE.md](WEBSITE.md)).
 - [ ] Create `server/secrets/` with owner-only permissions, holding
   `redis-password`, `admin-api-key`, `google-play-service-account.json` and,
   for iOS, the App Store purchase `.p8` key. Point the `*_SOURCE` entries in

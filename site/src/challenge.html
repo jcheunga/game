@@ -9,25 +9,26 @@
 <body>
 <!--#include nav.html -->
 
-<!-- Caddy serves /challenge/<code> through this page as a template (server/Caddyfile, delimiters [[ ]]), and fills in
-     the code only when it matches the game's code format, so nothing else from the address reaches the page. -->
+<!-- site/worker.js serves /challenge/<code> through this page. It keeps the valid block, with the code filled in, only
+     when the code matches the game's format, and the invalid block otherwise, so nothing else from the address reaches
+     the page. -->
 <main id="main" class="doc">
   <div class="wrap">
     <header>
       <span class="eyebrow">Challenge</span>
-      [[- $code := .OriginalReq.URL.Path | trimPrefix "/challenge/" | upper ]]
-      [[- if regexMatch "^CH-[0-9]{1,3}-[A-Z]{3}-[0-9]{1,6}$" $code ]]
+      <!--challenge:valid-->
       <h1>Race this board</h1>
       <p class="summary">A friend shared a seeded challenge. Everyone who loads its code fights the same stage, foes and waves, so your scores compare directly.</p>
       <div class="contact-card">
         <span class="eyebrow">Challenge code</span>
-        <span class="address">[[ $code ]]</span>
+        <span class="address">[[code]]</span>
         <p>In Crownroad, open More → Community → Challenges, type this code into the code box and tap Load.</p>
       </div>
-      [[- else ]]
+      <!--/challenge:valid-->
+      <!--challenge:invalid-->
       <h1>This challenge link is incomplete</h1>
       <p class="summary">A challenge code looks like CH-04-PRS-4821. Ask your friend to copy the code from the game and send it again.</p>
-      [[- end ]]
+      <!--/challenge:invalid-->
       <div class="cta-row">
         <a class="btn btn-primary" href="/">About Crownroad</a>
         <a class="btn btn-ghost" href="/support">Get support</a>

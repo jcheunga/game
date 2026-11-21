@@ -93,7 +93,7 @@ def load_values(config_path: Path, strict: bool, expect_domain: str | None, prob
     if expect_domain and domain != expect_domain.strip().lower():
         problems.error(
             f"site.json domain {domain!r} does not match the deployment domain {expect_domain!r} "
-            "(CROWNROAD_SITE_DOMAIN in server/.env.production)"
+            "(the --domain passed by scripts/release/deploy_site.sh)"
         )
 
     email = str(config.get("support_email") or "").strip()
@@ -125,8 +125,9 @@ def load_values(config_path: Path, strict: bool, expect_domain: str | None, prob
         problems.error(f"site.json: \"admob_publisher_id\" should look like pub-0123456789012345, not {publisher!r}")
     values["admob_publisher_id"] = publisher
     values["availability_label"] = "Available on" if any_link else "Coming to"
-    # Once a store is live, the page head names only the live platforms, so an Android-first launch doesn't claim iPhone.
-    live = [key for key in LINKS if values[f"link:{key}"]] or list(LINKS)
+    # The page head always names Android and iPhone, the two launch platforms (iPhone follows Android shortly), and
+    # adds the web only once a web build is linked.
+    live = ["google_play", "app_store"] + (["web_play"] if values["link:web_play"] else [])
     names = [PLATFORMS[key][0] for key in live]
     listed = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
     values["platforms_sentence"] = f"{values['availability_label']} {listed}."
@@ -156,9 +157,8 @@ def render(text: str, values: dict[str, str], source: Path, problems: Problems) 
         url = values.get(f"link:{key}", "")
         if url:
             return f'<a href="{url}" rel="noopener">{label}</a>'
-        # Once any store is live the heading reads "Available on", so mark the rest.
-        suffix = " · soon" if values["availability_label"] == "Available on" else ""
-        return f"<span>{label}{suffix}</span>"
+        # A store without its listing yet is named as plain text; both launch platforms count as available.
+        return f"<span>{label}</span>"
 
     text = LINK_RE.sub(link, text)
 

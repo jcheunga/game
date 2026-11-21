@@ -23,9 +23,10 @@ a large public launch.
   application environment variables.
 - An independent operator key for `/admin`, `/stats`, `/analytics/summary`,
   and `/admin/balance`.
-- The public website (home, support, privacy and terms pages) from `site/` on
-  `CROWNROAD_SITE_DOMAIN`, with `www.` redirecting to it. `deploy.sh` builds it
-  first and stops if any launch value is unset. See [WEBSITE.md](WEBSITE.md).
+
+The public website (home, support, privacy and terms pages) isn't on this
+host: it deploys to Cloudflare with `scripts/release/deploy_site.sh`, so it
+stays up when the API is down. See [WEBSITE.md](WEBSITE.md).
 
 The API never creates database dumps in its own container. Use PostgreSQL
 provider backups, point-in-time recovery, or encrypted off-host dumps and
@@ -64,7 +65,8 @@ rehearse a restore before releasing paid currency.
    `CROWNROAD_RATE_LIMIT_SCALE` (server/ops/README.md) before raising the
    player target.
 2. Point an A (and, if used, AAAA) record such as `api.your-domain.example` at
-   the VM, plus records for the website domain and its `www.` alias. Make ports
+   the VM (set to DNS only if the zone is on Cloudflare; the website's records
+   are made by its own deploy, see [WEBSITE.md](WEBSITE.md)). Make ports
    80 and 443 available from the public internet. Caddy uses that reachability
    to provision and renew certificates. Give the API an AAAA record if the host
    offers IPv6. Most phone networks hand out IPv6 addresses but share a few
@@ -74,10 +76,9 @@ rehearse a restore before releasing paid currency.
 3. Copy the release repository to the server and work from its `server/`
    directory.
 4. Copy `.env.production.example` to `.env.production`, then set the API
-   hostname, the website hostname (`CROWNROAD_SITE_DOMAIN`), a monitored email
-   address, and the exact browser origins. Do not use `*` as an origin. Fill in
-   `site/site.json` with the same website domain and the publisher details
-   described in [WEBSITE.md](WEBSITE.md).
+   hostname, a monitored email address, and the exact browser origins. Do not
+   use `*` as an origin. The website deploys separately (see
+   [WEBSITE.md](WEBSITE.md)).
 5. Provision the managed PostgreSQL database and create a least-privilege
    application role. Put its **pooled** PostgreSQL URL in `DATABASE_URL` in
    `.env.production`. It must use verified TLS, such as

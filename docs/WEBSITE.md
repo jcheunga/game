@@ -1,8 +1,11 @@
 # Public website
 
 The marketing site, privacy policy, terms and support page live in `site/` and
-are served by the same Caddy instance as the API. There is no JavaScript, no
-cookies and no analytics; the only third-party request is Google Fonts.
+are served by Cloudflare, as a Worker with static assets, separately from the
+game server. The site stays up when the API host is down, which matters
+because the stores link to its privacy, support and account-deletion pages.
+There is no JavaScript in the pages, no cookies and no analytics; the only
+third-party request is Google Fonts.
 
 | Path | What it is |
 | --- | --- |
@@ -10,7 +13,9 @@ cookies and no analytics; the only third-party request is Google Fonts.
 | `site/src/` | Page templates, images, icons, `robots.txt`, `sitemap.xml`, `security.txt` |
 | `site/src/_partials/` | Shared head, navigation and footer |
 | `scripts/tools/build_site.py` | Renders `site/src` into `site/dist` and checks links, anchors, images, sitemap and page heads |
-| `site/dist/` | Build output (not committed). Caddy serves it from `/srv/site` |
+| `site/dist/` | Build output (not committed), uploaded as the Worker's static assets |
+| `site/worker.js` | The Worker: redirects `www.` to the bare domain, fills in `/challenge/<code>` pages, adds the security and cache headers |
+| `scripts/release/deploy_site.sh` | Strict build, then `wrangler deploy` with the domain from `site.json`; `--dev` previews locally |
 
 Pages: `/`, `/support`, `/privacy`, `/terms`, plus a `404.html` for unknown paths.
 
@@ -21,8 +26,9 @@ python3 scripts/tools/build_site.py --serve
 ```
 
 This builds with visible placeholders for any unset value and serves
-http://localhost:8000 with the same clean URLs Caddy uses (`/privacy` serves
-`privacy.html`). `./scripts/verify_all.sh` and CI run the same build without
+http://localhost:8000 with the same clean URLs Cloudflare uses (`/privacy` serves
+`privacy.html`). To run the real Worker locally, headers and challenge links
+included, use `scripts/release/deploy_site.sh --dev` (http://localhost:8787). `./scripts/verify_all.sh` and CI run the same build without
 `--serve`, so a broken link or missing image fails verification.
 
 ## Go-live checklist
@@ -43,19 +49,23 @@ http://localhost:8000 with the same clean URLs Caddy uses (`/privacy` serves
 2. **Have the privacy policy and terms reviewed.** They were written from what
    the code does today (see "Keeping the privacy policy true" below), not by a
    lawyer. Check them against the markets you launch in and your age rating.
-3. **DNS.** Point A (and AAAA, if used) records for both the domain and
-   `www.` at the deployment host, alongside the existing API record. Caddy
-   issues certificates for all three names, and `www` redirects to the bare
-   domain.
-4. **Server environment.** Set `CROWNROAD_SITE_DOMAIN` in
-   `server/.env.production` to the same domain as `site.json`. `deploy.sh`
-   checks that they match.
-5. **Deploy.** Run `./deploy.sh` from `server/` as described in
-   [DEPLOYMENT.md](DEPLOYMENT.md). It builds the site with
-   `--strict --domain "$CROWNROAD_SITE_DOMAIN"` before it validates Caddy and
-   starts the stack. Later site-only changes don't need a container restart:
-   rerun the build and Caddy serves the new files immediately.
-6. **Check it's live.**
+3. **Put the domain on Cloudflare.** Create a free Cloudflare account and add
+   the domain as a zone (registering it with Cloudflare Registrar does this
+   for you; otherwise change the registrar's nameservers to the two Cloudflare
+   gives you). Don't add records for the bare domain or `www.`: the deploy
+   creates them. The API's record (`api.`, pointing at the game server) goes
+   in the same zone, set to **DNS only** (grey cloud) so Caddy keeps issuing
+   its own certificate and the room relay's WebSockets go straight to the
+   host.
+4. **Deploy.** Install Node.js, then run `scripts/release/deploy_site.sh`. It
+   builds the site with `--strict` and runs Wrangler (pinned in the script),
+   which asks you to sign in to Cloudflare in the browser the first time; in
+   CI, set `CLOUDFLARE_API_TOKEN` instead. It attaches the domain and `www.`
+   to the Worker as custom domains, and Cloudflare issues their certificates.
+   Rerun it after any site change. It's independent of the game server, so
+   the site can go live before the server exists, as soon as the store
+   consoles need its privacy URL.
+5. **Check it's live.**
 
    ```sh
    curl -sI https://crownroad.game/ | grep -iE '^(HTTP|content-security-policy|strict-transport)'
@@ -67,7 +77,7 @@ http://localhost:8000 with the same clean URLs Caddy uses (`/privacy` serves
    Then paste the home page URL into a link-preview checker, such as the
    debugger of a social network you post on, to confirm the share card
    (`/assets/img/og.jpg`) appears.
-7. **Store listings.** Use these URLs in App Store Connect and Play Console:
+6. **Store listings.** Use these URLs in App Store Connect and Play Console:
 
    | Field | URL |
    | --- | --- |
@@ -76,14 +86,15 @@ http://localhost:8000 with the same clean URLs Caddy uses (`/privacy` serves
    | Privacy policy URL | `https://<domain>/privacy` |
    | Play Console data-deletion URL | `https://<domain>/support#delete-data` |
 
-8. **Search.** Add the domain to Google Search Console and submit
+7. **Search.** Add the domain to Google Search Console and submit
    `https://<domain>/sitemap.xml`.
-9. **When a store goes live,** add its listing URL under `links` in
+8. **When a store goes live,** add its listing URL under `links` in
    `site.json` (`app_store`, `google_play`, `web_play`) and redeploy. The
-   closing section switches from "Coming to" to "Available on", links each
-   live platform, and marks the rest "soon". The page's search description
-   and its structured data then name only the live platforms ("Available on
-   Android."), so an Android-first launch doesn't claim iPhone.
+   home page switches from "Coming to Android and iPhone" to "Available on
+   Android and iPhone" and links each store that has a listing; one without
+   a listing yet is named as plain text. Both launch platforms are always
+   named, since iPhone follows Android shortly. The web is named only once
+   `web_play` is set.
 
 ## Keeping the privacy policy true
 
@@ -101,7 +112,7 @@ configuration. Update the page in the same change if any of these move:
 | Google and Apple purchase tokens kept only as a one-way fingerprint (Stripe's payment ID is stored as is); purchases limited to 10 an hour | `server/Endpoints.cs`, `server/StorePurchaseVerification.cs` |
 | Hashed IPs for rate limiting expire after about a minute | `server/RateLimitStore.cs` |
 | API access logs and the server's request logs (with player IDs) rotate (5 × 20 MB per container) | `caddy` and `crownroad-server` logging options in `server/docker-compose.production.yml` |
-| No website access logs | No `log` directive in the website block of `server/Caddyfile` |
+| No website access logs | Workers Logs off (`"observability": { "enabled": false }` in the config `scripts/release/deploy_site.sh` writes); Cloudflare receives visitors' IPs, as the policy says |
 | Analytics off until the player opts in | `scripts/core/AnalyticsService.cs`, and the Privacy section of the Account tab in `scripts/ui/SettingsMenu.cs` (there is no first-run prompt) |
 | Crash reports off until a separate opt-in; withdrawing analytics discards queued events | `scripts/core/CrashReporter.cs`, `AnalyticsService.cs`, and the Account tab in `scripts/ui/SettingsMenu.cs` |
 | Cloud saves exclude session credentials, server settings and consent choices; restores preserve the current device's identity and choices | Shared `scripts/core/CloudSavePrivacy.cs`, `CloudSaveService.cs`, `GameState.cs`, `server/Endpoints.cs`; schema migration 5 in `server/Database.cs` scrubs existing rows |
@@ -126,13 +137,14 @@ same audit as the policy, are in
 ## Challenge links
 
 The game's **Copy share link** gives `https://<domain>/challenge/CH-04-PRS-4821`.
-Caddy serves those through `site/src/challenge.html` as a template
-(`server/Caddyfile`, delimiters `[[ ]]`, so they don't clash with the site
-builder's `{{ }}`): the page shows the code and how to load it in the game,
-or says the link is incomplete when the address doesn't match the code
-format, so nothing else from the address reaches the page. The site allows
-no scripts, which is why the server fills it in. The preview server doesn't
-run templates, so locally the page shows the raw `[[ ]]` markers.
+`site/worker.js` serves those through `site/src/challenge.html`, which holds
+two blocks between `<!--challenge:valid-->` and `<!--challenge:invalid-->`
+markers. The Worker keeps the first, with `[[code]]` filled in, when the
+address matches the code format, and the second ("this link is incomplete")
+otherwise, so nothing else from the address reaches the page. The pages allow
+no scripts, which is why the Worker fills it in. `build_site.py --serve`
+doesn't run the Worker, so it shows both blocks; `deploy_site.sh --dev` shows
+the real page.
 
 Opening the game straight from a link would also need a native plugin on
 each platform to pass the link into the game, plus the
@@ -154,5 +166,5 @@ which the privacy policy discloses. To remove that third-party request,
 download the WOFF2 files into `site/src/assets/fonts/`, replace the Google
 Fonts `<link>` in `site/src/_partials/head.html` with `@font-face` rules in
 `site.css`, and remove `fonts.googleapis.com`/`fonts.gstatic.com` from the
-website Content-Security-Policy in `server/Caddyfile`. Then update the "This
+website Content-Security-Policy in `site/worker.js`. Then update the "This
 website" paragraph of the privacy policy.

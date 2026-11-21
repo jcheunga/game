@@ -44,8 +44,8 @@ player_rows() { sqlite3 "$work/e2e.db" "SELECT COUNT(*) FROM players WHERE profi
 if [ $stack = 1 ]; then
     # Each replica reads operator switches (the purchase pause) at most every 10 s.
     settle=10.5
-    export E2E_PORT="$port" E2E_SITE="$work/site" E2E_POSTGRES_PASSWORD="e2e-$(date +%s)"
-    mkdir -p "$work/site" "$work/secrets"
+    export E2E_PORT="$port" E2E_POSTGRES_PASSWORD="e2e-$(date +%s)"
+    mkdir -p "$work/secrets"
     printf '%s' "e2e-redis-$(date +%s)" > "$work/secrets/redis-password"
     printf '%s' "$admin_key" > "$work/secrets/admin-api-key"
     : > "$work/secrets/google-play-service-account.json"

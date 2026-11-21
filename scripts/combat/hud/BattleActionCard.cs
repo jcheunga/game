@@ -195,16 +195,17 @@ public partial class BattleActionCard : Control
     private void LayoutArt()
     {
         var inner = new Rect2(new Vector2(4, 4), (Size - new Vector2(8, 8)).Max(Vector2.One));
-        // The art sits whole inside the card with a margin, a little below the cost badge.
-        _portrait.Position = inner.Position + inner.Size * (FullArt ? new Vector2(.08f, .07f) : new Vector2(.14f, .17f));
-        _portrait.Size = inner.Size * (FullArt ? new Vector2(.84f, .86f) : new Vector2(.72f, .76f));
+        // The art sits whole inside the card and fills most of it; the small corner badge and level tag overlap
+        // only its empty corners.
+        _portrait.Position = inner.Position + inner.Size * (FullArt ? new Vector2(.08f, .07f) : new Vector2(.07f, .1f));
+        _portrait.Size = inner.Size * (FullArt ? new Vector2(.84f, .86f) : new Vector2(.86f, .86f));
         _cooldownShade.Position = new Vector2(inner.Position.X, inner.End.Y - inner.Size.Y * _cooldownRatio);
         _cooldownShade.Size = new Vector2(inner.Size.X, inner.Size.Y * _cooldownRatio);
         _cooldownShade.QueueRedraw();
         // The portrait greys out below the same line (in its own local pixels).
         _portraitMaterial.SetShaderParameter("split_y", _cooldownRatio > 0 ? _cooldownShade.Position.Y - _portrait.Position.Y : 1e5f);
-        // Badge: 48 px at the concept's 119 px card (the concept's 44 read too small), top-right, scaled with the card.
-        var badge = Mathf.Round(48 * Size.X / 119f);
+        // Badge: 38 px at the concept's 119 px card, top-right, scaled with the card. Larger ones crowded the art.
+        var badge = Mathf.Round(38 * Size.X / 119f);
         _costPlate.Position = new Vector2(Size.X - badge - 2, 1);
         _costPlate.Size = new Vector2(badge, badge);
         _levelPlate.Position = new Vector2(5, Size.Y - _levelPlate.Size.Y - 5);
@@ -213,7 +214,7 @@ public partial class BattleActionCard : Control
         if (badge == _numeralBadge) return;
         _numeralBadge = badge;
         FitLevelTag();
-        _cost.AddThemeFontSizeOverride("font_size", Mathf.Max(16, Mathf.RoundToInt(badge * .58f)));
+        _cost.AddThemeFontSizeOverride("font_size", Mathf.Max(16, Mathf.RoundToInt(badge * .62f)));
         _cost.AddThemeConstantOverride("outline_size", Mathf.Max(3, Mathf.RoundToInt(badge * .1f)));
         _cost.AddThemeConstantOverride("shadow_offset_y", Mathf.Max(1, Mathf.RoundToInt(badge * .04f)));
     }
@@ -248,9 +249,28 @@ void fragment() {
 }";
 
     private static SliceStyle _selectedFrame;
+    private static GradientTexture2D _artBacking;
+
+    /// <summary>How dark the pool behind the art is at its centre, on top of the see-through face.</summary>
+    internal const float ArtBackingOpacity = .8f;
 
     public override void _Draw()
     {
+        // The see-through face lets the battlefield's grass and stone show through the art's gaps and compete with
+        // it. A soft dark pool behind the figure gives it a plain ground; it fades out before the rim, so the card's
+        // edges and corners stay see-through.
+        _artBacking ??= new GradientTexture2D
+        {
+            Width = 64, Height = 64, Fill = GradientTexture2D.FillEnum.Radial,
+            FillFrom = new Vector2(.5f, .5f), FillTo = new Vector2(1f, .5f),
+            Gradient = new Gradient
+            {
+                Offsets = new[] { 0f, .55f, 1f },
+                Colors = new[] { new Color(.05f, .055f, .07f, ArtBackingOpacity), new Color(.05f, .055f, .07f, ArtBackingOpacity * .8f),
+                    new Color(.05f, .055f, .07f, 0f) }
+            }
+        };
+        DrawTextureRect(_artBacking, new Rect2(new Vector2(2, 2), (Size - new Vector2(4, 4)).Max(Vector2.One)), false);
         if (!_selected) return;
         // The concept's glowing gold frame marks the armed card.
         _selectedFrame ??= RoyalKit.Slice("hud-card-selected", 14, false);

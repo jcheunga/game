@@ -7,7 +7,8 @@ public partial class BattleController
     private HBoxContainer _goldReadout;
     private PanelContainer _goldFrame;
     private Label _goldAmount;
-    private Button _hudSettingsButton, _restartButton, _resumeButton;
+    private Button _hudSettingsButton;
+    private RoyalButton _restartButton, _resumeButton;
     private RealmModal _battleSettingsModal;
     private CanvasLayer _battleSettingsLayer;
     private Control _battleHudRoot;
@@ -126,10 +127,12 @@ public partial class BattleController
                 scroller.CustomMinimumSize = Vector2.Zero;
             }
             var rowSize = row.GetCombinedMinimumSize();
-            var dockRect = spec.Rect("dock");
             var width = rowSize.X + 18;
             var height = rowSize.Y + 20;
-            cards.Position = new Vector2((size.X - width) / 2, size.Y - bottom - (720 - dockRect.End.Y) - height);
+            // The cards stand as far off the bottom edge as the courage plate stands off the top one. The dock
+            // has no tray now, so the gap is measured to the cards themselves, not to the dock's own margin.
+            var edge = spec.Rect("courage").Position.Y;
+            cards.Position = new Vector2((size.X - width) / 2, size.Y - bottom - (edge - dock.ContentMarginBottom) - height);
             cards.Size = new Vector2(width, height);
             LayoutCaravanSpellButton(cards, cardWidth, cardHeight, size.X - right);
             // Settings open on their own layer at the canvas's own scale, not the HUD's.
@@ -146,25 +149,66 @@ public partial class BattleController
         root.AddChild(_pauseOverlay); _pauseOverlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         var veil = new ColorRect { Color = new Color("081018ac"), MouseFilter = Control.MouseFilterEnum.Stop };
         _pauseOverlay.AddChild(veil); veil.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        var card = new PanelContainer { CustomMinimumSize = new Vector2(420, 0) };
-        card.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 16)); _pauseOverlay.AddChild(card);
-        var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", 8); card.AddChild(stack);
-        var title = RealmUi.Heading("Battle paused", 28); title.HorizontalAlignment = HorizontalAlignment.Center;
-        title.VerticalAlignment = VerticalAlignment.Center; title.CustomMinimumSize = new Vector2(0, 50); stack.AddChild(title);
-        Button ActionButton(string icon, string text, Action action, bool primary = false)
-        {
-            var button = RealmUi.Button(icon, text, action, primary);
-            // 60 HUD units: a full fingertip (72 px) once the HUD's scale is applied.
-            button.CustomMinimumSize = new Vector2(0, 60); ModalUi.StyleButton(button); stack.AddChild(button); return button;
-        }
-        _resumeButton = ActionButton("arrow", "Resume", TogglePause, true);
-        _restartButton = RealmUi.Button("arrow", "Restart", TryRestartBattle);
-        _restartButton.CustomMinimumSize = new Vector2(0, 60); ModalUi.StyleButton(_restartButton);
-        StyleRestartButton(_restartButton); stack.AddChild(_restartButton);
-        ActionButton("gear", "Game settings", OpenBattleSettings);
-        ActionButton("book", "Battle guide", OpenCombatGuide);
-        ActionButton("back", "Quit battle", RetreatToMap);
+        var card = new PanelContainer { CustomMinimumSize = new Vector2(460, 0) };
+        card.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 18)); _pauseOverlay.AddChild(card);
+        var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", 10); card.AddChild(stack);
+        // The result board's engraved gold title, its cap band centred in the header.
+        var title = RoyalText.Title("Battle paused", 32);
+        title.AllCaps = true; title.Align = HorizontalAlignment.Center; title.CustomMinimumSize = new Vector2(0, 54);
+        stack.AddChild(title);
+        // The result board's pair, stacked: gold to go on, steel for everything else.
+        _resumeButton = PauseAction(stack, "Resume", "icon-swords-dark", TogglePause, gold: true);
+        _restartButton = PauseAction(stack, "Restart", "icon-restart", TryRestartBattle);
+        StyleRestartButton(_restartButton);
+        PauseAction(stack, "Game settings", "icon-tools", OpenBattleSettings);
+        PauseAction(stack, "Battle guide", "icon-open-book", OpenCombatGuide);
+        PauseAction(stack, "Quit battle", "icon-quit", RetreatToMap);
         BuildDeveloperBattleTools(stack);
+    }
+
+    private static SliceStyle _pauseGold, _pauseSteel;
+
+    /// <summary>A button of the result board, cut from its plate: the gold one or the steel one.</summary>
+    private static SliceStyle ResultSurface(bool gold)
+    {
+        SliceStyle Cut(string key)
+        {
+            var plate = RoyalArt.Plate("victory");
+            return new SliceStyle(plate, RoyalSpec.For("victory").Rect(key), RoyalArt.Density(plate), 24, 24, 24, 24, 0, 0);
+        }
+        return gold ? _pauseGold ??= Cut("button.back") : _pauseSteel ??= Cut("button.restart");
+    }
+
+    /// <summary>
+    /// A pause-menu action in the result board's style: its painted surface, with the icon and engraved capitals
+    /// centred together on it. 60 HUD units tall is a full fingertip (72 px) once the HUD's scale is applied.
+    /// </summary>
+    private RoyalButton PauseAction(Container parent, string text, string glyph, Action action, bool gold = false, float height = 60, int size = 22)
+    {
+        var button = new RoyalButton { CustomMinimumSize = new Vector2(0, height), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            AccessibilityName = text, TooltipText = text, FocusMode = Control.FocusModeEnum.All, MouseDefaultCursorShape = Control.CursorShape.PointingHand };
+        button.SetStates(ResultSurface(gold), 8);
+        button.SetMeta("pause_gold", gold); button.SetMeta("pause_glyph", glyph ?? ""); button.SetMeta("pause_size", size);
+        button.Pressed += action;
+        SetPauseCaption(button, text);
+        // The container sizes the button, so its row is laid out again whenever that size changes.
+        button.Resized += () => SetPauseCaption(button, button.Text, button.GetMeta("pause_price", "").AsString());
+        parent.AddChild(button);
+        return button;
+    }
+
+    private static void SetPauseCaption(RoyalButton button, string text, string price = "")
+    {
+        button.Text = text; button.SetMeta("pause_price", price);
+        if (button.Size.X <= 0) return;
+        var gold = button.GetMeta("pause_gold").AsBool();
+        var glyph = button.GetMeta("pause_glyph").AsString();
+        var label = RoyalText.Caps(text, button.GetMeta("pause_size").AsInt32(), gold ? new Color("1e0f04") : new Color("fff1d0"), 700);
+        var side = Mathf.Round(button.Size.Y * .47f);
+        button.Arrange(label, glyph.Length > 0 ? RoyalKit.Texture(glyph) : null, new Vector2(side, side),
+            price.Length > 0 ? RoyalText.Caps(price, 18, new Color("f3d48a"), 700) : null, price.Length > 0 ? RoyalKit.Texture("icon-wheat") : null, new Vector2(38, 32));
+        // Dark lettering pressed into gold keeps a faint light edge below it instead of a dark drop shadow.
+        if (gold) { label.ShadowOffset = new Vector2(0, 1); label.ShadowInk = new Color(1f, .92f, .7f, .35f); }
     }
 
     /// <summary>What a restart charges: a campaign stage's entry (a replay's once it is won), the authored entry in the
@@ -173,6 +217,17 @@ public partial class BattleController
         : IsCampaignMode ? GameState.Instance.GetStageEntryFoodCost(_stage)
         : GameState.Instance.GetBattleRestartFoodCost(_stage);
 
+    private void StyleRestartButton(RoyalButton button)
+    {
+        var cost = RestartFoodCost;
+        var shared = IsLanRaceMode || IsOnlineRoomMode;
+        SetPauseCaption(button, shared ? "Restart unavailable" : "Restart", shared || cost <= 0 ? "" : $"{cost} food");
+        button.TooltipText = shared ? "Shared matches cannot be restarted individually." : $"Restart this battle · {cost} rations";
+        button.AccessibilityName = $"Restart battle, {cost} rations";
+        button.Disabled = _restartPending || shared || GameState.Instance.Food < cost;
+    }
+
+    /// <summary>The same price on the legacy end panel's plain button.</summary>
     private void StyleRestartButton(Button button)
     {
         var cost = RestartFoodCost;
@@ -182,7 +237,6 @@ public partial class BattleController
         button.TooltipText = $"Restart this battle · {cost} rations";
         button.AccessibilityName = $"Restart battle, {cost} rations";
         button.Disabled = _restartPending || IsLanRaceMode || IsOnlineRoomMode || GameState.Instance.Food < cost;
-        if (IsLanRaceMode || IsOnlineRoomMode) { button.Text = "Restart unavailable"; button.TooltipText = "Shared matches cannot be restarted individually."; }
     }
 
     private void RefreshRestartAvailability()

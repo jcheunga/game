@@ -49,7 +49,7 @@ public partial class UiReviewSmoke
             Check(GetTree().Paused && Read<bool>(battle, "_battlePaused"), tag + ": menu freezes the fight");
             Send(new InputEventKey { Keycode = Key.Tab, Pressed = true });
             Check(GetViewport().GuiGetFocusOwner() == Read<Button>(battle, "_restartButton"), tag + ": keyboard focus stays within the pause menu");
-            Check(Read<Button>(battle, "_restartButton").Icon != null && Read<Button>(battle, "_restartButton").AccessibilityName.Contains("rations"), tag + ": restart exposes its ration price");
+            Check(Read<Button>(battle, "_restartButton").GetNodeOrNull("Price") != null && Read<Button>(battle, "_restartButton").AccessibilityName.Contains("rations"), tag + ": restart exposes its ration price");
             await Capture(tag + "-menu");
             Call(battle, "OpenBattleSettings"); await Wait(.15);
             Check(GetTree().Paused && Walk(battle).OfType<SettingsMenu>().Any(), tag + ": settings opens over the paused battle");

@@ -6,7 +6,7 @@ using Godot;
 /// </summary>
 public partial class BattleController
 {
-    private Button _developerSpeedButton;
+    private RoyalButton _developerSpeedButton;
 
     private bool DeveloperBattleToolsAvailable => GameState.Instance.DeveloperToolsActive && !IsLanRaceMode && !IsOnlineRoomMode;
 
@@ -27,23 +27,19 @@ public partial class BattleController
             stack.AddChild(row);
             return row;
         }
-        Button Add(HBoxContainer row, string name, string icon, string text, System.Action action)
+        RoyalButton Add(HBoxContainer row, string name, string text, System.Action action)
         {
-            var button = RealmUi.Button(icon, text, action);
+            var button = PauseAction(row, text, null, action, height: 52, size: 18);
             button.Name = name;
-            button.CustomMinimumSize = new Vector2(0, 52);
-            button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            ModalUi.StyleButton(button);
-            row.AddChild(button);
             return button;
         }
         var settle = Row();
         // Endless and boss rush runs have no stronghold to break; they end only when the wagon falls.
-        if (!IsEndlessMode && !IsBossRushMode) Add(settle, "DeveloperWinBattle", "crown", "Win battle", () => DeveloperSettleBattle(true));
-        Add(settle, "DeveloperLoseBattle", "flag", IsEndlessMode || IsBossRushMode ? "End run" : "Lose battle", () => DeveloperSettleBattle(false));
+        if (!IsEndlessMode && !IsBossRushMode) Add(settle, "DeveloperWinBattle", "Win battle", () => DeveloperSettleBattle(true));
+        Add(settle, "DeveloperLoseBattle", IsEndlessMode || IsBossRushMode ? "End run" : "Lose battle", () => DeveloperSettleBattle(false));
         var tune = Row();
-        Add(tune, "DeveloperFillResources", "bolt", "Fill courage and mana", DeveloperFillResources);
-        _developerSpeedButton = Add(tune, "DeveloperBattleSpeed", "clock", "", CycleDeveloperBattleSpeed);
+        Add(tune, "DeveloperFillResources", "Fill meters", DeveloperFillResources);
+        _developerSpeedButton = Add(tune, "DeveloperBattleSpeed", "", CycleDeveloperBattleSpeed);
         RefreshDeveloperSpeedButton();
     }
 
@@ -75,7 +71,7 @@ public partial class BattleController
     private void RefreshDeveloperSpeedButton()
     {
         if (!IsInstanceValid(_developerSpeedButton)) return;
-        _developerSpeedButton.Text = $"Speed {GameState.Instance.BattleSpeedScale:0}×";
+        SetPauseCaption(_developerSpeedButton, $"Speed {GameState.Instance.BattleSpeedScale:0}×");
         _developerSpeedButton.TooltipText = "Change the battle speed (1×, 2×, 4×, 8×)";
         _developerSpeedButton.AccessibilityName = _developerSpeedButton.Text;
     }

@@ -44,7 +44,8 @@ public partial class BattleController
             button.CustomMinimumSize=new Vector2(112,96);
             button.ClipContents=true;
         }
-        foreach(var button in _pauseOverlay.FindChildren("*","Button",true,false).OfType<Button>()) MobilePresentation.TouchButton(button);
+        // The pause menu's painted buttons are already a fingertip tall and keep their own surfaces.
+        foreach(var button in _pauseOverlay.FindChildren("*","Button",true,false).OfType<Button>().Where(button=>button is not RoyalButton)) MobilePresentation.TouchButton(button);
         _endPanel.CustomMinimumSize=new Vector2(680,380);
         MobilePresentation.TouchButton(_endPrimaryButton); MobilePresentation.TouchButton(_endSecondaryButton);
         foreach(var scroll in _endPanel.FindChildren("*","ScrollContainer",true,false).OfType<ScrollContainer>()) scroll.CustomMinimumSize=new Vector2(0,150);

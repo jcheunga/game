@@ -42,6 +42,8 @@ REQUIRED = {
     "effective_date": "the date the privacy policy and terms take effect (YYYY-MM-DD)",
 }
 LINKS = ("app_store", "google_play", "web_play")
+# How each store link's platform is named in prose and in the home page's schema.org gamePlatform.
+PLATFORMS = {"app_store": ("iPhone", "iOS"), "google_play": ("Android", "Android"), "web_play": ("the web", "Web browser")}
 TEXT_SUFFIXES = {".html", ".txt", ".xml", ".webmanifest"}
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 DOMAIN_RE = re.compile(r"^(?!-)[a-z0-9-]+(\.[a-z0-9-]+)+$")
@@ -123,6 +125,12 @@ def load_values(config_path: Path, strict: bool, expect_domain: str | None, prob
         problems.error(f"site.json: \"admob_publisher_id\" should look like pub-0123456789012345, not {publisher!r}")
     values["admob_publisher_id"] = publisher
     values["availability_label"] = "Available on" if any_link else "Coming to"
+    # Once a store is live, the page head names only the live platforms, so an Android-first launch doesn't claim iPhone.
+    live = [key for key in LINKS if values[f"link:{key}"]] or list(LINKS)
+    names = [PLATFORMS[key][0] for key in live]
+    listed = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+    values["platforms_sentence"] = f"{values['availability_label']} {listed}."
+    values["game_platforms_json"] = json.dumps([PLATFORMS[key][1] for key in live])
     values["year"] = str(dt.date.today().year)
     # RFC 9116 requires an expiry under a year away; each deploy refreshes it.
     expires = dt.datetime.now(dt.timezone.utc).replace(microsecond=0) + dt.timedelta(days=364)

@@ -3,7 +3,7 @@
 <head>
 <!--#include head.html -->
 <title>Crownroad</title>
-<meta name="description" content="Crownroad is a medieval lane-battle siege game. Escort the Lantern Caravan's war wagon across 100 stages and break every gatehouse held by the Rotbound Host. {{availability_label}} iPhone, Android and the web.">
+<meta name="description" content="Crownroad is a medieval lane-battle siege game. Escort the Lantern Caravan's war wagon across 100 stages and break every gatehouse held by the Rotbound Host. {{platforms_sentence}}">
 <link rel="canonical" href="https://{{domain}}/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Crownroad">
@@ -25,9 +25,9 @@
   "image": "https://{{domain}}/assets/img/og.jpg",
   "description": "A medieval lane-battle siege game. Escort the Lantern Caravan's war wagon across 100 stages and break every gatehouse held by the Rotbound Host.",
   "genre": ["Strategy", "Lane battle", "Tower defense"],
-  "gamePlatform": ["iOS", "Android", "Web browser"],
+  "gamePlatform": {{game_platforms_json}},
   "applicationCategory": "Game",
-  "playMode": ["SinglePlayer", "MultiPlayer"],
+  "playMode": "SinglePlayer",
   "publisher": { "@type": "Organization", "name": "{{legal_name}}" }
 }
 </script>

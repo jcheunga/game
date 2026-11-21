@@ -81,7 +81,9 @@ http://localhost:8000 with the same clean URLs Caddy uses (`/privacy` serves
 9. **When a store goes live,** add its listing URL under `links` in
    `site.json` (`app_store`, `google_play`, `web_play`) and redeploy. The
    closing section switches from "Coming to" to "Available on", links each
-   live platform, and marks the rest "soon".
+   live platform, and marks the rest "soon". The page's search description
+   and its structured data then name only the live platforms ("Available on
+   Android."), so an Android-first launch doesn't claim iPhone.
 
 ## Keeping the privacy policy true
 
